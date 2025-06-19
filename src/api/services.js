@@ -164,10 +164,8 @@ function findAllValuesByKey(obj, key) {
 
 export const getData = async ({ type, query}) => {
   try {
-    const response = await axios.get("http://localhost:8000/api/data", {
-      params: { type },
-      data: query,
-    });
+    console.log("[Service] Fetching data with type:", type, "and query:", query);
+    const response = await axios.post(`http://localhost:8000/api/data?type=${type}`, query);
     return {status: response.status, data: response.data}
   } catch (error) {
     console.error(error)
