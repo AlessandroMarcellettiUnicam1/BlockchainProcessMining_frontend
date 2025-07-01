@@ -173,3 +173,4 @@ export const getData = async ({ type, query}) => {
   }
 }
 
+
