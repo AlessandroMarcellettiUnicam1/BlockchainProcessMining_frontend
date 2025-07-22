@@ -1,11 +1,8 @@
 import { LineChart } from "@mui/x-charts/LineChart";
 import { Box } from "@mui/material";
 import { useDataView } from "../../context/DataViewContext";
-export default function Time() {
-
-  const { data } = useDataView();
-
-  return (
+export default function Time({ data }) {
+	return (
 		<Box sx={{ width: "100%" }}>
 			<h1>Gas used and Transaction Count over Time</h1>
 

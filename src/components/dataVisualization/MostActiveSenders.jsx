@@ -7,44 +7,6 @@ import DeleteSweepTwoToneIcon from "@mui/icons-material/DeleteSweepTwoTone";
 import { useDialogs } from "@toolpad/core/useDialogs";
 import { TransactionsDialog } from "./dialogs/TransactionsDialog";
 
-// const data = [
-//   {
-//     id: 0,
-//     sender: "0x1234567890123456789012345678901234567890",
-//     numberOfTransactions: 100,
-//     averageGasUsed: 124453
-//   },
-//   {
-//     id: 1,
-//     sender: "0x1234567890123456789012345678901234567890",
-//     numberOfTransactions: 100,
-//     averageGasUsed: 124453
-//   },
-//   {
-//     id: 2,
-//     sender: "0x1234567890123456789012345678901234567890",
-//     numberOfTransactions: 100,
-//     averageGasUsed: 124453
-//   },
-//   {
-//     id: 3,
-//     sender: "0x1234567890123456789012345678901234567890",
-//     numberOfTransactions: 100,
-//     averageGasUsed: 124453
-//   },
-//   {
-//     id: 4,
-//     sender: "0x1234567890123456789012345678901234567890",
-//     numberOfTransactions: 100,
-//     averageGasUsed: 124453
-//   },
-//   {
-//     id: 5,
-//     sender: "0x1234567890123456789012345678901234567890",
-//     numberOfTransactions: 100,
-//     averageGasUsed: 124453
-//   }
-// ]
 const columns = [
 	{ field: "sender", headerName: "Sender", width: 400 },
 	{
@@ -55,8 +17,7 @@ const columns = [
 	{ field: "averageGasUsed", headerName: "Average Gas Used", width: 200 },
 ];
 
-export default function MostActiveSenders() {
-	const { data } = useDataView();
+export default function MostActiveSenders({ data }) {
 	const dialogs = useDialogs();
 
 	const [searchValue, setSearchValue] = React.useState("");

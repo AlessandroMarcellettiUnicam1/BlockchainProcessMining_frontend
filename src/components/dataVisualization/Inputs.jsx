@@ -1,10 +1,9 @@
-import React from 'react';
-import { Box, TextField, Button } from '@mui/material';
-import { DataGrid } from '@mui/x-data-grid';
+import React from "react";
+import { Box, TextField, Button } from "@mui/material";
+import { DataGrid } from "@mui/x-data-grid";
 import { useDataView } from "../../context/DataViewContext";
 import SearchIcon from "@mui/icons-material/Search";
 import DeleteSweepTwoToneIcon from "@mui/icons-material/DeleteSweepTwoTone";
-
 
 // const data = [
 //   { id: 0, smartContract: '0x1234567890123456789012345678901234567890', inputName: 'amount', inputType: "uint256", occurrences: 4234},
@@ -22,82 +21,81 @@ const columns = [
 	{ field: "inputValue", headerName: "Input Value", width: 200 },
 ];
 
-export default function Inputs() {
-    const { data } = useDataView();
-    const [searchValue, setSearchValue] = React.useState("");
-    const [filteredData, setFilteredData] = React.useState(data || []);
+export default function Inputs({ data }) {
+	const [searchValue, setSearchValue] = React.useState("");
+	const [filteredData, setFilteredData] = React.useState(data || []);
 
-    return (
-			<div>
-				<h1>Inputs</h1>
+	return (
+		<div>
+			<h1>Inputs</h1>
+			<Box
+				sx={{
+					display: "flex",
+					flexDirection: "column",
+					alignItems: "flex-start",
+					width: "100%",
+					gap: 2,
+				}}>
 				<Box
 					sx={{
 						display: "flex",
-						flexDirection: "column",
-						alignItems: "flex-start",
+						flexDirection: "row",
+						alignItems: "center",
 						width: "100%",
 						gap: 2,
+						marginBottom: 2,
 					}}>
-					<Box
-						sx={{
-							display: "flex",
-							flexDirection: "row",
-							alignItems: "center",
-							width: "100%",
-							gap: 2,
-							marginBottom: 2,
-						}}>
-						<TextField
-							label="Search by Contract Address"
-							variant="outlined"
-							fullWidth
-							value={searchValue}
-							placeholder="0x..."
-							onChange={(e) => setSearchValue(e.target.value.toLowerCase())}
-						/>
-						<Button
-							variant="contained"
-							onClick={() =>
-								setFilteredData(
-									data.filter((item) =>
-										item.contractAddress.toLowerCase().includes(searchValue)
-									)
+					<TextField
+						label="Search by Contract Address"
+						variant="outlined"
+						fullWidth
+						value={searchValue}
+						placeholder="0x..."
+						onChange={(e) => setSearchValue(e.target.value.toLowerCase())}
+					/>
+					<Button
+						variant="contained"
+						onClick={() =>
+							setFilteredData(
+								data.filter((item) =>
+									item.contractAddress.toLowerCase().includes(searchValue)
 								)
-							}
-							sx={{ width: "fit-content", height: "100%", minHeight: "56px" }}>
-							<SearchIcon />
-						</Button>
-						<Button
-							variant="contained"
-							onClick={() => {
-								setFilteredData(data);
-								setSearchValue("");
-							}}
-							sx={{
-								width: "fit-content",
-								backgroundColor: "red",
-								color: "white",
-								height: "100%",
-								minHeight: "56px",
-							}}>
-							<DeleteSweepTwoToneIcon />
-						</Button>
-					</Box>
-					<Box
+							)
+						}
+						sx={{ width: "fit-content", height: "100%", minHeight: "56px" }}>
+						<SearchIcon />
+					</Button>
+					<Button
+						variant="contained"
+						onClick={() => {
+							setFilteredData(data);
+							setSearchValue("");
+						}}
 						sx={{
-							flexGrow: 1,
-							width: "100%",
-							height: 400,
+							width: "fit-content",
+							backgroundColor: "red",
+							color: "white",
+							height: "100%",
+							minHeight: "56px",
 						}}>
-						<DataGrid
-							rows={filteredData.map((item, index) => ({
-								id: index,
-								...item,
-							}))}
-							columns={columns}
-						/>
-					</Box>
+						<DeleteSweepTwoToneIcon />
+					</Button>
 				</Box>
-			</div>
-		);
+				<Box
+					sx={{
+						flexGrow: 1,
+						width: "100%",
+						height: 400,
+					}}>
+					<DataGrid
+						rows={filteredData.map((item, index) => ({
+							id: index,
+							...item,
+						}))}
+						columns={columns}
+					/>
+				</Box>
+			</Box>
+		</div>
+	);
 }
