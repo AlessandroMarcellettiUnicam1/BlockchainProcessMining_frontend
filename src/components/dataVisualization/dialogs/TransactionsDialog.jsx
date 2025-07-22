@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import PropTypes from "prop-types";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
@@ -16,30 +16,51 @@ function TransactionsDialog({ open, onClose, payload }) {
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState(null);
 	const { query } = useDataView();
+	const abortControllerRef = useRef(null);
 
 	useEffect(() => {
+		// Create new AbortController for each request
+		abortControllerRef.current = new AbortController();
+		const signal = abortControllerRef.current.signal;
+
 		const fetchData = async () => {
 			setLoading(true);
 			setError(null);
 			try {
 				const response = await axios.post(
 					`http://localhost:8000/api/data/txs?sender=${payload.sender}`,
-					query
+					query,
+					{ signal } // Pass cancellation signal
 				);
+
+				if (signal.aborted) return;
+
 				if (response.status === 200) {
 					setTransactionsData(response.data);
 				} else {
 					setError("Failed to fetch activity data");
 				}
-				setLoading(false);
 			} catch (error) {
-				setError(error.message || "An error occurred");
-				setLoading(false);
+				if (error.name !== "CanceledError") {
+					setError(error.message || "An error occurred");
+				}
+			} finally {
+				if (!signal.aborted) {
+					setLoading(false);
+				}
 			}
 		};
+
 		if (open && payload.sender) {
 			fetchData();
 		}
+
+		// Cleanup function for aborting requests
+		return () => {
+			if (abortControllerRef.current) {
+				abortControllerRef.current.abort();
+			}
+		};
 	}, [open, payload.sender, query]);
 	return (
 		<Dialog

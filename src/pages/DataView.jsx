@@ -1,11 +1,10 @@
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Box from "@mui/material/Box";
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useCallback, useMemo } from "react";
 import GasUsed from "../components/dataVisualization/GasUsed";
 import Events from "../components/dataVisualization/Events";
 import Call from "../components/dataVisualization/Call";
-import Activity from "../components/dataVisualization/Activity";
 import Inputs from "../components/dataVisualization/Inputs";
 import MostActiveSenders from "../components/dataVisualization/MostActiveSenders";
 import StorageState from "../components/dataVisualization/StorageState";
@@ -14,86 +13,83 @@ import { Button, TextField, CircularProgress } from "@mui/material";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { getData } from "../api/services";
 import { useDataView } from "../context/DataViewContext";
+import { useQuery, useQueryClient } from "react-query";
 
 const tabs = [
 	{
 		label: "Gas Used",
 		value: 0,
 		type: "gasUsed",
-		component: <GasUsed />,
+		component: (data) => <GasUsed data={data} />,
 	},
 	{
 		label: "Most Active Senders",
 		value: 1,
 		type: "mostActiveSenders",
-		component: <MostActiveSenders />,
+		component: (data) => <MostActiveSenders data={data} />,
 	},
 	{
 		label: "Time",
 		value: 2,
 		type: "time",
-		component: <Time />,
+		component: (data) => <Time data={data} />,
 	},
 	{
 		label: "Inputs",
 		value: 3,
 		type: "inputs",
-		component: <Inputs />,
+		component: (data) => <Inputs data={data} />,
 	},
 	{
 		label: "Events",
 		value: 4,
 		type: "events",
-		component: <Events />,
+		component: (data) => <Events data={data} />,
 	},
 	{
 		label: "Call",
-		value: 5  ,
+		value: 5,
 		type: "call",
-		component: <Call />,
+		component: (data) => <Call data={data} />,
 	},
 	{
 		label: "Storage State",
 		value: 6,
 		type: "storageState",
-		component: <StorageState />,
+		component: (data) => <StorageState data={data} />,
 	},
 ];
 
 export default function DataViewPage() {
-	const {
-		selectedTab,
-		setSelectedTabState,
-		setLoadingState,
-		setErrorState,
-		setDataView,
-		query,
-		setQueryState,
-	} = useDataView();
+	const { selectedTab, setSelectedTabState, query, setQueryState } =
+		useDataView();
 
-	const onFetchData = async ({ type }) => {
-		console.log(
-			"[DataView] Fetching data with type:",
-			type,
-			"and query:",
-			query
-		);
-		setLoadingState(true);
-		setErrorState(null);
-		try {
-			const response = await getData({ type, query });
-			console.log("[DataView] Response Data:", response);
-			setDataView(response.data);
-		} catch (error) {
-			setErrorState(error.message || "Failed to fetch data");
-		} finally {
-			setLoadingState(false);
-		}
+	const { isLoading, data, error } = useQuery({
+		queryKey: ["data", selectedTab, query],
+		queryFn: () =>
+			getData({
+				type: tabs[selectedTab].type,
+				query: query ?? null,
+			}).then((r) => {
+				return r.data;
+			}),
+	});
+
+	const queryClient = useQueryClient();
+	const invalidateQuery = () => {
+		queryClient.invalidateQueries({ queryKey: ["data"] });
 	};
 
-	useEffect(() => {
-		onFetchData({ type: tabs[selectedTab].type, query });
-	}, []);
+	const handleResetFilters = () => {
+		const resetQuery = {
+			contractAddress: null,
+			dateFrom: null,
+			dateTo: null,
+			fromBlock: null,
+			toBlock: null,
+		};
+		setQueryState(resetQuery);
+	};
 
 	return (
 		<div>
@@ -123,10 +119,10 @@ export default function DataViewPage() {
 								label="Date From"
 								slotProps={{ textField: { size: "small" } }}
 								value={query.dateFrom ? new Date(query.dateFrom) : null}
-								onChange={(newValue) =>
+								onChange={(e) =>
 									setQueryState({
 										...query,
-										dateFrom: newValue ? newValue.toISOString() : null,
+										dateFrom: e ? e.toISOString() : null,
 									})
 								}
 							/>
@@ -134,12 +130,12 @@ export default function DataViewPage() {
 								label="Date To"
 								slotProps={{ textField: { size: "small" } }}
 								value={query.dateTo ? new Date(query.dateTo) : null}
-								onChange={(newValue) => {
+								onChange={(e) =>
 									setQueryState({
 										...query,
-										dateTo: newValue ? newValue.toISOString() : null,
-									});
-								}}
+										dateTo: e ? e.toISOString() : null,
+									})
+								}
 							/>
 						</Box>
 						<Box sx={{ display: "flex", gap: 2 }}>
@@ -152,7 +148,6 @@ export default function DataViewPage() {
 								onChange={(e) =>
 									setQueryState({ ...query, fromBlock: e.target.value })
 								}
-								InputProps={{ inputProps: { min: 0 } }}
 							/>
 							<TextField
 								label="To Block"
@@ -163,38 +158,25 @@ export default function DataViewPage() {
 								onChange={(e) =>
 									setQueryState({ ...query, toBlock: e.target.value })
 								}
-								InputProps={{ inputProps: { min: 0 } }}
 							/>
 						</Box>
 						<Button
 							variant="contained"
-							onClick={() =>
-								onFetchData({ type: tabs[selectedTab].type, query })
-							}>
-							Apply Filters
+							onClick={invalidateQuery}
+							disabled={isLoading}>
+							{isLoading ? "Loading..." : "Apply Filters"}
 						</Button>
 						<Button
 							variant="outlined"
-							onClick={() => {
-								setQueryState({
-									contractAddress: null,
-									dateFrom: null,
-									dateTo: null,
-									fromBlock: null,
-									toBlock: null,
-								});
-								onFetchData({ type: tabs[selectedTab].type });
-							}}>
+							onClick={handleResetFilters}
+							disabled={isLoading}>
 							Reset Filters
 						</Button>
 					</Box>
 					<Tabs
 						value={selectedTab}
-						onChange={(_, newValue) => {
-							setSelectedTabState(newValue);
-							onFetchData({ type: tabs[newValue].type, query });
-						}}
-						aria-label="basic tabs">
+						onChange={(_, newValue) => setSelectedTabState(newValue)}
+						aria-label="tabs">
 						{tabs.map((tab, index) => (
 							<Tab
 								key={index}
@@ -203,105 +185,90 @@ export default function DataViewPage() {
 						))}
 					</Tabs>
 				</Box>
-				<TabContent />
+				{error && <ErrorState {...error} />}
+				{isLoading && <LoadingState />}
+				{(!data ||
+					(Array.isArray(data) && data.length === 0 && !isLoading)) && (
+					<EmptyState />
+				)}
+				{data && <Box sx={{ p: 3 }}>{tabs[selectedTab]?.component(data)}</Box>}
 			</Box>
 		</div>
 	);
 }
 
-function TabContent() {
-	const { loading, data, error, selectedTab, query } = useDataView();
-  // Error state
-	if (error) {
-		return (
-			<Box
-				sx={{
-					display: "flex",
-					justifyContent: "center",
-					alignItems: "center",
-					height: "400px",
-				}}>
-				<p style={{ color: "red" }}>{error}</p>
-			</Box>
-		);
-	}
-  // Loading state
-	if (loading) {
-		return (
-			<Box
-				sx={{
-					display: "flex",
-					justifyContent: "center",
-					alignItems: "center",
-					height: "400px",
-				}}>
-				<CircularProgress />
-			</Box>
-		);
-	}
-  // Empty data state
-  if (!data || data.length === 0 || !isNaN(data)) {
-    return (
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "400px",
-        }}>
-        <p>No data available for this tab with the selected filters:</p>
-        <Box sx={{ maxWidth: "400px", textAlign: "center", mb: 2 }}>
-          {query.contractAddress && (
-            <p><strong>Contract Address:</strong> {query.contractAddress}</p>
-          )}
-          {query.dateFrom && (
-            <p><strong>Date From:</strong> {new Date(query.dateFrom).toLocaleDateString()}</p>
-          )}
-          {query.dateTo && (
-            <p><strong>Date To:</strong> {new Date(query.dateTo).toLocaleDateString()}</p>
-          )}
-          {query.fromBlock && (
-            <p><strong>From Block:</strong> {query.fromBlock}</p>
-          )}
-          {query.toBlock && (
-            <p><strong>To Block:</strong> {query.toBlock}</p>
-          )}
-          {!query.contractAddress && !query.dateFrom && !query.dateTo &&
-           !query.fromBlock && !query.toBlock && (
-            <p>No filters applied</p>
-          )}
-        </Box>
-        <p>Please adjust your filters or try a different tab.</p>
-      </Box>
-    );
-  }
-		// Data state
-		return (
-			<>
-				{tabs.map((tab, index) => (
-					<CustomTabPanel
-						key={index}
-						value={selectedTab}
-						index={index}>
-						{tab.component}
-					</CustomTabPanel>
-				))}
-			</>
-		);
-}
+const ErrorState = ({ error }) => (
+	<Box
+		sx={{
+			display: "flex",
+			justifyContent: "center",
+			alignItems: "center",
+			height: "400px",
+		}}>
+		<p style={{ color: "red" }}>{error}</p>
+	</Box>
+);
 
-function CustomTabPanel(props) {
-	const { children, value, index, ...other } = props;
+const LoadingState = () => (
+	<Box
+		sx={{
+			display: "flex",
+			justifyContent: "center",
+			alignItems: "center",
+			height: "400px",
+		}}>
+		<CircularProgress />
+	</Box>
+);
+
+const EmptyState = () => {
+	const { query } = useDataView();
 
 	return (
-		<div
-			role="tabpanel"
-			hidden={value !== index}
-			id={`tabpanel-${index}`}
-			aria-labelledby={`tab-${index}`}
-			{...other}>
-			{value === index && <Box sx={{ p: 3 }}>{children}</Box>}
-		</div>
+		<Box
+			sx={{
+				display: "flex",
+				flexDirection: "column",
+				justifyContent: "center",
+				alignItems: "center",
+				height: "400px",
+			}}>
+			<p>No data available for this tab with the selected filters:</p>
+			<Box sx={{ maxWidth: "400px", textAlign: "center", mb: 2 }}>
+				{query.contractAddress && (
+					<p>
+						<strong>Contract Address:</strong> {query.contractAddress}
+					</p>
+				)}
+				{query.dateFrom && (
+					<p>
+						<strong>Date From:</strong>{" "}
+						{new Date(query.dateFrom).toLocaleDateString()}
+					</p>
+				)}
+				{query.dateTo && (
+					<p>
+						<strong>Date To:</strong>{" "}
+						{new Date(query.dateTo).toLocaleDateString()}
+					</p>
+				)}
+				{query.fromBlock && (
+					<p>
+						<strong>From Block:</strong> {query.fromBlock}
+					</p>
+				)}
+				{query.toBlock && (
+					<p>
+						<strong>To Block:</strong> {query.toBlock}
+					</p>
+				)}
+				{!query.contractAddress &&
+					!query.dateFrom &&
+					!query.dateTo &&
+					!query.fromBlock &&
+					!query.toBlock && <p>No filters applied</p>}
+			</Box>
+			<p>Please adjust your filters or try a different tab.</p>
+		</Box>
 	);
-}
+};
