@@ -1,7 +1,7 @@
 import axios from "axios";
 const serverUrl = "http://localhost:8000";
 
-export const _sendData = async (contractName, contractAddress, impl_contract, fromBlock, toBlock, network, sc, filters) => {
+export const _sendData = async (contractName, contractAddress, impl_contract, fromBlock, toBlock, network, sc, filters, extractionType) => {
     const formData = new FormData()
     formData.append('file', sc)
     formData.append('contractAddress', contractAddress)
@@ -11,7 +11,7 @@ export const _sendData = async (contractName, contractAddress, impl_contract, fr
     formData.append('toBlock', toBlock)
     formData.append('network', network)
     formData.append('filters', JSON.stringify(filters))
-
+    formData.append('extractionType',extractionType);
     try {
         const response = await axios.post(serverUrl + "/submit", formData)
         return {status: response.status, data: response.data}

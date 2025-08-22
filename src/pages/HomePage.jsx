@@ -46,6 +46,7 @@ function HomePage() {
     const [toBlock, setToBlock] = useState("18698323")
 
     const [network, setNetwork] = useState("Mainnet")
+    const [extractionType,setExtractionType]=useState("OnlyDefault");
     const [loading, setLoading] = useState(false)
     const [smartContract, setSmartContract] = useState(null)
 
@@ -75,7 +76,7 @@ function HomePage() {
             senders: senders,
             functions: functions
         }
-        const response = await _sendData(contractName, contractAddress, impl_contract, fromBlock, toBlock, network, smartContract, filters)
+        const response = await _sendData(contractName, contractAddress, impl_contract, fromBlock, toBlock, network, smartContract, filters, extractionTypes.indexOf(extractionType))
         if (response.status === 200) {
             setResults(response.data)
             setLoading(false)
@@ -85,7 +86,9 @@ function HomePage() {
         }
     }
 
-    const networks = ["Mainnet", "Sepolia", "Polygon", "Amoy"]
+    const networks = ["Mainnet", "Sepolia", "Polygon", "Amoy"]  
+    // the extractionTypes are mapped in this format OnlyDeafult=0,StorageState=1,Exetended=2
+    const extractionTypes = ["OnlyDefault","StorageState-PartialInternal","ExetendedInternal"]
 
     useEffect(() => {
         switch (network) {
@@ -137,6 +140,9 @@ function HomePage() {
 
     const handleNetworkChange = (e) => {
         setNetwork(e.target.value)
+    }
+    const handelExtractionTypeChange = (e) => {
+        setExtractionType(e.target.value)
     }
 
     const handleContractUpload = (e) => {
@@ -440,6 +446,23 @@ function HomePage() {
                         >
                             {
                                 networks.map((name, index) => (
+                                    <MenuItem key={index} value={name}>
+                                        <Typography>{name}</Typography>
+                                    </MenuItem>
+                                ))
+                            }
+                        </Select>
+                    </FormControl>
+                    <FormControl fullWidth sx={{width: 200}}>
+                        <InputLabel>ExtractionType</InputLabel>
+                        <Select
+                            variant="outlined"
+                            value={extractionType}
+                            label="name"
+                            onChange={(e) => handelExtractionTypeChange(e)}
+                        >
+                            {
+                                extractionTypes.map((name, index) => (
                                     <MenuItem key={index} value={name}>
                                         <Typography>{name}</Typography>
                                     </MenuItem>
