@@ -187,10 +187,8 @@ export default function DataViewPage() {
 				</Box>
 				{error && <ErrorState {...error} />}
 				{isLoading && <LoadingState />}
-				{(!data ||
-					(Array.isArray(data) && data.length === 0 && !isLoading)) && (
-					<EmptyState />
-				)}
+				{(!data || (Array.isArray(data) && data.length === 0)) &&
+					!isLoading && <EmptyState />}
 				{data && <Box sx={{ p: 3 }}>{tabs[selectedTab]?.component(data)}</Box>}
 			</Box>
 		</div>

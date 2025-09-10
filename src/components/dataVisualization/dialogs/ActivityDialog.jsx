@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
@@ -10,6 +9,7 @@ import axios from "axios";
 import { useDataView } from "../../../context/DataViewContext";
 import { Box } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
+import { useQuery } from "react-query";
 
 const columns = [
 	{ field: "smartContract", headerName: "Smart Contract", width: 300 },
@@ -23,35 +23,19 @@ const columns = [
 ];
 
 function ActivityDialog({ open, onClose, payload }) {
-	const [activityData, setActivityData] = useState(null);
-	const [loading, setLoading] = useState(false);
-	const [error, setError] = useState(null);
 	const { query } = useDataView();
 
-	useEffect(() => {
-		const fetchData = async () => {
-			setLoading(true);
-			setError(null);
-			try {
-				const response = await axios.post(
+	const { isFetching, error, data } = useQuery({
+		queryKey: ["eventsData"],
+		queryFn: () =>
+			axios
+				.post(
 					`http://localhost:8000/api/data/activities?activity=${payload.activity}`,
 					query
-				);
-				if (response.status === 200) {
-					setActivityData(response.data);
-				} else {
-					setError("Failed to fetch activity data");
-				}
-				setLoading(false);
-			} catch (error) {
-				setError(error.message || "An error occurred");
-				setLoading(false);
-			}
-		};
-		if (open && payload.activity) {
-			fetchData();
-		}
-	}, [open, payload.activity, query]);
+				)
+				.then((res) => res.data),
+	});
+
 	return (
 		<Dialog
 			fullWidth
@@ -62,16 +46,16 @@ function ActivityDialog({ open, onClose, payload }) {
 				Activity Overview for activity: {payload.activity}
 			</DialogTitle>
 			<DialogContent>
-				{loading && <p>Loading activity data...</p>}
+				{isFetching && <p>Loading activity data...</p>}
 				{error && <Alert severity="error">{error}</Alert>}
-				{activityData && (
+				{data && (
 					<Box
 						sx={{
 							width: "100%",
 							height: 600,
 						}}>
 						<DataGrid
-							rows={activityData.map((item, index) => ({
+							rows={data.map((item, index) => ({
 								...item,
 								id: index,
 							}))}
@@ -88,7 +72,7 @@ function ActivityDialog({ open, onClose, payload }) {
 }
 
 ActivityDialog.propTypes = {
-	onClose: PropTypes.func.isRequired,
+	onClose: PropTypes.func.isRequi,
 	open: PropTypes.bool.isRequired,
 	payload: PropTypes.shape({
 		activity: PropTypes.string,

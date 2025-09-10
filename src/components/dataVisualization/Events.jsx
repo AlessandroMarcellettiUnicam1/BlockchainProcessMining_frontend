@@ -1,8 +1,6 @@
 import { BarChart } from "@mui/x-charts/BarChart";
-import React from "react";
 import { Box } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
-import { useDataView } from "../../context/DataViewContext";
 import { useDialogs } from "@toolpad/core/useDialogs";
 import { EventsDialog } from "./dialogs/EventsDialog";
 

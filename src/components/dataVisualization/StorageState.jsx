@@ -2,13 +2,22 @@ import { BarChart } from "@mui/x-charts/BarChart";
 import React from "react";
 import { Box } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
-
+import { useDialogs } from "@toolpad/core/useDialogs";
+import StorageHistoryDialog from "./dialogs/StorageHistoryDialog";
 const columns = [
 	{ field: "variableName", headerName: "Variable Name", width: 400 },
 	{ field: "count", headerName: "Occurrences", width: 200 },
 ];
 
 export default function StorageState({ data }) {
+	const dialogs = useDialogs();
+
+	const handleRowClick = async (params) => {
+		await dialogs.open(StorageHistoryDialog, {
+			variableName: params.row.variableName,
+		});
+	};
+
 	return (
 		<div>
 			<h1>Storage State</h1>
@@ -49,6 +58,7 @@ export default function StorageState({ data }) {
 							id: index,
 						}))}
 						columns={columns}
+						onRowClick={handleRowClick}
 					/>
 				</Box>
 			</Box>
