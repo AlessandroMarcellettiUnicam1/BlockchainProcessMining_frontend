@@ -91,7 +91,7 @@ function EventsDialog({ open, onClose, payload }) {
 	const [itemsPerPage] = useState(10);
 	const { query } = useDataView();
 
-	const { isLoading, error, data } = useQuery({
+	const { isFetching, error, data } = useQuery({
 		queryKey: ["eventsData"],
 		queryFn: () =>
 			axios
@@ -107,7 +107,7 @@ function EventsDialog({ open, onClose, payload }) {
 	const endIndex = startIndex + itemsPerPage;
 	const currentEvents = data ? data.slice(startIndex, endIndex) : [];
 
-	const handlePageChange = (event, value) => {
+	const handlePageChange = (_, value) => {
 		setCurrentPage(value);
 	};
 
@@ -123,9 +123,9 @@ function EventsDialog({ open, onClose, payload }) {
 			onClose={() => onClose()}>
 			<DialogTitle>Events of: {payload.eventName}</DialogTitle>
 			<DialogContent>
-				{isLoading && <p>Loading events data...</p>}
+				{isFetching && <p>Loading events data...</p>}
 				{error && <Alert severity="error">{error}</Alert>}
-				{data && (
+				{data && !isFetching && (
 					<>
 						<Box
 							sx={{

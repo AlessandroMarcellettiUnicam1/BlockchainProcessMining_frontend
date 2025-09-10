@@ -1,6 +1,6 @@
 import { LineChart } from "@mui/x-charts/LineChart";
 import { Box } from "@mui/material";
-import { useDataView } from "../../context/DataViewContext";
+
 export default function Time({ data }) {
 	return (
 		<Box sx={{ width: "100%" }}>
@@ -23,9 +23,13 @@ export default function Time({ data }) {
 				]}
 				height={400}
 				margin={{ left: 70, right: 30, top: 30, bottom: 60 }}
+				skipAnimation={true}
 				sx={{
 					".MuiLineElement-root": {
 						strokeWidth: 2,
+					},
+					".MuiMarkElement-root": {
+						display: "none", // Hide individual points
 					},
 				}}
 			/>
@@ -46,9 +50,13 @@ export default function Time({ data }) {
 				]}
 				height={400}
 				margin={{ left: 70, right: 30, top: 30, bottom: 60 }}
+				skipAnimation={true}
 				sx={{
 					".MuiLineElement-root": {
 						strokeWidth: 2,
+					},
+					".MuiMarkElement-root": {
+						display: "none", // Hide individual points
 					},
 				}}
 			/>

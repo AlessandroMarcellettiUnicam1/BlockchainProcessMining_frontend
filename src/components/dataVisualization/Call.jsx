@@ -2,6 +2,8 @@ import { BarChart } from "@mui/x-charts/BarChart";
 import React from "react";
 import { Box } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
+import { useDialogs } from "@toolpad/core/useDialogs";
+import { CallsDialog } from "./dialogs/CallsDialog";
 
 const columns = [
 	{ field: "callType", headerName: "Call Type", width: 400 },
@@ -9,6 +11,13 @@ const columns = [
 ];
 
 export default function Call({ data }) {
+	const dialogs = useDialogs();
+
+	const handleRowClick = async (params) => {
+		await dialogs.open(CallsDialog, {
+			callType: params.row.callType,
+		});
+	};
 	return (
 		<div>
 			<h1>Call</h1>
@@ -49,6 +58,7 @@ export default function Call({ data }) {
 							...item,
 						}))}
 						columns={columns}
+						onRowClick={handleRowClick}
 					/>
 				</Box>
 			</Box>
