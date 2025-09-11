@@ -75,6 +75,8 @@ export default function DataViewPage() {
 			}),
 	});
 
+	console.log({ isLoading, data, error });
+
 	const queryClient = useQueryClient();
 	const invalidateQuery = () => {
 		queryClient.invalidateQueries({ queryKey: ["data"] });
@@ -188,8 +190,11 @@ export default function DataViewPage() {
 				{error && <ErrorState {...error} />}
 				{isLoading && <LoadingState />}
 				{(!data || (Array.isArray(data) && data.length === 0)) &&
-					!isLoading && <EmptyState />}
-				{data && <Box sx={{ p: 3 }}>{tabs[selectedTab]?.component(data)}</Box>}
+					!isLoading &&
+					!error && <EmptyState />}
+				{data && Array.isArray(data) && data.length > 0 && (
+					<Box sx={{ p: 3 }}>{tabs[selectedTab]?.component(data)}</Box>
+				)}
 			</Box>
 		</div>
 	);
