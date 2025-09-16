@@ -121,6 +121,7 @@ function PageLayout({children, loading, setLoading}) {
         window.history.replaceState({}, '', path)
     }
     const handleFileChange = (e) => {
+        setLoading && setLoading(true)
         const fileReader = new FileReader()
         fileReader.onload = (e) => {
             const content = e.target.result
@@ -334,7 +335,13 @@ function PageLayout({children, loading, setLoading}) {
                                     <JsonView value={results} style={{ ...darkTheme, fontSize: '14px' }} width="100%" />
                                     ) : (
                                     <Box display="flex" justifyContent="center" alignItems="center" height="100%">
-                                        <Typography color="gray">No logs to display</Typography>
+                                        {
+                                            !results?(
+                                                <Typography color="gray">No file uploaded</Typography>
+                                            ):(
+                                                <Typography color="red">FILE UPLOADED</Typography>
+                                            )
+                                        }
                                     </Box>
                                     )
                                 }
