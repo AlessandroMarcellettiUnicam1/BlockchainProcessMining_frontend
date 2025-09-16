@@ -91,7 +91,7 @@ function PageLayout({children, loading, setLoading}) {
 
     const [showOcel, setShowOcel] = useState(false);
     const [showXes, setShowXes] = useState(false);
-
+    const [showResults, setShowResults] = useState(false);
 
     const path = window.location.pathname
 
@@ -125,6 +125,7 @@ function PageLayout({children, loading, setLoading}) {
         fileReader.onload = (e) => {
             const content = e.target.result
             setResults(JSON.parse(content))
+            setShowResults(false);
         }
         fileReader.readAsText(e.target.files[0])
         e.target.value = null
@@ -329,8 +330,12 @@ function PageLayout({children, loading, setLoading}) {
                                                 <XMLViewer xml={xes.xesString || "<empty></empty>"} />
                                             </Box>
                                         </Box>
-                                    ) : results && (
-                                        <JsonView value={results} style={{ ...darkTheme, fontSize: '14px' }} width="100%" />
+                                    ) : (showResults && results) ? (
+                                    <JsonView value={results} style={{ ...darkTheme, fontSize: '14px' }} width="100%" />
+                                    ) : (
+                                    <Box display="flex" justifyContent="center" alignItems="center" height="100%">
+                                        <Typography color="gray">No logs to display</Typography>
+                                    </Box>
                                     )
                                 }
                             </CardContentNoPadding>
