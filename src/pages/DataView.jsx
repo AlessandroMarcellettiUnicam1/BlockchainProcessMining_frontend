@@ -1,6 +1,8 @@
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Box from "@mui/material/Box";
+import {FileUpload} from "@mui/icons-material"
+import { HiddenInput } from "../components/HiddenInput";
 import React, { useRef, useEffect, useCallback, useMemo } from "react";
 import GasUsed from "../components/dataVisualization/GasUsed";
 import Events from "../components/dataVisualization/Events";
@@ -11,7 +13,7 @@ import StorageState from "../components/dataVisualization/StorageState";
 import Time from "../components/dataVisualization/Time";
 import { Button, TextField, CircularProgress } from "@mui/material";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
-import { getData } from "../api/services";
+import { getData,importJSONToDB } from "../api/services";
 import { useDataView } from "../context/DataViewContext";
 import { useQuery, useQueryClient } from "react-query";
 
@@ -93,9 +95,22 @@ export default function DataViewPage() {
 		setQueryState(resetQuery);
 	};
 
+	const handleImportJsonToDB=(e)=>{
+		const fileReader = new FileReader();
+		fileReader.onload = (event) => {
+			const content = event.target.result;
+			importJSONToDB(content)
+		};
+		if (e.target.files[0]) {
+			fileReader.readAsText(e.target.files[0]);
+		}
+		e.target.value = null;
+	}
+
 	return (
 		<div>
 			<Box sx={{ width: "100%" }}>
+				
 				<Box sx={{ borderBottom: 1, borderColor: "divider" }}>
 					<Box
 						sx={{
@@ -174,6 +189,15 @@ export default function DataViewPage() {
 							disabled={isLoading}>
 							Reset Filters
 						</Button>
+						<Button
+								  component="label"
+								  variant="contained"
+								  startIcon={<FileUpload />}
+								  sx={{ padding: 1, height: "55px" }}
+								>
+								  Upload collection
+								  <HiddenInput type="file" onChange={handleImportJsonToDB} />
+								</Button>
 					</Box>
 					<Tabs
 						value={selectedTab}

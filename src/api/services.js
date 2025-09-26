@@ -137,7 +137,14 @@ export const _generateGraph=async (jsonData,edges)=>{
     }
 }
 
-
+export const importJSONToDB = async(jsonLog)=>{
+    try {
+       const response = await axios.post(serverUrl + "/api/uploadDataInDb",{jsonLog})
+       return {status: response.status};
+    } catch (error) {
+        console.error(error)
+    }
+}
 function findAllValuesByKey(obj, key) {
     let results = [];
 
@@ -172,5 +179,6 @@ export const getData = async ({ type, query}) => {
     return {status: error.response.status, data: error.response.data}
   }
 }
+
 
 
