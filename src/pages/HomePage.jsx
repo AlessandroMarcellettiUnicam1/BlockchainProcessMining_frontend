@@ -251,6 +251,9 @@ function HomePage() {
 
     const addContractAddress = (e) => {
         setContractAddress(e.target.value)
+        
+    }
+    const addImpleContractAddress = (e) => {
         setImplContractAddress(e.target.value)
     }
 
@@ -487,11 +490,11 @@ function HomePage() {
                                 <FilledInput value={contractAddress} label="Contract Address"
                                              onChange={(e) => addContractAddress(e)}/>
                             </FormControl>
-                            {/*<FormControl variant="filled">*/}
-                            {/*    <InputLabel sx={{fontWeight: "700", fontSize: "18px"}}>Implementation contract address</InputLabel>*/}
-                            {/*    <FilledInput value={impl_contract} label="Implementation address"*/}
-                            {/*                 onChange={(e) => setImplContractAddress(e.target.value)}/>*/}
-                            {/*</FormControl>*/}
+                            <FormControl variant="filled">
+                               <InputLabel sx={{fontWeight: "700", fontSize: "18px"}}>Implementation contract address</InputLabel>
+                               <FilledInput value={impl_contract} label="Implementation address"
+                                            onChange={(e) => addImpleContractAddress(e)}/>
+                            </FormControl>
                             <FormControl variant="filled">
                                 <InputLabel sx={{fontWeight: "700", fontSize: "18px"}}>From Block</InputLabel>
                                 <FilledInput value={fromBlock} label="From Block"
