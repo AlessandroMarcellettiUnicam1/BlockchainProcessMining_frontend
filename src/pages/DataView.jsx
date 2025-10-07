@@ -11,7 +11,7 @@ import Inputs from "../components/dataVisualization/Inputs";
 import MostActiveSenders from "../components/dataVisualization/MostActiveSenders";
 import StorageState from "../components/dataVisualization/StorageState";
 import Time from "../components/dataVisualization/Time";
-import { Button, TextField, CircularProgress } from "@mui/material";
+import {Button, TextField, CircularProgress, Checkbox} from "@mui/material";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { getData,importJSONToDB } from "../api/services";
 import { useDataView } from "../context/DataViewContext";
@@ -155,6 +155,15 @@ export default function DataViewPage() {
 								}
 							/>
 						</Box>
+                        <Box sx = {{display:"flex",gap:2}}>
+                            <Checkbox
+                                value={query.internalTxs}
+                                onChange={(e)=>
+                                    setQueryState({...query,internalTxs:e.target.checked})
+                                }
+                            />
+                            <p>Show internal transaction</p>
+                        </Box>
 						<Box sx={{ display: "flex", gap: 2 }}>
 							<TextField
 								label="From Block"
@@ -177,27 +186,46 @@ export default function DataViewPage() {
 								}
 							/>
 						</Box>
-						<Button
-							variant="contained"
-							onClick={invalidateQuery}
-							disabled={isLoading}>
-							{isLoading ? "Loading..." : "Apply Filters"}
-						</Button>
-						<Button
-							variant="outlined"
-							onClick={handleResetFilters}
-							disabled={isLoading}>
-							Reset Filters
-						</Button>
-						<Button
-								  component="label"
-								  variant="contained"
-								  startIcon={<FileUpload />}
-								  sx={{ padding: 1, height: "55px" }}
-								>
-								  Upload collection
-								  <HiddenInput type="file" onChange={handleImportJsonToDB} />
-								</Button>
+                        <Box>
+                            <TextField
+                                label="Min Activity Occurrences"
+                                type="number"
+                                variant="outlined"
+                                size="small"
+                                onChange={(e) =>
+                                    setQueryState({ ...query, minOccurrences: e.target.value })}
+                            />
+                        </Box>
+                        <Box
+                            sx={{
+                            display: "flex",
+                            flexWrap: "wrap",
+                            gap: 2,
+                            p: 2,
+                            alignItems: "center",
+                        }}>
+                            <Button
+                                variant="contained"
+                                onClick={invalidateQuery}
+                                disabled={isLoading}>
+                                {isLoading ? "Loading..." : "Apply Filters"}
+                            </Button>
+                            <Button
+                                variant="outlined"
+                                onClick={handleResetFilters}
+                                disabled={isLoading}>
+                                Reset Filters
+                            </Button>
+                            <Button
+                                      component="label"
+                                      variant="contained"
+                                      startIcon={<FileUpload />}
+                                      sx={{ padding: 1, height: "55px" }}
+                                    >
+                              Upload collection
+                              <HiddenInput type="file" onChange={handleImportJsonToDB} />
+                            </Button>
+                        </Box>
 					</Box>
 					<Tabs
 						value={selectedTab}
