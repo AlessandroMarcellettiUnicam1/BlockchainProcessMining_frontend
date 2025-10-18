@@ -25,19 +25,20 @@ function CallsDialog({ open, onClose, payload }) {
 		queryFn: () =>
 			axios
 				.post(
-					`http://localhost:8000/api/data/calls?callType=${payload.callType}&page=${page + 1}&limit=${limit}`,
+					`http://localhost:8000/api/data/internalTxsTree?txHash=${payload.txHash}&page=${page-1}&limit=${limit}`,
 					query
 				)
 				.then((res) => {
-					console.log(res.data);
 					return res.data;
 				}),
 		keepPreviousData: true,
 	});
 
+    console.log(data);
+
 	useEffect(() => {
 		setPage(1);
-	}, [open, payload.callType]);
+	}, [open, payload.transactionHash]);
 
 	return (
 		<Dialog
@@ -45,7 +46,7 @@ function CallsDialog({ open, onClose, payload }) {
 			maxWidth="xl"
 			open={open}
 			onClose={() => onClose()}>
-			<DialogTitle>Calls of type: {payload.callType}</DialogTitle>
+			<DialogTitle>Transaction: {payload.txHash}</DialogTitle>
 			<DialogContent>
 				{isLoading && <p>Loading calls data...</p>}
 				{error && <Alert severity="error">{error}</Alert>}
