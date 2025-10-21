@@ -1,62 +1,41 @@
-import {useState,useMemo} from "react";
+import React, {useState,useMemo} from "react";
 import { LineChart } from "@mui/x-charts/LineChart";
-import { Box,ButtonGroup,Button } from "@mui/material";
+import { Box } from "@mui/material";
+import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 
 export default function Time({ data }) {
-    const [timeRange,setTimeRange] = useState("all");
+    const [lowerDate,setLowerDate] = useState(null);
+    const [upperDate,setUpperDate] = useState(null);
+
     const filteredData = useMemo(() => {
         if (!data || data.length === 0) return [];
 
-        const max = new Date(Math.max(...data.map((item) => new Date(item.date))));
-        const min = new Date(max);
-
-        switch (timeRange) {
-            case "1m":
-                min.setMonth(max.getMonth() - 1);
-                break;
-            case "6m":
-                min.setMonth(max.getMonth() - 6);
-                break;
-            case "1y":
-                min.setFullYear(max.getFullYear() - 1);
-                break;
-            default:
-                return data;
+        if (lowerDate && upperDate && lowerDate<=upperDate) {
+            return data.filter((item) => {
+                const d = new Date(item.date);
+                return d >= lowerDate && d <= upperDate;
+            });
         }
 
-        return data.filter((item) => new Date(item.date) >= min);
-    }, [data, timeRange]);
+        return data;
+    }, [data, lowerDate, upperDate]);
 
     return (
 		<Box sx={{ width: "100%" }}>
 			<h1>Gas used and Transaction Count over Time</h1>
-            <Box>
-                <ButtonGroup variant="outlined">
-                    <Button
-                        variant = {timeRange==="1m" ? "contained" : "outlined"}
-                        onClick = {()=>setTimeRange("1m")}
-                    >
-                        1 Month
-                    </Button>
-                    <Button
-                        variant = {timeRange==="6m" ? "contained" : "outlined"}
-                        onClick = {()=>setTimeRange("6m")}
-                    >
-                        6 Month
-                    </Button>
-                    <Button
-                        variant = {timeRange==="1y" ? "contained" : "outlined"}
-                        onClick = {()=>setTimeRange("1y")}
-                    >
-                        1 Year
-                    </Button>
-                    <Button
-                        variant = {timeRange==="all" ? "contained" : "outlined"}
-                        onClick = {()=>setTimeRange("all")}
-                    >
-                        All
-                    </Button>
-                </ButtonGroup>
+            <Box sx={{ display: "flex", gap: 2 }}>
+                <DateTimePicker
+                    label="Date From"
+                    slotProps={{ textField: { size: "small" } }}
+                    value={lowerDate}
+                    onChange={(newValue)=>setLowerDate(newValue)}
+                />
+                <DateTimePicker
+                    label="Date To"
+                    slotProps={{ textField: { size: "small" } }}
+                    value={upperDate}
+                    onChange={(newValue) => setUpperDate(newValue)}
+                />
             </Box>
 			<LineChart
 				xAxis={[
@@ -66,6 +45,16 @@ export default function Time({ data }) {
 						tickFormat: (date) => date.toLocaleDateString(),
 					},
 				]}
+                yAxis={[
+                    {
+                        valueFormatter: (value) => {
+                            if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+                            if (value >= 1_000) return `${(value / 1_000).toFixed(0)}K`;
+                            return value;
+                        },
+                        width: 85,
+                    }
+                ]}
 				series={[
 					{
 						data: filteredData.map((item) => item.gasUsed),
@@ -93,6 +82,16 @@ export default function Time({ data }) {
 						tickFormat: (date) => date.toLocaleDateString(),
 					},
 				]}
+                yAxis={[
+                    {
+                        valueFormatter: (value) => {
+                            if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+                            if (value >= 1_000) return `${(value / 1_000).toFixed(0)}K`;
+                            return value;
+                        },
+                        width: 85,
+                    }
+                ]}
 				series={[
 					{
 						data: filteredData.map((item) => item.transactionCount),
