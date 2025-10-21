@@ -88,7 +88,7 @@ function HomePage() {
 
     const networks = ["Mainnet", "Sepolia", "Polygon", "Amoy"]  
     // the extractionTypes are mapped in this format OnlyDeafult=0,StorageState=1,Exetended=2
-    const extractionTypes = ["OnlyDefault","StorageState-PartialInternal","ExetendedInternal"]
+    const extractionTypes = ["Events-storage-internalExtended","Events-storage-internalPartial","Events"]
 
     useEffect(() => {
         switch (network) {
