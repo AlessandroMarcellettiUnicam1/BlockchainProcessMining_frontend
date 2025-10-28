@@ -4,37 +4,27 @@ import { Box } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { useDialogs } from "@toolpad/core/useDialogs";
 import { CallsDialog } from "./dialogs/CallsDialog";
-import axios from "axios";
-import {useQuery} from "react-query";
-import {useDataView} from "../../context/DataViewContext";
 
 
 const columns = [
     {field: "transactionHash", headerName: "Transaction Hash",width:400},
     {field: "contractAddress", headerName: "Contract Address",width:400},
-    {field: "functionName", headerName: "Function Name",width:300},
+    {field: "activity", headerName: "Function Name",width:300},
 ];
 
 export default function Call({data}) {
     const dialogs = useDialogs();
-    const query = useDataView();
-    const { data:dataGrid } = useQuery({
-        queryFn: () =>
-            axios
-                .post(
-                    `http://localhost:8000/api/data/transactions`,
-                    query
-                )
-                .then((res) => {
-                    return res.data;
-                }),
-        keepPreviousData: true,
-    });
+    const chart = Array.isArray(data?.call) ? data.call : [];
+    const dataGrid = Array.isArray(data?.dataGrid) ? data.dataGrid : [];
 
 
     const handleRowClick = async (params) => {
         await dialogs.open(CallsDialog, {
-            txHash: params.row.transactionHash
+            txHash: params.row.transactionHash,
+            depth: params.row.depth,
+            contractAddress: params.row.contractAddress,
+            activity: params.row.activity,
+            sender: params.row.sender,
         });
     };
     return (
@@ -57,12 +47,26 @@ export default function Call({data}) {
                     <BarChart
                         series={[
                             {
-                                data: data.map((item) => item.count),
+                                data: chart.map((item) => item.count),
                             },
                         ]}
-                        height={290}
-                        width={400}
-                        xAxis={[{data: data.map((item) => item.callType)}]}
+                        height={300}
+                        width={880}
+                        xAxis={[
+                            {
+                                data: chart.map((item) => item.callType),
+                            },
+                        ]}
+                        yAxis={[
+                            {
+                                valueFormatter: (value) => {
+                                    if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+                                    if (value >= 1_000) return `${(value / 1_000).toFixed(0)}K`;
+                                    return value;
+                                },
+                                width: 50,
+                            }
+                        ]}
                     />
                 </Box>
                 <Box

@@ -21,24 +21,31 @@ function CallsDialog({ open, onClose, payload }) {
 	const { query } = useDataView();
 
 	const { isLoading, error, data } = useQuery({
-		queryKey: ["eventsData", page],
+        queryKey: [
+            "callsData",
+            payload.txHash,
+            payload.depth,
+            payload.contractAddress,
+            payload.sender,
+            payload.activity,
+            page
+        ],
 		queryFn: () =>
 			axios
 				.post(
-					`http://localhost:8000/api/data/internalTxsTree?txHash=${payload.txHash}&page=${page-1}&limit=${limit}`,
+					`http://localhost:8000/api/data/internalTxs?txHash=${payload.txHash}&depth=${payload.depth}&to=${payload.contractAddress}&from=${payload.sender}&activity=${payload.activity}&page=${page-1}&limit=${limit}`,
 					query
 				)
 				.then((res) => {
 					return res.data;
 				}),
 		keepPreviousData: true,
+        enabled: open && !!payload.txHash,
 	});
-
-    console.log(data);
 
 	useEffect(() => {
 		setPage(1);
-	}, [open, payload.transactionHash]);
+	}, [open, payload.txHash]);
 
 	return (
 		<Dialog
@@ -95,7 +102,11 @@ CallsDialog.propTypes = {
 	onClose: PropTypes.func.isRequired,
 	open: PropTypes.bool.isRequired,
 	payload: PropTypes.shape({
-		callType: PropTypes.string,
+        txHash: PropTypes.string,
+        contractAddress: PropTypes.string,
+        sender: PropTypes.string,
+        activity: PropTypes.string,
+        depth: PropTypes.number,
 	}).isRequired,
 };
 

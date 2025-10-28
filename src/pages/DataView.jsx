@@ -131,6 +131,15 @@ export default function DataViewPage() {
 							}
 							sx={{ minWidth: 250 }}
 						/>
+                        <TextField
+                            label="Transaction Hash"
+                            variant="outlined"
+                            size="small"
+                            value = {query.txHash || ""}
+                            onChange={(e)=>
+                                setQueryState({ ...query, txHash: e.target.value })
+                            }
+                        />
 						<Box sx={{ display: "flex", gap: 2 }}>
 							<DateTimePicker
 								label="Date From"
@@ -244,7 +253,7 @@ export default function DataViewPage() {
 				{(!data || (Array.isArray(data) && data.length === 0)) &&
 					!isLoading &&
 					!error && <EmptyState />}
-				{data && Array.isArray(data) && data.length > 0 && (
+				{data && (
 					<Box sx={{ p: 3 }}>{tabs[selectedTab]?.component(data)}</Box>
 				)}
 			</Box>

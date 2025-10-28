@@ -41,9 +41,23 @@ export default function StorageState({ data }) {
 								data: data.map((item) => item.count),
 							},
 						]}
-						height={290}
-						width={400}
-						xAxis={[{ data: data.map((item) => item.variableName) }]}
+						height={300}
+						width={880}
+						xAxis={[
+                            {
+                                data: data.map((item) => item.variableName),
+                            }
+                        ]}
+                        yAxis={[
+                            {
+                                valueFormatter: (value) => {
+                                    if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+                                    if (value >= 1_000) return `${(value / 1_000).toFixed(0)}K`;
+                                    return value;
+                                },
+                                width: 50,
+                            }
+                        ]}
 					/>
 				</Box>
 				<Box

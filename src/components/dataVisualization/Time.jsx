@@ -52,7 +52,7 @@ export default function Time({ data }) {
                             if (value >= 1_000) return `${(value / 1_000).toFixed(0)}K`;
                             return value;
                         },
-                        width: 85,
+                        width: 50,
                     }
                 ]}
 				series={[
@@ -89,7 +89,7 @@ export default function Time({ data }) {
                             if (value >= 1_000) return `${(value / 1_000).toFixed(0)}K`;
                             return value;
                         },
-                        width: 85,
+                        width: 50,
                     }
                 ]}
 				series={[

@@ -4,6 +4,7 @@ import { DataGrid } from "@mui/x-data-grid";
 import { BarChart } from "@mui/x-charts/BarChart";
 import { useDialogs } from "@toolpad/core/useDialogs";
 import { ActivityDialog } from "./dialogs/ActivityDialog";
+import {TransactionDialog} from "./dialogs/TransactionDialog";
 
 const columns = [
 	{ field: "smartContract", headerName: "Smart Contract", width: 300 },
@@ -12,8 +13,16 @@ const columns = [
 	{ field: "gasUsed", headerName: "Gas Used", width: 150 },
 ];
 
+const columnsTransactions = [
+    {field: "contractAddress", headerName: "Smart Contract", width: 300},
+    {field: "transactionHash", headerName: "Transaction Hash", width: 300},
+    {field: "functionName", headerName: "Activity", width: 300}
+]
+
 export default function GasUsed({ data }) {
 	const dialogs = useDialogs();
+    const gasUsed = Array.isArray(data.gasUsed) ? data.gasUsed : [];
+    const dataTransactions = Array.isArray(data.transaction) ? data.transaction : [];
 
 	const handleRowClick = async (params) => {
 		await dialogs.open(ActivityDialog, {
@@ -21,8 +30,31 @@ export default function GasUsed({ data }) {
 		});
 	};
 
+    const handleRowClickTransaction = async (params)=>{
+        await dialogs.open(TransactionDialog,{
+            txHash: params.row.transactionHash,
+        });
+    }
+
 	return (
 		<Box sx={{ p: 3 }}>
+            <Box sx={{ height: 400, width: "100%" }}>
+                <DataGrid
+                    rows = {(dataTransactions || []).map((item, index) =>({
+                            id: index,
+                            ...item,
+                        })
+                    )}
+                    onRowClick={handleRowClickTransaction}
+                    columns={columnsTransactions}
+                    pageSize={10}
+                    sx={{
+                        "& .MuiDataGrid-row:hover": {
+                            cursor: "pointer",
+                        },
+                    }}
+                />
+            </Box>
 			<Box sx={{ mb: 2 }}>
 				<Typography
 					variant="h4"
@@ -35,7 +67,7 @@ export default function GasUsed({ data }) {
 					color="text.secondary">
 					Avg Gas Used per Transaction:{" "}
 					<strong>
-						{data.reduce((acc, item) => acc + item.gasUsed, 0) / data.length}
+						{(gasUsed.reduce((acc, item) => acc + item.gasUsed, 0) / gasUsed.length).toFixed(0)}
 					</strong>
 				</Typography>
 			</Box>
@@ -59,7 +91,7 @@ export default function GasUsed({ data }) {
 							<PieChart
 								series={[
 									{
-										data: data.map((item, index) => ({
+										data: gasUsed.map((item, index) => ({
 											id: index,
 											value: item.gasUsed,
 											label: item.activity,
@@ -96,7 +128,7 @@ export default function GasUsed({ data }) {
 							<BarChart
 								series={[
 									{
-										data: data.map((item) => item.count),
+										data: gasUsed.map((item) => item.count),
 										label: "Transaction Count",
 									},
 								]}
@@ -104,10 +136,20 @@ export default function GasUsed({ data }) {
 								width={880}
 								xAxis={[
 									{
-										data: data.map((item) => item.activity),
+										data: gasUsed.map((item) => item.activity),
 										scaleType: "band",
 									},
 								]}
+                                yAxis={[
+                                    {
+                                        valueFormatter: (value) => {
+                                            if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+                                            if (value >= 1_000) return `${(value / 1_000).toFixed(0)}K`;
+                                            return value;
+                                        },
+                                        width: 50,
+                                    }
+                                ]}
 								margin={{ left: 10, right: 10, top: 40, bottom: 80 }}
 							/>
 						</Box>
@@ -123,7 +165,7 @@ export default function GasUsed({ data }) {
 				</Typography>
 				<Box sx={{ height: 400, width: "100%" }}>
 					<DataGrid
-						rows={data.map((item, index) => ({
+						rows={gasUsed.map((item, index) => ({
 							...item,
 							smartContract: item.contract || "N/A",
 							id: index,
