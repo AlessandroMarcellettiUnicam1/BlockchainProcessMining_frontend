@@ -41,9 +41,19 @@ export default function Events({ data }) {
 								data: data.map((item) => item.count),
 							},
 						]}
-						height={300}
+						height={350}
 						width={880}
-						xAxis={[{ data: data.map((item) => item.eventName) }]}
+						xAxis={[
+                            {
+                                data: data.map((item) => item.eventName),
+                                scaleType: "band",
+                                tickLabelStyle:{
+                                    angle:45,
+                                    fontSize: 12,
+                                },
+                                height: 60
+                            }
+                        ]}
                         yAxis={[
                             {
                                 valueFormatter: (value) => {

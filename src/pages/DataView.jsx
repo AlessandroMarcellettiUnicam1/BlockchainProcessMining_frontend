@@ -19,7 +19,7 @@ import { useQuery, useQueryClient } from "react-query";
 
 const tabs = [
 	{
-		label: "Gas Used",
+		label: "Transaction Analysis",
 		value: 0,
 		type: "gasUsed",
 		component: (data) => <GasUsed data={data} />,

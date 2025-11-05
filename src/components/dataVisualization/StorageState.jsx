@@ -41,11 +41,17 @@ export default function StorageState({ data }) {
 								data: data.map((item) => item.count),
 							},
 						]}
-						height={300}
+						height={350}
 						width={880}
 						xAxis={[
                             {
                                 data: data.map((item) => item.variableName),
+                                scaleType: "band",
+                                tickLabelStyle:{
+                                    angle:45,
+                                    fontSize: 12,
+                                },
+                                height: 60
                             }
                         ]}
                         yAxis={[

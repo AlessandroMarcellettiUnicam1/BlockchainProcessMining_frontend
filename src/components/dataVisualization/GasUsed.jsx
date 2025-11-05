@@ -40,7 +40,7 @@ export default function GasUsed({ data }) {
 		<Box sx={{ p: 3 }}>
             <Box sx={{ height: 400, width: "100%" }}>
                 <DataGrid
-                    rows = {(dataTransactions || []).map((item, index) =>({
+                    rows = {dataTransactions.map((item, index) =>({
                             id: index,
                             ...item,
                         })
@@ -132,12 +132,17 @@ export default function GasUsed({ data }) {
 										label: "Transaction Count",
 									},
 								]}
-								height={300}
+								height={350}
 								width={880}
 								xAxis={[
 									{
 										data: gasUsed.map((item) => item.activity),
 										scaleType: "band",
+                                        tickLabelStyle:{
+                                            angle:45,
+                                            fontSize: 12,
+                                        },
+                                        height: 60
 									},
 								]}
                                 yAxis={[
