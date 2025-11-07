@@ -12,6 +12,7 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { DataViewProvider } from "./context/DataViewContext";
 import { DialogsProvider } from "@toolpad/core/useDialogs";
 import { QueryClient, QueryClientProvider } from "react-query";
+import StorageIcon from "@mui/icons-material/Storage";
 
 const NAVIGATION = [
 	{
@@ -28,6 +29,11 @@ const NAVIGATION = [
 		title: "Data Extraction",
 		icon: <ConstructionIcon />,
 	},
+	{
+        segment: "extractionInternal",
+        title: "Data Extraction Internal",
+        icon: <StorageIcon />,
+    },
 	{
 		segment: "view",
 		title: "Data Visualization",

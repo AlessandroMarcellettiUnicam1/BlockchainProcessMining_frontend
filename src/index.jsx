@@ -12,6 +12,7 @@ import XesPage from './pages/XesPage';
 import HomePage from './pages/HomePage';
 import DataViewPage from './pages/DataView';
 import NetworkGraph from './pages/VisualModel';
+import DataExtractionInternalPage from './pages/DataExtractionInternal';
 
 const router = createBrowserRouter([
     {
@@ -27,6 +28,10 @@ const router = createBrowserRouter([
                 {
                   path: "extraction",
                   Component: DataExtractionPage
+                },
+                {
+                  path: "extractionInternal",
+                  Component: DataExtractionInternalPage
                 },
                 {
                   path: "view",
