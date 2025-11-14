@@ -12,7 +12,7 @@ import {
 } from "@mui/material";
 
 import LinearProgress from "@mui/material/LinearProgress";
-import {_sendData} from "../api/services";
+import {_sendData, _sendDataInternal} from "../api/services";
 import PageLayout from "../layouts/PageLayout";
 import useDataContext from "../context/useDataContext";
 import {HiddenInput} from "../components/HiddenInput";
@@ -71,7 +71,7 @@ function DataExtractionInternalPage() {
 
     const [activeFilter, setActiveFilter] = useState(new Set())
 
-    const sendData = async () => {
+    const sendDataInternal = async () => {
         setLoading(true)
 
         const filters = {
@@ -83,7 +83,7 @@ function DataExtractionInternalPage() {
         }
 
         // Use contractAddressesFrom to send data
-        const response = await _sendData(contractName, contractAddressesFrom, impl_contract, fromBlock, toBlock, network, smartContract, filters)
+        const response = await _sendDataInternal (contractAddressesFrom, contractAddressesTo, fromBlock, toBlock, network, sc, filters)
 
         if (response.status === 200) {
             setResults(response.data)
@@ -510,31 +510,13 @@ function DataExtractionInternalPage() {
                         </>
                     }
 
-                    <Button
-                        fullWidth
-                        component="label"
-                        startIcon={<FileUpload/>}
-                        variant="contained"
-                        disabled={loading}
-                        sx={{
-                            padding: 1,
-                            height: "40px",
-                            backgroundColor: "#86469C",
-                            '&:hover': {backgroundColor: "#512960"},
-                            color: "#B9DCF7"
-                        }}
-                    >
-                        Upload Smart Contract
-                        <HiddenInput type="file" accept=".sol" onChange={handleContractUpload}/>
-                    </Button>
-
                     {loading ?
                         <LinearProgress/>
                         :
                         <>
                             <Button
                                 fullWidth
-                                onClick={sendData}
+                                onClick={sendDataInternal}
                                 startIcon={<FilterList/>}
                                 variant="contained"
                                 sx={{

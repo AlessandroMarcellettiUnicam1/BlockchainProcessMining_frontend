@@ -21,6 +21,24 @@ export const _sendData = async (contractName, contractAddress, impl_contract, fr
     }
 }
 
+export const _sendDataInternal = async (contractAddressesFrom, contractAddressesTo, fromBlock, toBlock, network, sc, filters) => {
+    const formData = new FormData()
+    formData.append('file', sc)
+    formData.append('contractAddressesFrom', JSON.stringify(contractAddressesFrom))
+    formData.append('contractAddressesTo', JSON.stringify(contractAddressesTo))
+    formData.append('fromBlock', fromBlock)
+    formData.append('toBlock', toBlock)
+    formData.append('network', network)
+    formData.append('filters', JSON.stringify(filters))
+    try {
+        const response = await axios.post(serverUrl + "/submitInternal", formData)
+        return {status: response.status, data: response.data}
+    } catch (error) {
+        console.error(error)
+        return {status: error.response.status, data: error.response.data}
+    }
+}
+
 export const _downloadJson = async (jsonLog) => {
     const body = {
         jsonLog
