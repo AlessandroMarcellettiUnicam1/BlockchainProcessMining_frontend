@@ -12,7 +12,7 @@ import {
 } from "@mui/material";
 
 import LinearProgress from "@mui/material/LinearProgress";
-import {_sendData, _sendDataInternal} from "../api/services";
+import {_sendData} from "../api/services";
 import PageLayout from "../layouts/PageLayout";
 import useDataContext from "../context/useDataContext";
 import {HiddenInput} from "../components/HiddenInput";
@@ -71,7 +71,7 @@ function DataExtractionInternalPage() {
 
     const [activeFilter, setActiveFilter] = useState(new Set())
 
-    const sendDataInternal = async () => {
+    const sendData = async () => {
         setLoading(true)
 
         const filters = {
@@ -82,8 +82,12 @@ function DataExtractionInternalPage() {
             functions: functions
         }
 
+        const newParams = {
+            contractAddressesFrom, contractAddressesTo, fromBlock, toBlock, network, smartContract, filters
+        }
+
         // Use contractAddressesFrom to send data
-        const response = await _sendDataInternal (contractAddressesFrom, contractAddressesTo, fromBlock, toBlock, network, sc, filters)
+        const response = await _sendData({newParams});
 
         if (response.status === 200) {
             setResults(response.data)
@@ -516,7 +520,7 @@ function DataExtractionInternalPage() {
                         <>
                             <Button
                                 fullWidth
-                                onClick={sendDataInternal}
+                                onClick={sendData}
                                 startIcon={<FilterList/>}
                                 variant="contained"
                                 sx={{
