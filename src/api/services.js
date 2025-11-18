@@ -1,7 +1,7 @@
 import axios from "axios";
 const serverUrl = "http://localhost:8000";
 
-export const _sendData = async (contractName, contractAddress, impl_contract, fromBlock, toBlock, network, sc, filters, extractionType) => {
+/*export const _sendData = async (contractName, contractAddress, impl_contract, fromBlock, toBlock, network, sc, filters, extractionType) => {
     const formData = new FormData()
     formData.append('file', sc)
     formData.append('contractAddress', contractAddress)
@@ -20,6 +20,57 @@ export const _sendData = async (contractName, contractAddress, impl_contract, fr
         return {status: error.response.status, data: error.response.data}
     }
 }
+
+export const _sendDataInternal = async (contractAddressesFrom, contractAddressesTo, fromBlock, toBlock, network, sc, filters) => {
+    const formData = new FormData()
+    formData.append('file', sc)
+    formData.append('contractAddressesFrom', JSON.stringify(contractAddressesFrom))
+    formData.append('contractAddressesTo', JSON.stringify(contractAddressesTo))
+    formData.append('fromBlock', fromBlock)
+    formData.append('toBlock', toBlock)
+    formData.append('network', network)
+    formData.append('filters', JSON.stringify(filters))
+    try {
+        const response = await axios.post(serverUrl + "/submitInternal", formData)
+        return {status: response.status, data: response.data}
+    } catch (error) {
+        console.error(error)
+        return {status: error.response.status, data: error.response.data}
+    }
+}*/
+
+export const _sendData = async ({ oldParams, newParams }) => {
+    const formData = new FormData();
+    if (oldParams) {
+        formData.append('file', oldParams.smartContract);
+        formData.append('contractAddress', oldParams.contractAddress);
+        formData.append('implementationContractAddress', oldParams.impl_contract);
+        formData.append('contractName', oldParams.contractName);
+        formData.append('fromBlock', oldParams.fromBlock);
+        formData.append('toBlock', oldParams.toBlock);
+        formData.append('network', oldParams.network);
+        formData.append('filters', JSON.stringify(oldParams.filters));
+        formData.append('extractionType', oldParams.extractionType);
+    } else if (newParams) {
+        formData.append('file', newParams.smartContract);
+        formData.append('contractAddressesFrom', JSON.stringify(newParams.contractAddressesFrom));
+        formData.append('contractAddressesTo', JSON.stringify(newParams.contractAddressesTo));
+        formData.append('fromBlock', newParams.fromBlock);
+        formData.append('toBlock', newParams.toBlock);
+        formData.append('network', newParams.network);
+        formData.append('filters', JSON.stringify(newParams.filters));
+    } else {
+        throw new Error("No parameters are given");
+    }
+    try {
+        const response = await axios.post(serverUrl + "/submit", formData);
+        return { status: response.status, data: response.data };
+    } catch (error) {
+        console.error(error);
+        return { status: error?.response?.status, data: error?.response?.data };
+    }
+};
+
 
 export const _downloadJson = async (jsonLog) => {
     const body = {

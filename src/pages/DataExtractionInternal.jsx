@@ -82,8 +82,12 @@ function DataExtractionInternalPage() {
             functions: functions
         }
 
+        const newParams = {
+            contractAddressesFrom, contractAddressesTo, fromBlock, toBlock, network, smartContract, filters
+        }
+
         // Use contractAddressesFrom to send data
-        const response = await _sendData(contractName, contractAddressesFrom, impl_contract, fromBlock, toBlock, network, smartContract, filters)
+        const response = await _sendData({newParams});
 
         if (response.status === 200) {
             setResults(response.data)
@@ -509,24 +513,6 @@ function DataExtractionInternalPage() {
                             />
                         </>
                     }
-
-                    <Button
-                        fullWidth
-                        component="label"
-                        startIcon={<FileUpload/>}
-                        variant="contained"
-                        disabled={loading}
-                        sx={{
-                            padding: 1,
-                            height: "40px",
-                            backgroundColor: "#86469C",
-                            '&:hover': {backgroundColor: "#512960"},
-                            color: "#B9DCF7"
-                        }}
-                    >
-                        Upload Smart Contract
-                        <HiddenInput type="file" accept=".sol" onChange={handleContractUpload}/>
-                    </Button>
 
                     {loading ?
                         <LinearProgress/>
