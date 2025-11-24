@@ -43,16 +43,22 @@ export default function Time({ data }) {
 						data: filteredData.map((item) => new Date(Date.parse(item.date))),
 						scaleType: "time",
 						tickFormat: (date) => date.toLocaleDateString(),
+                        tickLabelStyle:{
+                            angle:45,
+                            fontSize: 12,
+                        },
+                        height: 60
 					},
 				]}
                 yAxis={[
                     {
                         valueFormatter: (value) => {
                             if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+                            if (value >= 100_000) return `${(value / 100_000).toFixed(1)}00K`;
                             if (value >= 1_000) return `${(value / 1_000).toFixed(0)}K`;
                             return value;
                         },
-                        width: 50,
+                        width: 60,
                     }
                 ]}
 				series={[
@@ -80,16 +86,22 @@ export default function Time({ data }) {
 						data: filteredData.map((item) => new Date(Date.parse(item.date))),
 						scaleType: "time",
 						tickFormat: (date) => date.toLocaleDateString(),
+                        tickLabelStyle:{
+                            angle:45,
+                            fontSize: 12,
+                        },
+                        height: 60
 					},
 				]}
                 yAxis={[
                     {
                         valueFormatter: (value) => {
                             if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+                            if (value >= 100_000) return `${(value / 100_000).toFixed(1)}00K`;
                             if (value >= 1_000) return `${(value / 1_000).toFixed(0)}K`;
                             return value;
                         },
-                        width: 50,
+                        width: 60,
                     }
                 ]}
 				series={[

@@ -16,7 +16,9 @@ const columns = [
 const columnsTransactions = [
     {field: "contractAddress", headerName: "Smart Contract", width: 300},
     {field: "transactionHash", headerName: "Transaction Hash", width: 300},
-    {field: "functionName", headerName: "Activity", width: 300}
+    {field: "functionName", headerName: "Activity", width: 150},
+    {field: "blockNumber", headerName:"Block Number", width: 150},
+    {field:"gasUsed", headerName: "Gas Used", width: 200},
 ]
 
 export default function GasUsed({ data }) {

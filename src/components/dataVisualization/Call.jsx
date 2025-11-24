@@ -21,10 +21,7 @@ export default function Call({data}) {
     const handleRowClick = async (params) => {
         await dialogs.open(CallsDialog, {
             txHash: params.row.transactionHash,
-            depth: params.row.depth,
-            contractAddress: params.row.contractAddress,
-            activity: params.row.activity,
-            sender: params.row.sender,
+            callId: params.row.callId,
         });
     };
     return (

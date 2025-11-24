@@ -24,16 +24,13 @@ function CallsDialog({ open, onClose, payload }) {
         queryKey: [
             "callsData",
             payload.txHash,
-            payload.depth,
-            payload.contractAddress,
-            payload.sender,
-            payload.activity,
+            payload.callId,
             page
         ],
 		queryFn: () =>
 			axios
 				.post(
-					`http://localhost:8000/api/data/internalTxs?txHash=${payload.txHash}&depth=${payload.depth}&to=${payload.contractAddress}&from=${payload.sender}&activity=${payload.activity}&page=${page-1}&limit=${limit}`,
+					`http://localhost:8000/api/data/internalTxs?txHash=${payload.txHash}&callId=${payload.callId}&page=${page-1}&limit=${limit}`,
 					query
 				)
 				.then((res) => {

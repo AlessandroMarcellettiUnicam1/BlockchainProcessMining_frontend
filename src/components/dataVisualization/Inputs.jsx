@@ -57,7 +57,7 @@ export default function Inputs({ data }) {
                         width={880}
                         xAxis={[
                             {
-                                data: inputsChart.map((item) => item.type),
+                                data: inputsChart.map((item) => item.name),
                                 scaleType: "band",
                                 tickLabelStyle:{
                                     angle:45,
