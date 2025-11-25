@@ -37,6 +37,7 @@
     "react-router": "^7.6.0",
     "react-xml-viewer": "^2.0.5",
     "recharts": "^3.1.0",
+    "rollup": "^4.52.4",
     "sigma": "^3.0.1",
     "vis-data": "^7.1.9",
     "vis-network": "^9.1.9",
