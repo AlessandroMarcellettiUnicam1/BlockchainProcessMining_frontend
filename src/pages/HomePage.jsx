@@ -76,7 +76,10 @@ function HomePage() {
             senders: senders,
             functions: functions
         }
-        const response = await _sendData(contractName, contractAddress, impl_contract, fromBlock, toBlock, network, smartContract, filters, extractionTypes.indexOf(extractionType))
+        const oldParams = {
+            contractName, contractAddress, impl_contract, fromBlock, toBlock, network, smartContract, filters
+        }
+        const response = await _sendData({oldParams})
         if (response.status === 200) {
             setResults(response.data)
             setLoading(false)
