@@ -3,7 +3,7 @@ import Tab from "@mui/material/Tab";
 import Box from "@mui/material/Box";
 import {FileUpload} from "@mui/icons-material"
 import { HiddenInput } from "../components/HiddenInput";
-import React, { useRef, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import GasUsed from "../components/dataVisualization/GasUsed";
 import Events from "../components/dataVisualization/Events";
 import Call from "../components/dataVisualization/Call";
@@ -11,7 +11,9 @@ import Inputs from "../components/dataVisualization/Inputs";
 import MostActiveSenders from "../components/dataVisualization/MostActiveSenders";
 import StorageState from "../components/dataVisualization/StorageState";
 import Time from "../components/dataVisualization/Time";
-import {Button, TextField, CircularProgress, Checkbox} from "@mui/material";
+import {Button, TextField, CircularProgress, Checkbox,Typography,IconButton} from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
+import AddBoxIcon from "@mui/icons-material/AddBox";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { getData,importJSONToDB } from "../api/services";
 import { useDataView } from "../context/DataViewContext";
@@ -76,6 +78,7 @@ export default function DataViewPage() {
 				return r.data;
 			}),
 	});
+    const [addressToAdd, setAddressToAdd] = useState("");
 
 	console.log({ isLoading, data, error });
 
@@ -120,17 +123,71 @@ export default function DataViewPage() {
 							p: 2,
 							alignItems: "center",
 						}}>
-						<TextField
-							label="Smart Contract Address"
-							variant="outlined"
-							size="small"
-							placeholder="0x..."
-							value={query.contractAddress || ""}
-							onChange={(e) =>
-								setQueryState({ ...query, contractAddress: e.target.value })
-							}
-							sx={{ minWidth: 250 }}
-						/>
+                        <Box>
+                            <Typography fontWeight={700} fontSize="18px">
+                                Contract Addresses
+                            </Typography>
+
+                            <Box display="flex" gap={1} alignItems="flex-start" mt={1}>
+                                <TextField
+                                    placeholder="Add contract addresses (comma, space, or line-break)"
+                                    size="small"
+                                    fullWidth
+                                    multiline
+                                    rows={3}
+                                    value={addressToAdd}
+                                    onChange={(e) => setAddressToAdd(e.target.value)}
+                                />
+
+                                <IconButton
+                                    onClick={() => {
+                                        if (!addressToAdd) return;
+
+                                        const newAddresses = addressToAdd
+                                            .split(/[,\s\n]+/)
+                                            .map((addr) => addr.trim())
+                                            .filter((addr) => addr.length > 0);
+
+                                        // Update the query state to store an array
+                                        setQueryState({
+                                            ...query,
+                                            contractAddress: [...(query.contractAddress || []), ...newAddresses],
+                                        });
+
+                                        setAddressToAdd("");
+                                    }}
+                                >
+                                    <AddBoxIcon color="primary" fontSize="large" />
+                                </IconButton>
+                            </Box>
+
+                            {/* Display Added Addresses */}
+                            <Box mt={1}>
+                                {(query.contractAddress || []).map((addr, idx) => (
+                                    <Box
+                                        key={idx}
+                                        display="flex"
+                                        justifyContent="space-between"
+                                        alignItems="center"
+                                        mt={1}
+                                    >
+                                        <Typography>{addr}</Typography>
+                                        <IconButton
+                                            onClick={() =>
+                                                setQueryState({
+                                                    ...query,
+                                                    contractAddress: query.contractAddress.filter(
+                                                        (_, i) => i !== idx
+                                                    ),
+                                                })
+                                            }
+                                        >
+                                            <DeleteIcon color="error" fontSize="medium" />
+                                        </IconButton>
+                                    </Box>
+                                ))}
+                            </Box>
+                        </Box>
                         <TextField
                             label="Transaction Hash"
                             variant="outlined"
