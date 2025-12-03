@@ -11,13 +11,23 @@ import Inputs from "../components/dataVisualization/Inputs";
 import MostActiveSenders from "../components/dataVisualization/MostActiveSenders";
 import StorageState from "../components/dataVisualization/StorageState";
 import Time from "../components/dataVisualization/Time";
-import {Button, TextField, CircularProgress, Checkbox,Typography,IconButton} from "@mui/material";
+import {
+    Button,
+    TextField,
+    CircularProgress,
+    Typography,
+    IconButton,
+} from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddBoxIcon from "@mui/icons-material/AddBox";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { getData,importJSONToDB } from "../api/services";
 import { useDataView } from "../context/DataViewContext";
 import { useQuery, useQueryClient } from "react-query";
+import Radio from '@mui/material/Radio';
+import RadioGroup from '@mui/material/RadioGroup';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import FormControl from '@mui/material/FormControl';
 
 const tabs = [
 	{
@@ -79,6 +89,7 @@ export default function DataViewPage() {
 			}),
 	});
     const [addressToAdd, setAddressToAdd] = useState("");
+    const [value,setValue] = useState("public");
 
 	console.log({ isLoading, data, error });
 
@@ -222,13 +233,17 @@ export default function DataViewPage() {
 							/>
 						</Box>
                         <Box sx = {{display:"flex",gap:2}}>
-                            <Checkbox
-                                value={query.internalTxs}
-                                onChange={(e)=>
-                                    setQueryState({...query,internalTxs:e.target.checked})
-                                }
-                            />
-                            <p>Show internal transaction</p>
+                            <FormControl>
+                                <RadioGroup value={value}
+                                onChange={(e) => {
+                                    setValue(e.target.value);
+                                    setQueryState({...query, internalTxs: e.target.value });
+                                }}>
+                                    <FormControlLabel value="public" control={<Radio />} label={"Show public transactions"}/>
+                                    <FormControlLabel value="public+internal" control={<Radio />} label={"Show public and internal transactions"}/>
+                                    <FormControlLabel value="internal" control={<Radio />} label={"Show internal transactions"}/>
+                                </RadioGroup>
+                            </FormControl>
                         </Box>
 						<Box sx={{ display: "flex", gap: 2 }}>
 							<TextField
