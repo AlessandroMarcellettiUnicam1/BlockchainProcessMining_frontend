@@ -13,14 +13,15 @@ import StorageState from "../components/dataVisualization/StorageState";
 import Time from "../components/dataVisualization/Time";
 import {
     Button,
-    TextField,
     CircularProgress,
     Typography,
     IconButton,
+    Stack,
+    InputLabel,
+    FilledInput,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddBoxIcon from "@mui/icons-material/AddBox";
-import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { getData,importJSONToDB } from "../api/services";
 import { useDataView } from "../context/DataViewContext";
 import { useQuery, useQueryClient } from "react-query";
@@ -89,7 +90,7 @@ export default function DataViewPage() {
 			}),
 	});
     const [addressToAdd, setAddressToAdd] = useState("");
-    const [value,setValue] = useState("public");
+    const [txType,setTxType] = useState("public");
 
 	console.log({ isLoading, data, error });
 
@@ -105,6 +106,9 @@ export default function DataViewPage() {
 			dateTo: null,
 			fromBlock: null,
 			toBlock: null,
+            txHash: null,
+            internalTxs: "public",
+            minOccurrences: null
 		};
 		setQueryState(resetQuery);
 	};
@@ -120,194 +124,218 @@ export default function DataViewPage() {
 		}
 		e.target.value = null;
 	}
+    const handleAddAddress = () => {
+        if (!addressToAdd) return;
+
+        const newAddresses = addressToAdd
+            .split(/[,\s\n]+/)
+            .map((addr) => addr.trim())
+            .filter((addr) => addr.length > 0);
+
+        setQueryState({
+            ...query,
+            contractAddress: [...(query.contractAddress || []), ...newAddresses],
+        });
+        setAddressToAdd("");
+    };
+
+    const handleDeleteAddress = (idx) => {
+        setQueryState({
+            ...query,
+            contractAddress: query.contractAddress.filter(
+                (_, i) => i !== idx
+            ),
+        })
+    };
 
 	return (
 		<div>
 			<Box sx={{ width: "100%" }}>
-				
 				<Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-					<Box
-						sx={{
-							display: "flex",
-							flexWrap: "wrap",
-							gap: 2,
-							p: 2,
-							alignItems: "center",
-						}}>
-                        <Box>
-                            <Typography fontWeight={700} fontSize="18px">
-                                Contract Addresses
-                            </Typography>
 
-                            <Box display="flex" gap={1} alignItems="flex-start" mt={1}>
-                                <TextField
-                                    placeholder="Add contract addresses (comma, space, or line-break)"
-                                    size="small"
+                    <Stack spacing={3} sx={{ p: 3 }}>
+                        {/* Contract Addresses */}
+                        <FormControl variant="filled">
+                            <InputLabel sx={{ fontWeight: 700, fontSize: "18px" }}>
+                                Contract Addresses
+                            </InputLabel>
+                            <Box display="flex" gap={1} mt={1}>
+                                <FilledInput
                                     fullWidth
                                     multiline
                                     rows={3}
+                                    placeholder="Add contract addresses (comma, space, or line-break)"
                                     value={addressToAdd}
                                     onChange={(e) => setAddressToAdd(e.target.value)}
                                 />
-
-                                <IconButton
-                                    onClick={() => {
-                                        if (!addressToAdd) return;
-
-                                        const newAddresses = addressToAdd
-                                            .split(/[,\s\n]+/)
-                                            .map((addr) => addr.trim())
-                                            .filter((addr) => addr.length > 0);
-
-                                        // Update the query state to store an array
-                                        setQueryState({
-                                            ...query,
-                                            contractAddress: [...(query.contractAddress || []), ...newAddresses],
-                                        });
-
-                                        setAddressToAdd("");
-                                    }}
-                                >
+                                <IconButton onClick={handleAddAddress} sx={{ alignSelf: "flex-start" }}>
                                     <AddBoxIcon color="primary" fontSize="large" />
                                 </IconButton>
                             </Box>
+                        </FormControl>
 
-                            {/* Display Added Addresses */}
-                            <Box mt={1}>
-                                {(query.contractAddress || []).map((addr, idx) => (
+                        {/* Display Added Addresses */}
+                        { query.contractAddress && query.contractAddress.length > 0 && (
+                            <Box>
+                                {query.contractAddress.map((addr, idx) => (
                                     <Box
                                         key={idx}
                                         display="flex"
                                         justifyContent="space-between"
                                         alignItems="center"
-                                        mt={1}
+                                        py={1}
                                     >
                                         <Typography>{addr}</Typography>
-                                        <IconButton
-                                            onClick={() =>
-                                                setQueryState({
-                                                    ...query,
-                                                    contractAddress: query.contractAddress.filter(
-                                                        (_, i) => i !== idx
-                                                    ),
-                                                })
-                                            }
-                                        >
+                                        <IconButton onClick={() => handleDeleteAddress(idx)}>
                                             <DeleteIcon color="error" fontSize="medium" />
                                         </IconButton>
                                     </Box>
                                 ))}
                             </Box>
-                        </Box>
-                        <TextField
-                            label="Transaction Hash"
-                            variant="outlined"
-                            size="small"
-                            value = {query.txHash || ""}
-                            onChange={(e)=>
-                                setQueryState({ ...query, txHash: e.target.value })
-                            }
-                        />
-						<Box sx={{ display: "flex", gap: 2 }}>
-							<DateTimePicker
-								label="Date From"
-								slotProps={{ textField: { size: "small" } }}
-								value={query.dateFrom ? new Date(query.dateFrom) : null}
-								onChange={(e) =>
-									setQueryState({
-										...query,
-										dateFrom: e ? e.toISOString() : null,
-									})
-								}
-							/>
-							<DateTimePicker
-								label="Date To"
-								slotProps={{ textField: { size: "small" } }}
-								value={query.dateTo ? new Date(query.dateTo) : null}
-								onChange={(e) =>
-									setQueryState({
-										...query,
-										dateTo: e ? e.toISOString() : null,
-									})
-								}
-							/>
-						</Box>
-                        <Box sx = {{display:"flex",gap:2}}>
-                            <FormControl>
-                                <RadioGroup value={value}
-                                onChange={(e) => {
-                                    setValue(e.target.value);
-                                    setQueryState({...query, internalTxs: e.target.value });
-                                }}>
-                                    <FormControlLabel value="public" control={<Radio />} label={"Show public transactions"}/>
-                                    <FormControlLabel value="public+internal" control={<Radio />} label={"Show public and internal transactions"}/>
-                                    <FormControlLabel value="internal" control={<Radio />} label={"Show internal transactions"}/>
-                                </RadioGroup>
+                        )}
+
+                        {/* Transaction Hash */}
+                        <FormControl variant="filled">
+                            <InputLabel sx={{ fontWeight: 700, fontSize: "18px" }}>
+                                Transaction Hash
+                            </InputLabel>
+                            <FilledInput
+                                value={query.txHash}
+                                onChange={(e) => setQueryState({...query,txHash:e.target.value})}
+                            />
+                        </FormControl>
+
+                        {/* Date Range */}
+                        <Box sx={{display:"flex"}} gap={2}>
+                            <FormControl variant="filled" fullWidth>
+                                <InputLabel sx={{ fontWeight: 700, fontSize: "18px" }}>
+                                    Date From
+                                </InputLabel>
+                                <FilledInput
+                                    type="datetime-local"
+                                    value={query.dateFrom}
+                                    onChange={(e) => setQueryState({...query,dateFrom:e.target.value})}
+                                />
+                            </FormControl>
+                            <FormControl variant="filled" fullWidth>
+                                <InputLabel sx={{ fontWeight: 700, fontSize: "18px" }}>
+                                    Date To
+                                </InputLabel>
+                                <FilledInput
+                                    type="datetime-local"
+                                    value={query.dateTo}
+                                    onChange={(e) => setQueryState({...query,dateTo:e.target.value})}
+                                />
                             </FormControl>
                         </Box>
-						<Box sx={{ display: "flex", gap: 2 }}>
-							<TextField
-								label="From Block"
-								type="number"
-								variant="outlined"
-								size="small"
-								value={query.fromBlock || ""}
-								onChange={(e) =>
-									setQueryState({ ...query, fromBlock: e.target.value })
-								}
-							/>
-							<TextField
-								label="To Block"
-								type="number"
-								variant="outlined"
-								size="small"
-								value={query.toBlock || ""}
-								onChange={(e) =>
-									setQueryState({ ...query, toBlock: e.target.value })
-								}
-							/>
-						</Box>
-                        <Box>
-                            <TextField
-                                label="Min Activity Occurrences"
-                                type="number"
-                                variant="outlined"
-                                size="small"
-                                onChange={(e) =>
-                                    setQueryState({ ...query, minOccurrences: e.target.value })}
-                            />
+
+                        {/* Block Range */}
+                        <Box display="flex" gap={2}>
+                            <FormControl variant="filled" fullWidth>
+                                <InputLabel sx={{ fontWeight: 700, fontSize: "18px" }}>
+                                    From Block
+                                </InputLabel>
+                                <FilledInput
+                                    type="number"
+                                    value={query.fromBlock}
+                                    onChange={(e) => setQueryState({...query,fromBlock:e.target.value})}
+                                />
+                            </FormControl>
+                            <FormControl variant="filled" fullWidth>
+                                <InputLabel sx={{ fontWeight: 700, fontSize: "18px" }}>
+                                    To Block
+                                </InputLabel>
+                                <FilledInput
+                                    type="number"
+                                    value={query.toBlock}
+                                    onChange={(e) => setQueryState({...query,toBlock:e.target.value})}
+                                />
+                            </FormControl>
                         </Box>
-                        <Box
-                            sx={{
-                            display: "flex",
-                            flexWrap: "wrap",
-                            gap: 2,
-                            p: 2,
-                            alignItems: "center",
-                        }}>
+
+                        {/* Min Occurrences */}
+                        <FormControl variant="filled">
+                            <InputLabel sx={{ fontWeight: 700, fontSize: "18px" }}>
+                                Min Activity Occurrences
+                            </InputLabel>
+                            <FilledInput
+                                type="number"
+                                value={query.minOccurrences}
+                                onChange={(e) => setQueryState({...query,minOccurrences:e.target.value})}
+                            />
+                        </FormControl>
+
+                        {/* Transaction Type */}
+                        <FormControl variant="filled">
+                            <InputLabel sx={{ fontWeight: 700, fontSize: "18px", mb: 2 }}>
+                                Transaction Type
+                            </InputLabel>
+                            <Box sx={{ mt: 7 }}>
+                                <RadioGroup
+                                    row
+                                    value={txType}
+                                    onChange={(e) => {setTxType(e.target.value);
+                                                                            setQueryState({...query,internalTxs:e.target.value})}}>
+                                    <FormControlLabel
+                                        value="public"
+                                        control={<Radio />}
+                                        label="Show public transactions"
+                                    />
+                                    <FormControlLabel
+                                        value="public+internal"
+                                        control={<Radio />}
+                                        label="Show public and internal transactions"
+                                    />
+                                    <FormControlLabel
+                                        value="internal"
+                                        control={<Radio />}
+                                        label="Show internal transactions"
+                                    />
+                                </RadioGroup>
+                            </Box>
+                        </FormControl>
+
+
+
+                        {/* Action Buttons */}
+                        <Box display="flex" gap={2}>
                             <Button
                                 variant="contained"
                                 onClick={invalidateQuery}
-                                disabled={isLoading}>
-                                {isLoading ? "Loading..." : "Apply Filters"}
+                                disabled={isLoading}
+                                sx={{
+                                    height: "50px",
+                                    backgroundColor: "#66cdaa",
+                                    "&:hover": { backgroundColor: "#6fa287" },
+                                }}
+                            >
+                                {"Apply Filters"}
                             </Button>
                             <Button
                                 variant="outlined"
                                 onClick={handleResetFilters}
-                                disabled={isLoading}>
+                                disabled={isLoading}
+                                sx={{ height: "50px" }}
+                            >
                                 Reset Filters
                             </Button>
                             <Button
-                                      component="label"
-                                      variant="contained"
-                                      startIcon={<FileUpload />}
-                                      sx={{ padding: 1, height: "55px" }}
-                                    >
-                              Upload collection
-                              <HiddenInput type="file" onChange={handleImportJsonToDB} />
+                                component="label"
+                                variant="contained"
+                                startIcon={<FileUpload />}
+                                sx={{
+                                    height: "50px",
+                                    minWidth: "200px",
+                                    backgroundColor: "#86469C",
+                                    "&:hover": { backgroundColor: "#512960" },
+                                }}
+                            >
+                                Upload Collection
+                                <HiddenInput type="file" onChange={handleImportJsonToDB} />
                             </Button>
                         </Box>
-					</Box>
+                    </Stack>
+
 					<Tabs
 						value={selectedTab}
 						onChange={(_, newValue) => setSelectedTabState(newValue)}
