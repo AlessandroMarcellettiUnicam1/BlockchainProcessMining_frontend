@@ -59,7 +59,7 @@ export const _sendData = async ({ oldParams, newParams }) => {
         formData.append('toBlock', newParams.toBlock);
         formData.append('network', newParams.network);
         formData.append('filters', JSON.stringify(newParams.filters));
-        formData.append('extractionType', oldParams.parameterForExtraction);
+        // formData.append('extractionType', oldParams.parameterForExtraction);
     } else {
         throw new Error("No parameters are given");
     }
