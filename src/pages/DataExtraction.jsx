@@ -79,6 +79,7 @@ function DataExtractionPage() {
         const oldParams = {
             contractName, contractAddress, impl_contract, fromBlock, toBlock, network, smartContract, filters
         }
+        console.log(oldParams)
         const response = await _sendData({oldParams});
         if (response.status === 200) {
             setResults(response.data)

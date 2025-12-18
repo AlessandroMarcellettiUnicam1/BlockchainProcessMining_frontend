@@ -76,9 +76,9 @@ function HomePage() {
             senders: senders,
             functions: functions
         }
-        const extr_param = extractionTypes.indexOf(extractionType);
+        let parameterForExtraction=extractionTypes.indexOf(extractionType)
         const oldParams = {
-            contractName, contractAddress, impl_contract, fromBlock, toBlock, network, smartContract, filters, extr_param
+            contractName, contractAddress, impl_contract, fromBlock, toBlock, network, smartContract, filters,parameterForExtraction
         }
         const response = await _sendData({oldParams})
         if (response.status === 200) {

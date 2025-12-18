@@ -21,23 +21,28 @@ function CallsDialog({ open, onClose, payload }) {
 	const { query } = useDataView();
 
 	const { isLoading, error, data } = useQuery({
-		queryKey: ["eventsData", page],
+        queryKey: [
+            "callsData",
+            payload.txHash,
+            payload.callId,
+            page
+        ],
 		queryFn: () =>
 			axios
 				.post(
-					`http://localhost:8000/api/data/calls?callType=${payload.callType}&page=${page + 1}&limit=${limit}`,
+					`http://localhost:8000/api/data/internalTxs?txHash=${payload.txHash}&callId=${payload.callId}&page=${page-1}&limit=${limit}`,
 					query
 				)
 				.then((res) => {
-					console.log(res.data);
 					return res.data;
 				}),
 		keepPreviousData: true,
+        enabled: open && !!payload.txHash,
 	});
 
 	useEffect(() => {
 		setPage(1);
-	}, [open, payload.callType]);
+	}, [open, payload.txHash]);
 
 	return (
 		<Dialog
@@ -45,7 +50,7 @@ function CallsDialog({ open, onClose, payload }) {
 			maxWidth="xl"
 			open={open}
 			onClose={() => onClose()}>
-			<DialogTitle>Calls of type: {payload.callType}</DialogTitle>
+			<DialogTitle>Transaction: {payload.txHash}</DialogTitle>
 			<DialogContent>
 				{isLoading && <p>Loading calls data...</p>}
 				{error && <Alert severity="error">{error}</Alert>}
@@ -94,7 +99,11 @@ CallsDialog.propTypes = {
 	onClose: PropTypes.func.isRequired,
 	open: PropTypes.bool.isRequired,
 	payload: PropTypes.shape({
-		callType: PropTypes.string,
+        txHash: PropTypes.string,
+        contractAddress: PropTypes.string,
+        sender: PropTypes.string,
+        activity: PropTypes.string,
+        depth: PropTypes.number,
 	}).isRequired,
 };
 

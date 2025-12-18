@@ -41,9 +41,29 @@ export default function Events({ data }) {
 								data: data.map((item) => item.count),
 							},
 						]}
-						height={290}
-						width={400}
-						xAxis={[{ data: data.map((item) => item.eventName) }]}
+						height={350}
+						width={880}
+						xAxis={[
+                            {
+                                data: data.map((item) => item.eventName),
+                                scaleType: "band",
+                                tickLabelStyle:{
+                                    angle:45,
+                                    fontSize: 12,
+                                },
+                                height: 60
+                            }
+                        ]}
+                        yAxis={[
+                            {
+                                valueFormatter: (value) => {
+                                    if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+                                    if (value >= 1_000) return `${(value / 1_000).toFixed(0)}K`;
+                                    return value;
+                                },
+                                width: 50,
+                            }
+                        ]}
 					/>
 				</Box>
 				<Box

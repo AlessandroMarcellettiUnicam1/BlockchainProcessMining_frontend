@@ -1,4 +1,5 @@
 import React from "react";
+import { BarChart } from "@mui/x-charts/BarChart";
 import { Box, TextField, Button } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { useDataView } from "../../context/DataViewContext";
@@ -22,8 +23,11 @@ const columns = [
 ];
 
 export default function Inputs({ data }) {
+    const inputsGrid = Array.isArray(data?.inputsGrid) ? data?.inputsGrid : [];
+    const inputsChart = Array.isArray(data?.inputsChart) ? data?.inputsChart : [];
+
 	const [searchValue, setSearchValue] = React.useState("");
-	const [filteredData, setFilteredData] = React.useState(data || []);
+	const [filteredData, setFilteredData] = React.useState(inputsGrid || []);
 
 	return (
 		<div>
@@ -36,6 +40,44 @@ export default function Inputs({ data }) {
 					width: "100%",
 					gap: 2,
 				}}>
+                <Box
+                    sx={{
+                        width: "100%",
+                        minWidth: { md: "400px" },
+                        display: "flex",
+                        justifyContent: "center",
+                    }}>
+                    <BarChart
+                        series={[
+                            {
+                                data: inputsChart.map((item) => item.count),
+                            },
+                        ]}
+                        height={350}
+                        width={880}
+                        xAxis={[
+                            {
+                                data: inputsChart.map((item) => item.name),
+                                scaleType: "band",
+                                tickLabelStyle:{
+                                    angle:45,
+                                    fontSize: 12,
+                                },
+                                height: 60
+                            }
+                        ]}
+                        yAxis={[
+                            {
+                                valueFormatter: (value) => {
+                                    if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+                                    if (value >= 1_000) return `${(value / 1_000).toFixed(0)}K`;
+                                    return value;
+                                },
+                                width: 50,
+                            }
+                        ]}
+                    />
+                </Box>
 				<Box
 					sx={{
 						display: "flex",
@@ -57,7 +99,7 @@ export default function Inputs({ data }) {
 						variant="contained"
 						onClick={() =>
 							setFilteredData(
-								data.filter((item) =>
+								inputsGrid.filter((item) =>
 									item.contractAddress.toLowerCase().includes(searchValue)
 								)
 							)
@@ -68,7 +110,7 @@ export default function Inputs({ data }) {
 					<Button
 						variant="contained"
 						onClick={() => {
-							setFilteredData(data);
+							setFilteredData(inputsGrid);
 							setSearchValue("");
 						}}
 						sx={{

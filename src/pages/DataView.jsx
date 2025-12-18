@@ -11,7 +11,7 @@ import Inputs from "../components/dataVisualization/Inputs";
 import MostActiveSenders from "../components/dataVisualization/MostActiveSenders";
 import StorageState from "../components/dataVisualization/StorageState";
 import Time from "../components/dataVisualization/Time";
-import { Button, TextField, CircularProgress } from "@mui/material";
+import {Button, TextField, CircularProgress, Checkbox} from "@mui/material";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { getData,importJSONToDB } from "../api/services";
 import { useDataView } from "../context/DataViewContext";
@@ -19,7 +19,7 @@ import { useQuery, useQueryClient } from "react-query";
 
 const tabs = [
 	{
-		label: "Gas Used",
+		label: "Transaction Analysis",
 		value: 0,
 		type: "gasUsed",
 		component: (data) => <GasUsed data={data} />,
@@ -131,6 +131,15 @@ export default function DataViewPage() {
 							}
 							sx={{ minWidth: 250 }}
 						/>
+                        <TextField
+                            label="Transaction Hash"
+                            variant="outlined"
+                            size="small"
+                            value = {query.txHash || ""}
+                            onChange={(e)=>
+                                setQueryState({ ...query, txHash: e.target.value })
+                            }
+                        />
 						<Box sx={{ display: "flex", gap: 2 }}>
 							<DateTimePicker
 								label="Date From"
@@ -155,6 +164,15 @@ export default function DataViewPage() {
 								}
 							/>
 						</Box>
+                        <Box sx = {{display:"flex",gap:2}}>
+                            <Checkbox
+                                value={query.internalTxs}
+                                onChange={(e)=>
+                                    setQueryState({...query,internalTxs:e.target.checked})
+                                }
+                            />
+                            <p>Show internal transaction</p>
+                        </Box>
 						<Box sx={{ display: "flex", gap: 2 }}>
 							<TextField
 								label="From Block"
@@ -177,27 +195,46 @@ export default function DataViewPage() {
 								}
 							/>
 						</Box>
-						<Button
-							variant="contained"
-							onClick={invalidateQuery}
-							disabled={isLoading}>
-							{isLoading ? "Loading..." : "Apply Filters"}
-						</Button>
-						<Button
-							variant="outlined"
-							onClick={handleResetFilters}
-							disabled={isLoading}>
-							Reset Filters
-						</Button>
-						<Button
-								  component="label"
-								  variant="contained"
-								  startIcon={<FileUpload />}
-								  sx={{ padding: 1, height: "55px" }}
-								>
-								  Upload collection
-								  <HiddenInput type="file" onChange={handleImportJsonToDB} />
-								</Button>
+                        <Box>
+                            <TextField
+                                label="Min Activity Occurrences"
+                                type="number"
+                                variant="outlined"
+                                size="small"
+                                onChange={(e) =>
+                                    setQueryState({ ...query, minOccurrences: e.target.value })}
+                            />
+                        </Box>
+                        <Box
+                            sx={{
+                            display: "flex",
+                            flexWrap: "wrap",
+                            gap: 2,
+                            p: 2,
+                            alignItems: "center",
+                        }}>
+                            <Button
+                                variant="contained"
+                                onClick={invalidateQuery}
+                                disabled={isLoading}>
+                                {isLoading ? "Loading..." : "Apply Filters"}
+                            </Button>
+                            <Button
+                                variant="outlined"
+                                onClick={handleResetFilters}
+                                disabled={isLoading}>
+                                Reset Filters
+                            </Button>
+                            <Button
+                                      component="label"
+                                      variant="contained"
+                                      startIcon={<FileUpload />}
+                                      sx={{ padding: 1, height: "55px" }}
+                                    >
+                              Upload collection
+                              <HiddenInput type="file" onChange={handleImportJsonToDB} />
+                            </Button>
+                        </Box>
 					</Box>
 					<Tabs
 						value={selectedTab}
@@ -216,7 +253,7 @@ export default function DataViewPage() {
 				{(!data || (Array.isArray(data) && data.length === 0)) &&
 					!isLoading &&
 					!error && <EmptyState />}
-				{data && Array.isArray(data) && data.length > 0 && (
+				{data && (
 					<Box sx={{ p: 3 }}>{tabs[selectedTab]?.component(data)}</Box>
 				)}
 			</Box>
