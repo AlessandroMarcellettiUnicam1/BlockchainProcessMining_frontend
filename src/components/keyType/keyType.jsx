@@ -8,7 +8,7 @@ function KeyType({ nameFrom, nameTo, objectToSet, index,setObjectsTypesItem }) {
     const { results } = useDataContext();
     const [objectTypesOptions, setObjectTypesOptions] = useState([]);
     objectToSet.index = index;
-    // Extract unique keys (excluding numeric keys)
+    // Extract unique keys (excluding numeric and mongo keys)
     function getUniqueKeys(json) {
         if (!json) return [];
 
@@ -17,9 +17,20 @@ function KeyType({ nameFrom, nameTo, objectToSet, index,setObjectsTypesItem }) {
 
         paths.forEach(pathArray => {
             if (pathArray.length > 1) {
-                const lastKey = pathArray[pathArray.length - 1];
-                if (isNaN(lastKey)) {
-                    keys.add(lastKey);
+                const cleanPath = pathArray.slice(1);
+
+                const filteredPath = cleanPath.filter(k =>
+                    isNaN(k)
+                    && !String(k).startsWith('_')
+                    && !String(k).startsWith('$')
+                );
+
+                // Reject paths where "calls" appears more than once
+                const callCount = filteredPath.filter(k => k === "calls").length;
+                if (callCount > 1) return;
+
+                if (filteredPath.length > 0) {
+                    keys.add(filteredPath.join('.'));
                 }
             }
         });

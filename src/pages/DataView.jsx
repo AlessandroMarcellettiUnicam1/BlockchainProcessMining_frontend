@@ -1,7 +1,7 @@
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Box from "@mui/material/Box";
-import {FileUpload} from "@mui/icons-material"
+import {FileUpload,FilterList} from "@mui/icons-material"
 import { HiddenInput } from "../components/HiddenInput";
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import GasUsed from "../components/dataVisualization/GasUsed";
@@ -19,6 +19,8 @@ import {
     Stack,
     InputLabel,
     FilledInput,
+    Dialog,DialogContent, DialogTitle,
+    Slide
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddBoxIcon from "@mui/icons-material/AddBox";
@@ -29,6 +31,11 @@ import Radio from '@mui/material/Radio';
 import RadioGroup from '@mui/material/RadioGroup';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import FormControl from '@mui/material/FormControl';
+
+const Transition = React.forwardRef(function Transition(props, ref) {
+    return <Slide direction="down" ref={ref} {...props} />;
+});
+
 
 const tabs = [
 	{
@@ -91,6 +98,7 @@ export default function DataViewPage() {
 	});
     const [addressToAdd, setAddressToAdd] = useState("");
     const [txType,setTxType] = useState("public");
+    const [openDialog,setOpenDialog] = useState(false);
 
 	console.log({ isLoading, data, error });
 
@@ -152,7 +160,18 @@ export default function DataViewPage() {
 		<div>
 			<Box sx={{ width: "100%" }}>
 				<Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-
+                    <IconButton size="large" sx={{color: "#ffb703"}} onClick={() => setOpenDialog(true)}>
+                        <FilterList fontSize="large"/>
+                    </IconButton>
+                    <Dialog
+                        TransitionComponent={Transition}
+                        keepMounted
+                        maxWidth=""
+                        open={openDialog}
+                        onClose={()=>{setOpenDialog(false)}}
+                    >
+                        <DialogTitle>Filters</DialogTitle>
+                        <DialogContent>
                     <Stack spacing={3} sx={{ p: 3 }}>
                         {/* Contract Addresses */}
                         <FormControl variant="filled">
@@ -301,7 +320,11 @@ export default function DataViewPage() {
                         <Box display="flex" gap={2}>
                             <Button
                                 variant="contained"
-                                onClick={invalidateQuery}
+                                onClick={()=>{
+                                                    invalidateQuery();
+                                                    setOpenDialog(false)
+                                    }
+                                }
                                 disabled={isLoading}
                                 sx={{
                                     height: "50px",
@@ -335,6 +358,8 @@ export default function DataViewPage() {
                             </Button>
                         </Box>
                     </Stack>
+                        </DialogContent>
+                    </Dialog>
 
 					<Tabs
 						value={selectedTab}
