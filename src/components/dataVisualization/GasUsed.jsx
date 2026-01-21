@@ -22,10 +22,14 @@ const columnsTransactions = [
 ]
 
 export default function GasUsed({ data }) {
+	console.log("AKSJBD FAJSJKLFBAUHIFOLKAN;")
+
 	const dialogs = useDialogs();
     const gasUsed = Array.isArray(data.gasUsed) ? data.gasUsed : [];
     const dataTransactions = Array.isArray(data.transaction) ? data.transaction : [];
-
+	// console.log(gasUsed)
+	// console.log(dataTransactions)
+	    console.log(gasUsed.map((item) => item.activity))
 	const handleRowClick = async (params) => {
 		await dialogs.open(ActivityDialog, {
 			activity: params.row.activity,
@@ -152,7 +156,7 @@ export default function GasUsed({ data }) {
                                         valueFormatter: (value) => {
                                             if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
                                             if (value >= 1_000) return `${(value / 1_000).toFixed(0)}K`;
-                                            return value;
+                                            return value.toString();
                                         },
                                         width: 50,
                                     }

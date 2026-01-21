@@ -56,7 +56,7 @@ export default function Time({ data }) {
                             if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
                             if (value >= 100_000) return `${(value / 100_000).toFixed(1)}00K`;
                             if (value >= 1_000) return `${(value / 1_000).toFixed(0)}K`;
-                            return value;
+                            return value.toString();
                         },
                         width: 60,
                     }
@@ -99,7 +99,7 @@ export default function Time({ data }) {
                             if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
                             if (value >= 100_000) return `${(value / 100_000).toFixed(1)}00K`;
                             if (value >= 1_000) return `${(value / 1_000).toFixed(0)}K`;
-                            return value;
+                            return value.toString();
                         },
                         width: 60,
                     }
