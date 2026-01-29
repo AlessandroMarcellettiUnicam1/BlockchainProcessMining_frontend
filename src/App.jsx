@@ -24,41 +24,57 @@ const NAVIGATION = [
 		title: "Home",
 		icon: <DashboardTwoToneIcon />,
 	},
-	{
-		segment: "extraction",
-		title: "Data Extraction",
-		icon: <ConstructionIcon />,
-	},
-	{
-        segment: "extractionInternal",
-        title: "Data Extraction Internal",
-        icon: <StorageIcon />,
+    {
+        title: "Data Extraction",
+        children:[
+            {
+                segment: "extraction",
+                title: "Data Extraction",
+                icon: <ConstructionIcon />,
+            },
+            {
+                segment: "extractionInternal",
+                title: "Data Extraction Internal",
+                icon: <StorageIcon />,
+            }
+        ]
     },
-	{
-		segment: "view",
-		title: "Data Visualization",
-		icon: <QueryStatsIcon />,
-	},
-	{
-		segment: "ocel",
-		title: "Ocel Mapping",
-		icon: <MapTwoToneIcon />,
-	},
-	{
-		segment: "query",
-		title: "Query",
-		icon: <ContentPasteSearchTwoToneIcon />,
-	},
-	{
-		segment: "xes",
-		title: "XES",
-		icon: <PersonIcon />,
-	},
-	{
-		segment: "visual",
-		title: "Visual Model",
-		icon: <PersonIcon />,
-	},
+    {
+        title:"Data Analysis",
+        children:[
+            {
+                segment: "view",
+                title: "Analytics",
+                icon: <QueryStatsIcon />,
+            },
+            {
+                segment: "query",
+                title: "Query",
+                icon: <ContentPasteSearchTwoToneIcon />,
+            },
+            {
+                segment: "visual",
+                title: "Graph",
+                icon: <PersonIcon />,
+            }
+        ]
+    },
+
+    {
+        title: "Data Mapping",
+        children:[
+            {
+                segment: "ocel",
+                title: "Ocel",
+                icon: <MapTwoToneIcon />,
+            },
+            {
+                segment: "xes",
+                title: "XES",
+                icon: <PersonIcon />,
+            }
+        ]
+    },
 ];
 
 const BRANDING = {

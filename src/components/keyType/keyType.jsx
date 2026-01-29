@@ -8,24 +8,56 @@ function KeyType({ nameFrom, nameTo, objectToSet, index,setObjectsTypesItem }) {
     const { results } = useDataContext();
     const [objectTypesOptions, setObjectTypesOptions] = useState([]);
     objectToSet.index = index;
-    // Extract unique keys (excluding numeric keys)
-    function getUniqueKeys(json) {
-        if (!json) return [];
+    // Extract unique keys (excluding numeric and mongo keys)
+   function getUniqueKeys(json) {
+    if (!json) return [];
 
-        const paths = jp.paths(json, '$..*');
-        const keys = new Set();
+    const keys = new Set();
 
-        paths.forEach(pathArray => {
-            if (pathArray.length > 1) {
-                const lastKey = pathArray[pathArray.length - 1];
-                if (isNaN(lastKey)) {
-                    keys.add(lastKey);
+    function traverse(obj, path = []) {
+        if (obj === null || obj === undefined) return;
+
+        if (Array.isArray(obj)) {
+            obj.forEach(item => traverse(item, path));
+        } 
+        else if (typeof obj === 'object') {
+            Object.keys(obj).forEach(key => {
+                if (isNaN(key) && !key.startsWith('_') && !key.startsWith('$')) {
+                    const newPath = [...path, key];
+
+                    // Normalize path for saving
+                    const normalizedPath = normalizeCallsPath(newPath);
+                    keys.add(normalizedPath.join('.'));
+
+                    // Always keep traversing with the REAL path
+                    traverse(obj[key], newPath);
                 }
-            }
-        });
-
-        return Array.from(keys);
+            });
+        }
     }
+
+    traverse(json);
+    return Array.from(keys).sort();
+}
+
+function normalizeCallsPath(path) {
+    const result = [];
+    let seenCalls = false;
+
+    for (const key of path) {
+        if (key === "calls") {
+            if (!seenCalls) {
+                result.push("calls");
+                seenCalls = true;
+            }
+        } else {
+            result.push(key);
+        }
+    }
+
+    return result;
+}
+
 
     useEffect(() => {
         if (results) {
