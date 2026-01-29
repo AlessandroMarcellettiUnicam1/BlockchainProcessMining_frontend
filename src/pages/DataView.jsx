@@ -39,13 +39,13 @@ const Transition = React.forwardRef(function Transition(props, ref) {
 
 const tabs = [
 	{
-		label: "Transaction Analysis",
+		label: "Transaction",
 		value: 0,
 		type: "gasUsed",
 		component: (data) => <GasUsed data={data} />,
 	},
 	{
-		label: "Most Active Senders",
+		label: "Sender",
 		value: 1,
 		type: "mostActiveSenders",
 		component: (data) => <MostActiveSenders data={data} />,
@@ -57,7 +57,7 @@ const tabs = [
 		component: (data) => <Time data={data} />,
 	},
 	{
-		label: "Inputs",
+		label: "Input",
 		value: 3,
 		type: "inputs",
 		component: (data) => <Inputs data={data} />,
@@ -75,7 +75,7 @@ const tabs = [
 		component: (data) => <Call data={data} />,
 	},
 	{
-		label: "Storage State",
+		label: "State Variable",
 		value: 6,
 		type: "storageState",
 		component: (data) => <StorageState data={data} />,

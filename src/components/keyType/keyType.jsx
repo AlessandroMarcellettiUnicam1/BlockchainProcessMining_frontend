@@ -9,34 +9,55 @@ function KeyType({ nameFrom, nameTo, objectToSet, index,setObjectsTypesItem }) {
     const [objectTypesOptions, setObjectTypesOptions] = useState([]);
     objectToSet.index = index;
     // Extract unique keys (excluding numeric and mongo keys)
-    function getUniqueKeys(json) {
-        if (!json) return [];
+   function getUniqueKeys(json) {
+    if (!json) return [];
 
-        const paths = jp.paths(json, '$..*');
-        const keys = new Set();
+    const keys = new Set();
 
-        paths.forEach(pathArray => {
-            if (pathArray.length > 1) {
-                const cleanPath = pathArray.slice(1);
+    function traverse(obj, path = []) {
+        if (obj === null || obj === undefined) return;
 
-                const filteredPath = cleanPath.filter(k =>
-                    isNaN(k)
-                    && !String(k).startsWith('_')
-                    && !String(k).startsWith('$')
-                );
+        if (Array.isArray(obj)) {
+            obj.forEach(item => traverse(item, path));
+        } 
+        else if (typeof obj === 'object') {
+            Object.keys(obj).forEach(key => {
+                if (isNaN(key) && !key.startsWith('_') && !key.startsWith('$')) {
+                    const newPath = [...path, key];
 
-                // Reject paths where "calls" appears more than once
-                const callCount = filteredPath.filter(k => k === "calls").length;
-                if (callCount > 1) return;
+                    // Normalize path for saving
+                    const normalizedPath = normalizeCallsPath(newPath);
+                    keys.add(normalizedPath.join('.'));
 
-                if (filteredPath.length > 0) {
-                    keys.add(filteredPath.join('.'));
+                    // Always keep traversing with the REAL path
+                    traverse(obj[key], newPath);
                 }
-            }
-        });
-
-        return Array.from(keys);
+            });
+        }
     }
+
+    traverse(json);
+    return Array.from(keys).sort();
+}
+
+function normalizeCallsPath(path) {
+    const result = [];
+    let seenCalls = false;
+
+    for (const key of path) {
+        if (key === "calls") {
+            if (!seenCalls) {
+                result.push("calls");
+                seenCalls = true;
+            }
+        } else {
+            result.push(key);
+        }
+    }
+
+    return result;
+}
+
 
     useEffect(() => {
         if (results) {

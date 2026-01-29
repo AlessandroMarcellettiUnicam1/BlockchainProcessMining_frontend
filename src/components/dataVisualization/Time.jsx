@@ -73,7 +73,7 @@ export default function Time({ data }) {
 				skipAnimation={true}
 				sx={{
 					".MuiLineElement-root": {
-						strokeWidth: 2,
+						strokeWidth: 4,
 					},
 					".MuiMarkElement-root": {
 						display: "none", // Hide individual points
@@ -116,7 +116,7 @@ export default function Time({ data }) {
 				skipAnimation={true}
 				sx={{
 					".MuiLineElement-root": {
-						strokeWidth: 2,
+						strokeWidth: 4,
 					},
 					".MuiMarkElement-root": {
 						display: "none", // Hide individual points
