@@ -22,14 +22,12 @@ const columnsTransactions = [
 ]
 
 export default function GasUsed({ data }) {
-	console.log("AKSJBD FAJSJKLFBAUHIFOLKAN;")
 
 	const dialogs = useDialogs();
     const gasUsed = Array.isArray(data.gasUsed) ? data.gasUsed : [];
     const dataTransactions = Array.isArray(data.transaction) ? data.transaction : [];
 	// console.log(gasUsed)
 	// console.log(dataTransactions)
-	    console.log(gasUsed.map((item) => item.activity))
 	const handleRowClick = async (params) => {
 		await dialogs.open(ActivityDialog, {
 			activity: params.row.activity,
