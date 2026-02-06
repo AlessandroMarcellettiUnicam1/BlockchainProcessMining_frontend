@@ -21,12 +21,12 @@ const NAVIGATION = [
 	},
 	{
 		segment: "",
-		title: "Home",
+		title: "Framework",
 		icon: <DashboardTwoToneIcon />,
 	},
     {
 		segment:"data-extraction",
-        title: "Data Extraction",
+        title: "Extraction",
         children:[
             {
                 segment: "extraction",
@@ -42,7 +42,7 @@ const NAVIGATION = [
     },
     {
 		segment: "data-analysis",
-        title:"Data Analysis",
+        title:"Analysis",
         children:[
             {
                 segment: "view",
@@ -63,7 +63,7 @@ const NAVIGATION = [
     },
     {
 		segment:"data-mapping",
-        title: "Data Mapping",
+        title: "Mapping",
         children:[
             {
                 segment: "ocel",
