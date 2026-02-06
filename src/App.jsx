@@ -25,6 +25,7 @@ const NAVIGATION = [
 		icon: <DashboardTwoToneIcon />,
 	},
     {
+		segment:"data-extraction",
         title: "Data Extraction",
         children:[
             {
@@ -40,27 +41,28 @@ const NAVIGATION = [
         ]
     },
     {
+		segment: "data-analysis",
         title:"Data Analysis",
         children:[
             {
                 segment: "view",
-                title: "Analytics",
+                title: "Dashboard",
                 icon: <QueryStatsIcon />,
-            },
-            {
-                segment: "query",
-                title: "Query",
-                icon: <ContentPasteSearchTwoToneIcon />,
             },
             {
                 segment: "visual",
                 title: "Graph",
                 icon: <PersonIcon />,
+            },
+			{
+                segment: "query",
+                title: "Query",
+                icon: <ContentPasteSearchTwoToneIcon />,
             }
         ]
     },
-
     {
+		segment:"data-mapping",
         title: "Data Mapping",
         children:[
             {
@@ -78,7 +80,7 @@ const NAVIGATION = [
 ];
 
 const BRANDING = {
-	title: "Ethereum Data Extraction",
+	title: " EVM analysis framework",
 	logo: (
 		<svg
 			xmlns="http://www.w3.org/2000/svg"

@@ -26,31 +26,43 @@ const router = createBrowserRouter([
                   Component: HomePage
                 },
                 {
-                  path: "extraction",
+                  path: "data-extraction",
                   Component: DataExtractionPage
                 },
                 {
-                  path: "extractionInternal",
+                  path: "data-extraction/extraction",
+                  Component: DataExtractionPage
+                },
+                {
+                  path: "data-extraction/extractionInternal",
                   Component: DataExtractionInternalPage
                 },
                 {
-                  path: "view",
+                  path: "data-analysis",
                   Component: DataViewPage
                 },
                 {
-                  path: "ocel",
+                  path: "data-analysis/view",
+                  Component: DataViewPage
+                },
+                {
+                  path: "data-mapping",
                   Component: OcelMapping
                 },
                 {
-                  path: "query",
+                  path: "data-mapping/ocel",
+                  Component: OcelMapping
+                },
+                {
+                  path: "data-analysis/query",
                   Component: Query
                 },
                 {
-                  path: "xes",
+                  path: "data-mapping/xes",
                   Component: XesPage
                 },
                 {
-                  path: "visual",
+                  path: "data-analysis/visual",
                   Component: NetworkGraph
                 }
               ]
