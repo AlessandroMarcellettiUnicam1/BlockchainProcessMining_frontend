@@ -16,6 +16,7 @@ import {
   Divider,
   Dialog, DialogContent, DialogTitle,
 } from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
 import { FilterList } from "@mui/icons-material"
 import { PlayArrow, Pause } from "@mui/icons-material";
 import { ConstructionOutlined, FileUpload } from "@mui/icons-material";
@@ -25,6 +26,7 @@ import JsonView from "@uiw/react-json-view";
 import { _generateGraph } from "../api/services";
 import CustomTypography from "../components/CustomTypography";
 import KeyType from '../components/keyType/keyType';
+import AddBoxIcon from "@mui/icons-material/AddBox";
 import { SigmaContainer } from "@react-sigma/core";
 import FormControl from '@mui/material/FormControl';
 import GraphExtraction from "./Graph";
@@ -55,6 +57,8 @@ const NetworkGraph = () => {
   const [edgeFilter, setEdgeFilter] = useState("");
   const [colorLegend, setColorLegend] = useState([]);
   const [visibleNodesCount, setVisibleNodeCount] = useState(0);
+  const [transactionHash, setTransactionHash] =useState("");
+  const [transactionHashChoose, setTransactionHashChoose] = useState([]);
   const [startLayout, setStartLayout] = useState(false);
   const [visibleEdgeCount, setVisibleEdgeCount] = useState(0);
   const [openDialog, setOpenDialog] = useState(false);
@@ -158,8 +162,11 @@ const NetworkGraph = () => {
   const generateGraph = () => {
     setLoading(true);
     const startTime = performance.now();
+    const filters={
+      transactionHash:transactionHashChoose
+    }
     if (objectsTypesItem.length !== 0) {
-      _generateGraph(results, objectsTypesItem).then((response) => {
+      _generateGraph(results, objectsTypesItem,filters).then((response) => {
         setLoading(false);
         const nodes = Array.from(response.data.nodes.values());
         const edges = response.data.edges;
@@ -184,7 +191,7 @@ const NetworkGraph = () => {
   return (
     <div style={{ height: '100%', width: '100%' }}>
       <Box display="flex" gap={2} marginBottom={2} style={{ minHeight: '4em' }} flexWrap="wrap">
-      <Box display="none" sx={{ width: "100%" }}>
+      <Box  sx={{ width: "100%" }}>
         <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
           <IconButton size="large" sx={{ color: "#ffb703" }} onClick={() => setOpenDialog(true)}>
             <FilterList fontSize="large" />
@@ -199,27 +206,53 @@ const NetworkGraph = () => {
             <DialogTitle>Filters</DialogTitle>
             <DialogContent>
               <Stack spacing={3} sx={{ p: 3 }}>
-                {/* Contract Addresses */}
-                <FormControl variant="filled">
-                  <InputLabel sx={{ fontWeight: 700, fontSize: "18px" }}>
-                    Contract Addresses
-                  </InputLabel>
-                  <Box display="flex" gap={1} mt={1}>
-
-                  </Box>
-                </FormControl>
-
 
                 {/* Transaction Hash */}
-                <FormControl variant="filled">
-                  <InputLabel sx={{ fontWeight: 700, fontSize: "18px" }}>
-                    Transaction Hash
-                  </InputLabel>
-                </FormControl>
+                <Box>
+                  <Typography fontWeight={700} fontSize="18px">Transactio Hash</Typography>
+                                <Box display="flex" gap={1} alignItems="flex-start">
+                                    <TextField
+                                        value={transactionHash}
+                                        onChange={e=>setTransactionHash(e.target.value)}
+                                        placeholder="Add transaction hash (separated by comma, space, or line break)"
+                                        size="small"
+                                        fullWidth
+                                        multiline
+                                        rows={3}
+                                    />
+                                    <IconButton
+                                        onClick={()=>{
+                                          if(transactionHash){
+                                            const newTransactionHash = transactionHash
+                                              .split(/[,\s\n]+/)
+                                              .map(addr => addr.trim())
+                                              .filter(addr => addr.length > 0);
+                                            setTransactionHashChoose([...transactionHashChoose,...newTransactionHash]);
+                                            setTransactionHash("");
+                                          }
+                                        }}>
+                                        <AddBoxIcon color="primary" fontSize="large"/>
+                                    </IconButton>
+                                </Box>
+                                <Box mt={1}>
+                                    {transactionHashChoose.map((addr, idx) => (
+                                        <Box key={idx} display="flex" justifyContent="space-between" alignItems="center"
+                                             mt={1}>
+                                            <Typography>{addr}</Typography>
+                                            <IconButton onClick={() => setTransactionHashChoose(transactionHashChoose.filter((a, i) => i !== idx))}>
+                                                <DeleteIcon color="error" fontSize="medium"/>
+                                            </IconButton>
+                                        </Box>
+                                    ))}
+                                </Box>
+                </Box>
                 {/* Action Buttons */}
                 <Box display="flex" gap={2}>
                   <Button
                     variant="contained"
+                    onClick={()=>{
+                      setOpenDialog(false)
+                    }}
                     sx={{
                       height: "50px",
                       backgroundColor: "#66cdaa",
@@ -230,6 +263,9 @@ const NetworkGraph = () => {
                   </Button>
                   <Button
                     variant="outlined"
+                    onClick={()=>{
+                      setTransactionHashChoose([])
+                    }}
                     sx={{ height: "50px" }}
                   >
                     Reset Filters
