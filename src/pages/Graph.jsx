@@ -3,7 +3,7 @@ import { useLoadGraph, useRegisterEvents, useSigma } from "@react-sigma/core";
 import FA2Layout from "graphology-layout-forceatlas2/worker";
 import circlepack from "graphology-layout/circlepack";
 
-const GraphExtraction = ({ graphData, nodeFilter, onNodeSelected, onVisibleNodeCount,onVisibleEdgeCount, startLayout }) => {
+const GraphExtraction = ({ graphData, edgeRange, onNodeSelected, onVisibleNodeCount,onVisibleEdgeCount, startLayout }) => {
   const loadGraph = useLoadGraph();
   const registerEvents = useRegisterEvents();
   const sigma = useSigma();
@@ -148,36 +148,44 @@ const GraphExtraction = ({ graphData, nodeFilter, onNodeSelected, onVisibleNodeC
     sigma.refresh();
   }, [hoveredNode, hoveredNeighbors, sigma, graph]);
   // Handle node filtering
-  useEffect(() => {
-    if (!graph) return;
-    const visibleNodeCount = new Set();
+    useEffect(() => {
+        if (!graph) return;
 
-    if (nodeFilter !== "") {
-      // Hide all nodes initially
-      graph.forEachNode((node) => {
-        graph.setNodeAttribute(node, "hidden", true);
-      });
+        const [min, max] = edgeRange || [];
+        const visibleNodeCount = new Set();
+        let visibleEdgeCount = 0;
 
-      // Show nodes connected by edges matching the filter
-      graph.forEachEdge((edge, attributes) => {
-        if (attributes.value === parseInt(nodeFilter)) {
-          graph.setNodeAttribute(graph.source(edge), "hidden", false);
-          graph.setNodeAttribute(graph.target(edge), "hidden", false);
-          visibleNodeCount.add(graph.source(edge));
-          visibleNodeCount.add(graph.target(edge));
+        graph.forEachNode((node) => {
+            graph.setNodeAttribute(node, "hidden", true);
+        });
+
+        graph.forEachEdge((edge, attributes) => {
+            const val = attributes.value;
+
+            const passMin = min === null || val >= min;
+            const passMax = max === null || val <= max;
+
+            if (passMin && passMax) {
+                graph.setNodeAttribute(graph.source(edge), "hidden", false);
+                graph.setNodeAttribute(graph.target(edge), "hidden", false);
+
+                visibleNodeCount.add(graph.source(edge));
+                visibleNodeCount.add(graph.target(edge));
+                visibleEdgeCount++;
+            }
+        });
+
+        if (min === null && max === null) {
+            graph.forEachNode((node) => {
+                graph.setNodeAttribute(node, "hidden", false);
+                visibleNodeCount.add(node);
+            });
+            visibleEdgeCount = graph.edges().length;
         }
-      });
-    } else {
-      // Show all nodes
-      graph.forEachNode((node) => {
-        graph.setNodeAttribute(node, "hidden", false);
-        visibleNodeCount.add(node);
-      });
-    }
-    // Update visible node count
-    onVisibleNodeCount(visibleNodeCount.size);
-    onVisibleEdgeCount(graph.edges().length);
-  }, [nodeFilter, graph, onVisibleNodeCount,onVisibleEdgeCount]);
+
+        onVisibleNodeCount(visibleNodeCount.size);
+        onVisibleEdgeCount(visibleEdgeCount);
+    }, [edgeRange, graph, onVisibleNodeCount, onVisibleEdgeCount]);
 
   // Node drag handlers
   let draggedNode = null;
