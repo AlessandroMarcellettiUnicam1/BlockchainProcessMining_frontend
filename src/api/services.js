@@ -178,16 +178,10 @@ export const _ocelXes = async (objectsToXes,jsonToXes)=>{
     }
 
 }
-/**
- * 
- * @param {*} jsonData 
- * @param {*} edges 
- * @param {*} filters is an object that can contain different options
- * @returns 
- */
-export const _generateGraph=async (jsonData,edges,filters)=>{
+
+export const _generateGraph=async (jsonData,edges)=>{
     try {
-        const result=await axios.post(serverUrl + "/api/generateGraph", {jsonData,edges,filters});
+        const result=await axios.post(serverUrl + "/api/generateGraph", {jsonData,edges});
         return {status:200,data:result.data};
     } catch (error) {
         console.error(error)
