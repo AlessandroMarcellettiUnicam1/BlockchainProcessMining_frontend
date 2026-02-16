@@ -14,7 +14,6 @@ import LinearProgress from "@mui/material/LinearProgress";
 import {_sendData} from "../api/services";
 import PageLayout from "../layouts/PageLayout";
 
-import useDataContext from "../context/useDataContext";
 import {HiddenInput} from "../components/HiddenInput";
 import {FileUpload, FilterList} from "@mui/icons-material";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -25,12 +24,13 @@ import {DemoContainer} from "@mui/x-date-pickers/internals/demo";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import {Link} from "react-router";
+import useDataContext from '../context/useDataContext';
 
 const Transition = React.forwardRef(function Transition(props, ref) {
     return <Slide direction="down" ref={ref} {...props} />;
 });
 
-function DataExtractionPage() {
+function HomePage() {
 
     dayjs.extend(utc)
 
@@ -46,6 +46,7 @@ function DataExtractionPage() {
     const [toBlock, setToBlock] = useState("18698323")
 
     const [network, setNetwork] = useState("Mainnet")
+    const [extractionType,setExtractionType]=useState("OnlyDefault");
     const [loading, setLoading] = useState(false)
     const [smartContract, setSmartContract] = useState(null)
 
@@ -75,11 +76,11 @@ function DataExtractionPage() {
             senders: senders,
             functions: functions
         }
-
+        let parameterForExtraction=extractionTypes.indexOf(extractionType)
         const oldParams = {
-            contractName, contractAddress, impl_contract, fromBlock, toBlock, network, smartContract, filters
+            contractName, contractAddress, impl_contract, fromBlock, toBlock, network, smartContract, filters,parameterForExtraction
         }
-        const response = await _sendData({oldParams});
+        const response = await _sendData({oldParams})
         if (response.status === 200) {
             setResults(response.data)
             setLoading(false)
@@ -89,7 +90,9 @@ function DataExtractionPage() {
         }
     }
 
-    const networks = ["Mainnet", "Sepolia", "Polygon", "Amoy"]
+    const networks = ["Mainnet", "Sepolia", "Polygon", "Amoy"]  
+    // the extractionTypes are mapped in this format OnlyDeafult=0,StorageState=1,Exetended=2
+    const extractionTypes = ["Events-storage-internalExtended","Events-storage-internalPartial","Events"]
 
     useEffect(() => {
         switch (network) {
@@ -141,6 +144,9 @@ function DataExtractionPage() {
 
     const handleNetworkChange = (e) => {
         setNetwork(e.target.value)
+    }
+    const handelExtractionTypeChange = (e) => {
+        setExtractionType(e.target.value)
     }
 
     const handleContractUpload = (e) => {
@@ -249,6 +255,9 @@ function DataExtractionPage() {
 
     const addContractAddress = (e) => {
         setContractAddress(e.target.value)
+        
+    }
+    const addImpleContractAddress = (e) => {
         setImplContractAddress(e.target.value)
     }
 
@@ -451,6 +460,23 @@ function DataExtractionPage() {
                             }
                         </Select>
                     </FormControl>
+                    <FormControl fullWidth sx={{width: 200}}>
+                        <InputLabel>ExtractionType</InputLabel>
+                        <Select
+                            variant="outlined"
+                            value={extractionType}
+                            label="name"
+                            onChange={(e) => handelExtractionTypeChange(e)}
+                        >
+                            {
+                                extractionTypes.map((name, index) => (
+                                    <MenuItem key={index} value={name}>
+                                        <Typography>{name}</Typography>
+                                    </MenuItem>
+                                ))
+                            }
+                        </Select>
+                    </FormControl>
                 </Box>
                 <Stack justifyContent="space-between" height="calc(100% - 59px)">
                     <Box width="100%">
@@ -468,11 +494,11 @@ function DataExtractionPage() {
                                 <FilledInput value={contractAddress} label="Contract Address"
                                              onChange={(e) => addContractAddress(e)}/>
                             </FormControl>
-                            {/*<FormControl variant="filled">*/}
-                            {/*    <InputLabel sx={{fontWeight: "700", fontSize: "18px"}}>Implementation contract address</InputLabel>*/}
-                            {/*    <FilledInput value={impl_contract} label="Implementation address"*/}
-                            {/*                 onChange={(e) => setImplContractAddress(e.target.value)}/>*/}
-                            {/*</FormControl>*/}
+                            <FormControl variant="filled">
+                               <InputLabel sx={{fontWeight: "700", fontSize: "18px"}}>Implementation contract address</InputLabel>
+                               <FilledInput value={impl_contract} label="Implementation address"
+                                            onChange={(e) => addImpleContractAddress(e)}/>
+                            </FormControl>
                             <FormControl variant="filled">
                                 <InputLabel sx={{fontWeight: "700", fontSize: "18px"}}>From Block</InputLabel>
                                 <FilledInput value={fromBlock} label="From Block"
@@ -528,42 +554,11 @@ function DataExtractionPage() {
                             </Box>
                         </Stack>
                     </Box>
-                    <Stack marginTop={1}>
-                        <Box display="flex" gap={1}>
-                            <Button component={Link} to="/query" fullWidth variant="contained" sx={{
-                                padding: 1,
-                                height: "40px",
-                                backgroundColor: "#f1a706",
-                                '&:hover': {backgroundColor: "#bd850c"}
-                            }}>
-                                <Typography color="white">Query Page</Typography>
-                            </Button>
-                            <Button component={Link} to="/ocel" fullWidth variant="contained"
-                                    sx={{padding: 1, height: "40px"}}>
-                                <Typography color="white">Map data</Typography>
-                            </Button>
-                            <Button component={Link} to="/xes" fullWidth variant="contained"
-                                    sx={{padding: 1, height: "40px"}}>
-                                <Typography color="white">Map xes</Typography>
-                            </Button>
-                        </Box>
-                    </Stack>
-                      <Button fullWidth variant="contained" component={Link} to="/view"
-                                          sx={{
-                                              padding: 1,
-                                              marginTop: 1,
-                                              height: "40px",
-                                              backgroundColor: "#4CAF50",
-                                              '&:hover': {backgroundColor: "#388E3C"}
-                                          }}>
-                                      <Box width="100%" display="flex" justifyContent="center" alignItems="center">
-                                          <Typography color="white">View Data</Typography>
-                                      </Box>
-                                  </Button>
                 </Stack>
             </PageLayout>
         </>
     )
 }
 
-export default DataExtractionPage;
+export default HomePage;
+

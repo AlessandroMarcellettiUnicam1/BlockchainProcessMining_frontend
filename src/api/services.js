@@ -50,7 +50,7 @@ export const _sendData = async ({ oldParams, newParams }) => {
         formData.append('toBlock', oldParams.toBlock);
         formData.append('network', oldParams.network);
         formData.append('filters', JSON.stringify(oldParams.filters));
-        formData.append('extractionType', oldParams.extractionType);
+        formData.append('extractionType', oldParams.parameterForExtraction);
     } else if (newParams) {
         formData.append('file', newParams.smartContract);
         formData.append('contractAddressesFrom', JSON.stringify(newParams.contractAddressesFrom));
@@ -59,6 +59,7 @@ export const _sendData = async ({ oldParams, newParams }) => {
         formData.append('toBlock', newParams.toBlock);
         formData.append('network', newParams.network);
         formData.append('filters', JSON.stringify(newParams.filters));
+        // formData.append('extractionType', oldParams.parameterForExtraction);
     } else {
         throw new Error("No parameters are given");
     }

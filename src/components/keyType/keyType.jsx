@@ -11,7 +11,13 @@ function KeyType({ nameFrom, nameTo, objectToSet, index,setObjectsTypesItem }) {
     // Extract unique keys (excluding numeric and mongo keys)
    function getUniqueKeys(json) {
     if (!json) return [];
-
+    for(const tx of json){
+        if (tx.internalTxs !== undefined) {
+            tx.calls = tx.internalTxs;
+            delete tx.internalTxs;
+        }
+    }
+    console.log(json[0])
     const keys = new Set();
 
     function traverse(obj, path = []) {

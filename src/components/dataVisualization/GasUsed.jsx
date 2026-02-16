@@ -9,27 +9,25 @@ import {TransactionDialog} from "./dialogs/TransactionDialog";
 const columns = [
 	{ field: "smartContract", headerName: "Smart Contract", width: 300 },
 	{ field: "count", headerName: "Count", width: 120 },
-	{ field: "activity", headerName: "Activity", width: 150 },
+	{ field: "activity", headerName: "Function", width: 150 },
 	{ field: "gasUsed", headerName: "Gas Used", width: 150 },
 ];
 
 const columnsTransactions = [
     {field: "contractAddress", headerName: "Smart Contract", width: 300},
     {field: "transactionHash", headerName: "Transaction Hash", width: 300},
-    {field: "functionName", headerName: "Activity", width: 150},
+    {field: "functionName", headerName: "Function", width: 150},
     {field: "blockNumber", headerName:"Block Number", width: 150},
     {field:"gasUsed", headerName: "Gas Used", width: 200},
 ]
 
 export default function GasUsed({ data }) {
-	console.log("AKSJBD FAJSJKLFBAUHIFOLKAN;")
 
 	const dialogs = useDialogs();
     const gasUsed = Array.isArray(data.gasUsed) ? data.gasUsed : [];
     const dataTransactions = Array.isArray(data.transaction) ? data.transaction : [];
 	// console.log(gasUsed)
 	// console.log(dataTransactions)
-	    console.log(gasUsed.map((item) => item.activity))
 	const handleRowClick = async (params) => {
 		await dialogs.open(ActivityDialog, {
 			activity: params.row.activity,
@@ -128,7 +126,7 @@ export default function GasUsed({ data }) {
 						<Typography
 							variant="h6"
 							gutterBottom>
-							Activity Count
+							Function Occurrencies
 						</Typography>
 						<Box sx={{ width: "100%", overflowX: "auto" }}>
 							<BarChart

@@ -15,12 +15,12 @@ import JsonView from "@uiw/react-json-view";
 import { _generateGraph } from "../api/services";
 import CustomTypography from "../components/CustomTypography";
 import KeyType from '../components/keyType/keyType';
-import { SigmaContainer, useLoadGraph,useRegisterEvents } from "@react-sigma/core";
-// import { ForceAtlas2 } from '@react-sigma/layout-forceatlas2';
+import { SigmaContainer } from "@react-sigma/core";
+import FormControl from '@mui/material/FormControl';
 import GraphExtraction from "./Graph";
-import { TextField } from "@mui/material";
-
-
+import { MultiGraph } from "graphology";
+import { EdgeArrowProgram } from "sigma/rendering";
+import { EdgeCurvedArrowProgram } from "@sigma/edge-curve";
 import "@react-sigma/core/lib/style.css";
 import useDataContext from "../context/useDataContext";
 import RadioGroup from "@mui/material/RadioGroup";
@@ -34,7 +34,9 @@ import {CollectionDropdown} from "../components/dataVisualization/CollectionDrop
 
 
 
-
+const Transition = React.forwardRef(function Transition(props, ref) {
+  return <Slide direction="down" ref={ref} {...props} />;
+});
 const CardContentNoPadding = styled(CardContent)`
     padding-top: 0;
     &:last-child {

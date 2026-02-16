@@ -64,13 +64,13 @@ const tabs = [
 		component: (data) => <Inputs data={data} />,
 	},
 	{
-		label: "Events",
+		label: "Event",
 		value: 4,
 		type: "events",
 		component: (data) => <Events data={data} />,
 	},
 	{
-		label: "Call",
+		label: "Internal call",
 		value: 5,
 		type: "call",
 		component: (data) => <Call data={data} />,
@@ -126,7 +126,7 @@ export default function DataViewPage() {
 
 	return (
 		<div>
-			<Box sx={{ width: "100%" }}>
+			<Box sx={{ width: "100%" }} >
 				<Box sx={{ borderBottom: 1, borderColor: "divider" }}>
                     <IconButton size="large" sx={{color: "#ffb703"}} onClick={() => setOpenDialog(true)}>
                         <FilterList fontSize="large"/>
