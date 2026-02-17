@@ -43,7 +43,9 @@ function GraphFilter({open,onClose,query,setQuery,isLoading,onApply}){
         });
     };
     const handleResetFilters = ()=>{
-        setQuery({});
+        setQuery({
+            selectedCollection:query.selectedCollection
+        });
     }
     return (
         <Dialog

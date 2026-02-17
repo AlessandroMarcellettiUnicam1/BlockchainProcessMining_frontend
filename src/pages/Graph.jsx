@@ -6,7 +6,7 @@ import circular from "graphology-layout/circular";
 import random from "graphology-layout/random";
 import noverlap from "graphology-layout-noverlap";
 
-const GraphExtraction = ({ graphData, edgeRange, onNodeSelected, onVisibleNodeCount,onVisibleEdgeCount, startLayout }) => {
+const GraphExtraction = ({ graphData, edgeRange, onNodeSelected, onVisibleNodeCount,onVisibleEdgeCount, startLayout,layoutType="forceatlas2",layoutConfig={} }) => {
   const loadGraph = useLoadGraph();
   const registerEvents = useRegisterEvents();
   const sigma = useSigma();
@@ -15,6 +15,7 @@ const GraphExtraction = ({ graphData, edgeRange, onNodeSelected, onVisibleNodeCo
   const isGraphLoaded = useRef(false);
   const [hoveredNode, setHoveredNode] = useState(null);
   const [hoveredNeighbors, setHoveredNeighbors] = useState(new Set());
+
 
   // Grid Layout Implementation
   const applyGridLayout = () => {

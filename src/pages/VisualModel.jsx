@@ -6,7 +6,7 @@ import {
     Card,
     CardContent,
     styled,
-    Stack, IconButton
+    Stack, IconButton, TextField
 } from "@mui/material";
 import {ConstructionOutlined, FileUpload, FilterList} from "@mui/icons-material";
 import { HiddenInput } from "../components/HiddenInput";
@@ -24,7 +24,7 @@ import { EdgeCurvedArrowProgram } from "@sigma/edge-curve";
 import "@react-sigma/core/lib/style.css";
 import useDataContext from "../context/useDataContext";
 import RadioGroup from "@mui/material/RadioGroup";
-import FormControl from "@mui/material/FormControl";
+//import FormControl from "@mui/material/FormControl";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Radio from "@mui/material/Radio";
 import {GraphFilter} from "../components/GraphFilter";
@@ -239,6 +239,8 @@ const NetworkGraph = () => {
                     onClose = {()=>{
                         if(dataSource==="file")
                             setResults(rawData);
+                        if(dataSource==="database")
+                            refetch();
                         setOpenDialog(false);
                     }}
                     query={query}
@@ -253,7 +255,7 @@ const NetworkGraph = () => {
                         if(dataSource==="database") {
                             refetch();
                             setOpenDialog(false);
-
+                            console.log(query,dbResults);
                         }
                     }}
                 />
