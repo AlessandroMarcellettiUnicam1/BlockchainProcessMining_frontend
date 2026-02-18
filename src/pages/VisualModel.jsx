@@ -6,8 +6,9 @@ import {
     Card,
     CardContent,
     styled,
-    Stack, IconButton, TextField
+    Stack, IconButton, TextField,InputLabel,Select,MenuItem,Chip
 } from "@mui/material";
+import {PlayArrow,Pause } from "@mui/icons-material";
 import {ConstructionOutlined, FileUpload, FilterList} from "@mui/icons-material";
 import { HiddenInput } from "../components/HiddenInput";
 import React, { useEffect, useState, useRef } from "react";
@@ -67,6 +68,24 @@ const NetworkGraph = () => {
     const [selectedCollections, setSelectedCollections] = useState([]);
     const [query,setQuery]=useState({});
     const [openDialog,setOpenDialog] = useState(false);
+    //layout selection
+    const [layoutType, setLayoutType] = useState("forceatlas2");
+    const [useAdvancedLayouts, setUseAdvancedLayouts] = useState(true);
+
+    // Layout options for advanced version
+    const advancedLayouts = [
+        { value: "forceatlas2", label: "Force Atlas 2", animated: true },
+        { value: "circlepack", label: "Circle Pack", animated: false },
+        { value: "circular", label: "Circular", animated: false },
+        { value: "community-circular", label: "Community Circles", animated: false },
+        { value: "random", label: "Random", animated: false },
+        { value: "grid", label: "Grid", animated: false },
+        { value: "radial", label: "Radial", animated: false },
+        { value: "hierarchical", label: "Hierarchical", animated: false },
+        { value: "concentric", label: "Concentric", animated: false },
+    ];
+    const currentLayouts = advancedLayouts;
+    const currentLayoutInfo = currentLayouts.find(l => l.value === layoutType);   
     const {isLoading:isLoadingCollections, data:collections,error} = useQuery({
         queryKey: ["collections"],
         queryFn: async ()=> {
@@ -98,7 +117,17 @@ const NetworkGraph = () => {
         });
         setSelectedNode(null);
     };
-
+    const handleLayoutChange = (event) => {
+        setLayoutType(event.target.value);
+        // Reset animation when changing layouts
+        setStartLayout(false);
+    };
+    const handleLayoutModeChange = (event) => {
+        setUseAdvancedLayouts(event.target.value === 'advanced');
+        // Reset to a safe layout when switching modes
+        setLayoutType("forceatlas2");
+        setStartLayout(false);
+    };
     const applyFilter = (json)=>{
         const {contractAddress,dateFrom,dateTo,fromBlock,toBlock,funName,sender,txHash,minGasUsed,maxGasUsed} = query;
         if(contractAddress && Array.isArray(contractAddress) && contractAddress.length > 0)
@@ -340,6 +369,7 @@ const NetworkGraph = () => {
                 </Box>
 
             </Box>
+            
             <Box overflow="auto">
                 {objectsTypesItem.map((objectType, index) => (
                     <KeyType
@@ -352,12 +382,71 @@ const NetworkGraph = () => {
                     />
                 ))}
             </Box>
-            <Box>
+            <Box
+                sx={{
+                    mb: 2,
+                    p: 2,
+                    backgroundColor: '#f5f5f5',
+                    borderRadius: 2,
+                    border: '1px solid #e0e0e0'
+                }}
 
-                {/* <Button onClick={hadleStartLayout}>Test</Button> */}
+            >
+                <Typography variant="h6" sx={{ mb: 2 }}>
+                    Graph Layout Settings
+                </Typography>
+
+                <Box display="flex" gap={2} flexWrap="wrap" alignItems="center">
+
+                    {/* Layout Type Selection */}
+                    <FormControl sx={{ minWidth: 250 }}>
+                        <InputLabel>Layout Type</InputLabel>
+                        <Select
+                            value={layoutType}
+                            onChange={handleLayoutChange}
+                            label="Layout Type"
+                        >
+                            {currentLayouts.map((layout) => (
+                                <MenuItem key={layout.value} value={layout.value}>
+                                    {layout.label}
+                                    {layout.animated && (
+                                        <Chip
+                                            label="Animated"
+                                            size="small"
+                                            sx={{ ml: 1 }}
+                                            color="primary"
+                                        />
+                                    )}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+
+                    {/* Animation Control (only for animated layouts) */}
+                    {currentLayoutInfo?.animated && (
+                        <Button
+                            variant={startLayout ? "contained" : "outlined"}
+                            color={startLayout ? "warning" : "success"}
+                            onClick={hadleStartLayout}
+                            startIcon={startLayout ? <Pause /> : <PlayArrow />}
+                            sx={{ height: "56px" }}
+                        >
+                            {startLayout ? "Pause Animation" : "Start Animation"}
+                        </Button>
+                    )}
+
+                </Box>
             </Box>
             {/* Graph itself */}
-            <SigmaContainer style={{ height: 'calc(100vh - 200px)', width: '100%' }}>
+            <SigmaContainer style={{ height: 'calc(100vh - 200px)', width: '100%' }}
+                settings={{
+                    edgeProgramClasses: {
+                        straight: EdgeArrowProgram,
+                        curved: EdgeCurvedArrowProgram,
+                    },
+                    defaultEdgeType: "straight",
+                    renderEdgeLabels: true,
+                }}>
                 <GraphExtraction selectedNode={selectedNode}
                                  graphData={graphData}
                     //nodeFilter={nodeFilter}
@@ -366,6 +455,7 @@ const NetworkGraph = () => {
                                  onVisibleNodeCount={handleVisibleNodeCount}
                                  onVisibleEdgeCount={hadleVisibleEdgeCount}
                                  startLayout={startLayout}
+                                 layoutType={layoutType}
                 />
                 {/* { graphData &&(
           <GraphComponent
