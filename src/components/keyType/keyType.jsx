@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Box,Button, FormControl, InputLabel, MenuItem, Select } from "@mui/material";
+import { Box,Button, FormControl, InputLabel, MenuItem, Select, Typography } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import jp from 'jsonpath';
 import useDataContext from '../../context/useDataContext';
@@ -8,6 +8,7 @@ function KeyType({ nameFrom, nameTo, objectToSet, index,setObjectsTypesItem }) {
     const { results } = useDataContext();
     const [objectTypesOptions, setObjectTypesOptions] = useState([]);
     objectToSet.index = index;
+    const alpha="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     // Extract unique keys (excluding numeric and mongo keys)
    function getUniqueKeys(json) {
     if (!json) return [];
@@ -17,9 +18,7 @@ function KeyType({ nameFrom, nameTo, objectToSet, index,setObjectsTypesItem }) {
             delete tx.internalTxs;
         }
     }
-    console.log(json[0])
     const keys = new Set();
-
     function traverse(obj, path = []) {
         if (obj === null || obj === undefined) return;
 
@@ -121,6 +120,9 @@ function normalizeCallsPath(path) {
                     )}
                 </Select>
             </FormControl>
+            <Box>
+                <Typography marginTop={2}>{alpha.charAt(index)}</Typography>
+            </Box>
             <Box marginTop={1} >
                 <Button onClick={() => handleRemoveObject(objectToSet)}>
                     <DeleteIcon sx={{fontSize: 30, color: "red"}}/>

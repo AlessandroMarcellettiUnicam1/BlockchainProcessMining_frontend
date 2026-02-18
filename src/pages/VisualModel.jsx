@@ -257,7 +257,7 @@ const NetworkGraph = () => {
                 />
             }
             {/* Top control box */}
-            <Box display="flex" gap={2} marginBottom={2} style={{ height: '4em' }}>
+            <Box display="flex" gap={2} marginBottom={2} marginTop={3} style={{ height: '4em' }}>
 
 
                 <IconButton size="large" sx={{color: "#ffb703"}} onClick={() => setOpenDialog(true)}>
@@ -290,11 +290,9 @@ const NetworkGraph = () => {
                 />
                 <Stack>
                     <CustomTypography>
-                        <Button onClick={handleAddObjectType}>
-                            <Button  variant="contained"
-                                     sx={{ padding: 1, height: "55px" }}>Add edge</Button>
-                        </Button>
-
+                        <Button variant="contained"
+                            onClick={handleAddObjectType}
+                            sx={{ padding: 1, height: "55px" }}>Add edge</Button>
                     </CustomTypography>
 
 
@@ -372,6 +370,8 @@ const NetworkGraph = () => {
             
             <Box overflow="auto">
                 {objectsTypesItem.map((objectType, index) => (
+                    
+                    <Box>
                     <KeyType
                         key={`object-type-${index}`}
                         nameFrom={objectType.nameFrom}
@@ -380,6 +380,7 @@ const NetworkGraph = () => {
                         index={index}
                         setObjectsTypesItem={setObjectsTypesItem}
                     />
+                </Box>
                 ))}
             </Box>
             <Box
@@ -388,9 +389,9 @@ const NetworkGraph = () => {
                     p: 2,
                     backgroundColor: '#f5f5f5',
                     borderRadius: 2,
-                    border: '1px solid #e0e0e0'
+                    border: '1px solid #e0e0e0',
+                    width: '50%',
                 }}
-
             >
                 <Typography variant="h6" sx={{ mb: 2 }}>
                     Graph Layout Settings
