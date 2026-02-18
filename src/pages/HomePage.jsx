@@ -264,7 +264,7 @@ function HomePage() {
     return (
         <>
             <Typography>
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis in congue odio, at blandit lectus. Maecenas cursus, lectus id posuere commodo, felis enim fermentum ex, non venenatis nunc nunc nec diam. Suspendisse lobortis risus quis diam fringilla tincidunt. Quisque vitae suscipit risus. Ut convallis molestie commodo. Nam nec est eget odio ullamcorper ultrices in id est. Ut quis nulla a sapien ornare hendrerit. Vivamus ut molestie augue, sit amet tristique risus.
+                
             </Typography>
         </>
     )
