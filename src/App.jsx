@@ -13,6 +13,7 @@ import { DataViewProvider } from "./context/DataViewContext";
 import { DialogsProvider } from "@toolpad/core/useDialogs";
 import { QueryClient, QueryClientProvider } from "react-query";
 import StorageIcon from "@mui/icons-material/Storage";
+import FactCheckIcon from '@mui/icons-material/FactCheck';
 
 const NAVIGATION = [
 	{
@@ -74,7 +75,12 @@ const NAVIGATION = [
                 segment: "xes",
                 title: "XES",
                 icon: <PersonIcon />,
-            }
+            },
+			{
+				segment: "coblock",
+				title: "CoBlockly",
+				icon: <FactCheckIcon />,
+			}
         ]
     },
 ];
