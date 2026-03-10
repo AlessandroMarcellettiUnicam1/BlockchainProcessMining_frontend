@@ -77,7 +77,7 @@ const NAVIGATION = [
                 icon: <PersonIcon />,
             },
 			{
-				segment: "coblock",
+				segment: "coblockly",
 				title: "CoBlockly",
 				icon: <FactCheckIcon />,
 			}

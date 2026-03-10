@@ -1,9 +1,9 @@
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 import JSONEditor from 'jsoneditor';
 import 'jsoneditor/dist/jsoneditor.min.css';
 
 import * as nearley from "nearley";
-import grammar from "../grammar"; // The module declaration allows this import
+import grammar from "./grammar"; // The module declaration allows this import
 import { interpretRule as ir } from "./parser";
 
 let parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar),);
@@ -24,15 +24,20 @@ interface Mapping {
   E: string;
 }
 
-// on body loaded
-document.addEventListener("DOMContentLoaded", () => {
-  console.log("...adding event listener - MAIN")
+export function startCoBlockly() {
+  console.log("...adding event listener")
+  
   const errDiv = document.getElementById('errorParser') as HTMLElement;
   const spinnerContainerRule = document.getElementById('spinner-container-rule') as HTMLDivElement;
   const spinnerContainerLog = document.getElementById('spinner-container-log') as HTMLDivElement;
   const divC = document.getElementById('jsoneditorC') as HTMLElement;
   const divNC = document.getElementById('jsoneditorNC') as HTMLElement;
   const options = {};
+
+  // pulisco il div prima di iniettare
+  if(divC) divC.innerHTML = '';
+  if(divNC) divNC.innerHTML = '';
+  
   const jsonC = new JSONEditor(divC, options);
   const jsonNC = new JSONEditor(divNC, options);
 
@@ -46,164 +51,128 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ----------- load log from file
   const formLog = document.getElementById('logForm') as HTMLElement;
-  formLog.addEventListener('submit', event => {
-    event.preventDefault()
-    const fileInput = document.getElementById("logInput") as HTMLInputElement;
-    const file = fileInput.files?.[0]; if (!file) { alert('Please select a file to upload'); return; }
+  if(formLog) {
+      formLog.addEventListener('submit', event => {
+        event.preventDefault()
+        const fileInput = document.getElementById("logInput") as HTMLInputElement;
+        const file = fileInput.files?.[0]; if (!file) { alert('Please select a file to upload'); return; }
 
-    const formData = new FormData();
-    formData.append('file', file);
+        const formData = new FormData();
+        formData.append('file', file);
 
-    showSpinner(spinnerContainerLog)
-    axios.post('http://127.0.0.1:8000/api/uploadLog', formData, { headers: { 'Content-Type': 'multipart/form-data' } }
-    ).then(response => {
-      initLog(response)
-      // console.log('File uploaded successfully:', response.data);
-      hideSpinner(spinnerContainerLog)
-    }).catch(error => {
-      console.error('Error uploading file:', error);
-    });
-  });
-
-  // --------- load log from the list
-  /*
-  const listItems: NodeListOf<HTMLElement> = document.querySelectorAll("ul li"); 
-  listItems.forEach(function (item) {
-    item.onclick = function () {
-      const log = (this as HTMLDivElement).innerText; // this returns clicked li's value
-      axios.post('http://127.0.0.1:8000/api/loadLog', { name: log })
-        .then(response => {
-          initLog(response);
-          //console.log(response.data)
-        })
-        .catch(error => console.error('Error fetching data:', error));
-    }
-  });
-  */
+        showSpinner(spinnerContainerLog)
+        axios.post('http://127.0.0.1:8000/api/uploadLog', formData, { headers: { 'Content-Type': 'multipart/form-data' } }
+        ).then(response => {
+          initLog(response)
+          hideSpinner(spinnerContainerLog)
+        }).catch(error => {
+          console.error('Error uploading file:', error);
+        });
+      });
+  }
 
   // --------------- parse rule
   const compileRule = document.getElementById('compileRule') as HTMLElement;
-  compileRule.addEventListener('submit', event => {
-    event.preventDefault();
-    console.log("Verifying rule with parser...");
-    //-------------- retrieve rule -------------------------------
-    const rule: string = (document.getElementById("rule") as HTMLSelectElement).value;
+  if(compileRule) {
+      compileRule.addEventListener('submit', event => {
+        event.preventDefault();
+        console.log("Verifying rule with parser...");
+        
+        //-------------- retrieve rule -------------------------------
+        const rule: string = (document.getElementById("rule") as HTMLSelectElement).value;
 
-    if (rule.length == 0) { alert('Please insert a rule to compile!'); return; }
+        if (rule.length == 0) { alert('Please insert a rule to compile!'); return; }
 
-    console.log(rule);
+        console.log(rule);
 
-    try {
-      // Parse something!
-      parser.feed(rule);
+        try {
+          parser.feed(rule);
 
-      // parser.results is an array of possible parsings.
-      //console.log(JSON.stringify(parser.results)); // [[[[["foo"],"\n"]]]]
+          if (parser.results.length > 0) {
+            parserResult = JSON.stringify(ir(parser.results[0]), null, 2);
+            console.log(parserResult);
+            errDiv.style.backgroundColor = 'rgb(125, 250, 148)'
+            errDiv.style.border = '3px solid green';
+            errDiv.innerText = `Rule "${rule}" successfully compiled!`
+          } else {
+            errDiv.style.backgroundColor = 'rgb(251, 238, 99)'
+            errDiv.style.border = '3px solid orange';
+            errDiv.innerText = `Rule "${rule}" correct so far, but incomplete!`
+          }
 
-      if (parser.results.length > 0) {
-        // construction of CST 
-        parserResult = JSON.stringify(ir(parser.results[0]), null, 2);
-        console.log(parserResult);
-        errDiv.style.backgroundColor = 'rgb(125, 250, 148)'
-        errDiv.style.border = '3px solid green';
-        errDiv.innerText = `Rule "${rule}" successfully compiled!`
-      } else {
-        errDiv.style.backgroundColor = 'rgb(251, 238, 99)'
-        errDiv.style.border = '3px solid orange';
-        errDiv.innerText = `Rule "${rule}" correct so far, but incomplete!`
-      }
-
-    } catch (error) {
-      console.log(error)
-      errDiv.style.backgroundColor = 'rgb(250, 125, 125)'
-      errDiv.style.border = '3px solid red';
-      errDiv.innerHTML = `<pre>${String(error)}</pre>`
-      // errDiv.innerHTML = `<pre>${error instanceof Error ? error.stack || error.message : String(error)}</pre>`
-    } finally {
-      // Reset by creating a new instance
-      parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
-    }
-  });
+        } catch (error) {
+          console.log(error)
+          errDiv.style.backgroundColor = 'rgb(250, 125, 125)'
+          errDiv.style.border = '3px solid red';
+          errDiv.innerHTML = `<pre>${String(error)}</pre>`
+        } finally {
+          parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
+        }
+      });
+  }
 
   const downloadC = document.getElementById('downloadLinkC') as HTMLLinkElement;
   const downloadNC = document.getElementById('downloadLinkNC') as HTMLLinkElement;
 
   const verifyRule = document.getElementById('verifyRule') as HTMLElement;
-  verifyRule.addEventListener('submit', event => {
-    event.preventDefault();
-    showSpinner(spinnerContainerRule);
-    console.log("Applying rule to event log...");
-    //-------------- retrieve rule -------------------------------
-    const text: string = (document.getElementById("rule") as HTMLSelectElement).value;
-    console.log(`processing... ${text}`);
+  if(verifyRule) {
+      verifyRule.addEventListener('submit', event => {
+        event.preventDefault();
+        showSpinner(spinnerContainerRule);
+        console.log("Applying rule to event log...");
+        
+        const text: string = (document.getElementById("rule") as HTMLSelectElement).value;
+        console.log(`processing... ${text}`);
 
-    var fun = (document.getElementById(`fun`) as HTMLSelectElement).value
-    var ca = (document.getElementById(`ca`) as HTMLSelectElement).value
-    var b = (document.getElementById(`b`) as HTMLSelectElement).value
-    var s = (document.getElementById(`s`) as HTMLSelectElement).value
-    var time = (document.getElementById(`time`) as HTMLSelectElement).value
-    var gL = (document.getElementById(`gL`) as HTMLSelectElement).value
-    var gU = (document.getElementById(`gU`) as HTMLSelectElement).value
-    var v = (document.getElementById(`V`) as HTMLSelectElement).value
-    var sv = (document.getElementById(`sv`) as HTMLSelectElement).value
-    var call = (document.getElementById(`call`) as HTMLSelectElement).value
-    var i = (document.getElementById(`i`) as HTMLSelectElement).value
-    // var ed = (document.getElementById(`ed`) as HTMLSelectElement).value
-    var e = (document.getElementById(`e`) as HTMLSelectElement).value
+        var fun = (document.getElementById(`fun`) as HTMLSelectElement).value
+        var ca = (document.getElementById(`ca`) as HTMLSelectElement).value
+        var b = (document.getElementById(`b`) as HTMLSelectElement).value
+        var s = (document.getElementById(`s`) as HTMLSelectElement).value
+        var time = (document.getElementById(`time`) as HTMLSelectElement).value
+        var gL = (document.getElementById(`gL`) as HTMLSelectElement).value
+        var gU = (document.getElementById(`gU`) as HTMLSelectElement).value
+        var v = (document.getElementById(`V`) as HTMLSelectElement).value
+        var sv = (document.getElementById(`sv`) as HTMLSelectElement).value
+        var call = (document.getElementById(`call`) as HTMLSelectElement).value
+        var i = (document.getElementById(`i`) as HTMLSelectElement).value
+        var e = (document.getElementById(`e`) as HTMLSelectElement).value
 
-    const mapping: Mapping = {
-      function: fun,
-      contract: ca,
-      block: b,
-      sender: s,
-      timestamp: time,
-      gasLimit: gL,
-      gasUsed: gU,
-      value: v,
-      SV: sv,
-      CALL: call,
-      I: i,
-      E: e,
-    }
-    const rule: any = {
-      rule: parserResult
-    }
-    console.log(`processing... ${mapping}`);
-    axios.post('http://127.0.0.1:8000/api/verifyRule', { rule: rule, mapping: mapping })
-      .then(response => {
-        console.log(response.status)
+        const mapping: Mapping = {
+          function: fun, contract: ca, block: b, sender: s, timestamp: time,
+          gasLimit: gL, gasUsed: gU, value: v, SV: sv, CALL: call, I: i, E: e,
+        }
+        const rule: any = { rule: parserResult }
+        
+        console.log(`processing... ${mapping}`);
+        axios.post('http://127.0.0.1:8000/api/verifyRule', { rule: rule, mapping: mapping })
+          .then(response => {
+            console.log(response.status)
 
-        // Download compliant / non-compliant sets
-        const c = response.data.compliant;
-        const nc = response.data.noncompliant;
+            const c = response.data.compliant;
+            const nc = response.data.noncompliant;
 
-        const urlC = window.URL.createObjectURL(new Blob([JSON.stringify(c)]));
-        downloadC.href = urlC;
-        downloadC.setAttribute('download', 'compliant_set.json');
+            const urlC = window.URL.createObjectURL(new Blob([JSON.stringify(c)]));
+            downloadC.href = urlC;
+            downloadC.setAttribute('download', 'compliant_set.json');
 
-        const urlNC = window.URL.createObjectURL(new Blob([JSON.stringify(nc)]));
-        downloadNC.href = urlNC;
-        downloadNC.setAttribute('download', 'non-compliant_set.json');
+            const urlNC = window.URL.createObjectURL(new Blob([JSON.stringify(nc)]));
+            downloadNC.href = urlNC;
+            downloadNC.setAttribute('download', 'non-compliant_set.json');
 
-        jsonC.set(Object.fromEntries(Object.entries(c).slice(0, 20)));
-        jsonNC.set(Object.fromEntries(Object.entries(nc).slice(0, 20)));
+            jsonC.set(Object.fromEntries(Object.entries(c).slice(0, 20)));
+            jsonNC.set(Object.fromEntries(Object.entries(nc).slice(0, 20)));
 
-        (document.getElementById('ct') as HTMLDivElement).innerText = c.length;
-        (document.getElementById('nct') as HTMLDivElement).innerText = nc.length;
-        (document.getElementById('it') as HTMLDivElement).innerText = String(Number((document.getElementById('tracesLoaded') as HTMLDivElement).textContent) - (c.length + nc.length));
-      })
-      .catch(
-        error => console.error('Error submitting data:', error)
-      )
-      .finally(() => {
-        hideSpinner(spinnerContainerRule);
+            (document.getElementById('ct') as HTMLDivElement).innerText = c.length;
+            (document.getElementById('nct') as HTMLDivElement).innerText = nc.length;
+            (document.getElementById('it') as HTMLDivElement).innerText = String(Number((document.getElementById('tracesLoaded') as HTMLDivElement).textContent) - (c.length + nc.length));
+          })
+          .catch(error => console.error('Error submitting data:', error))
+          .finally(() => { hideSpinner(spinnerContainerRule); });
       });
-  });
+  }
+}
 
-  // ------------- end DOMContentLoaded --------------------
-});
-
-function initLog(response: axios.AxiosResponse<any, any>) {
+function initLog(response: AxiosResponse<any, any>) {
   (document.getElementById('logLoaded') as HTMLDivElement).innerText = response.data.logName;
   (document.getElementById('logLoaded') as HTMLDivElement).classList.add('bg-success');
   (document.getElementById('eventsLoaded') as HTMLDivElement).innerText = response.data.numEvents;
