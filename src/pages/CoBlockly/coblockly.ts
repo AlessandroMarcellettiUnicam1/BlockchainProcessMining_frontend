@@ -9,6 +9,7 @@ import { blocks } from './blocks/text';
 import 'blockly/javascript';
 import { toolbox } from './toolbox';
 import { javascriptGenerator } from 'blockly/javascript';
+import DarkTheme from '@blockly/theme-dark';
 
 console.log('File B loaded')
 // Register the blocks and generator with Blockly
@@ -136,20 +137,28 @@ javascriptGenerator.forBlock['coblock_control_binary'] = function (block: Blockl
 
 let ws: Blockly.WorkspaceSvg; // workspace globale per questo file
 
-export function initBlocklyEditor() {
+export function initBlocklyEditor(isDarkMode: boolean) {
   const blocklyDiv = document.getElementById('blocklyDiv');
 
   if (!blocklyDiv) {
-    console.error(`div with id 'blocklyDiv' not found, riproverò a breve...`);
+    console.error(`div with id 'blocklyDiv' not found.`);
     return;
   }
   
   if(ws) {
       console.log("Blockly già inizializzato.");
+      ws.setTheme(isDarkMode ? DarkTheme : Blockly.Themes.Classic);
       return;
   }
 
-  ws = Blockly.inject(blocklyDiv, { toolbox });
+  ws = Blockly.inject(blocklyDiv, { 
+    toolbox: toolbox,
+    theme: isDarkMode ? DarkTheme : Blockly.Themes.Classic
+  });
+
+  setTimeout(() => {
+    Blockly.svgResize(ws);
+  }, 100);
 
   // Register custom blocks/toolbar
   var ruleFlyoutCallback = function () {

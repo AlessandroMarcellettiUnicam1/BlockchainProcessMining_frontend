@@ -81,33 +81,40 @@ export function startCoBlockly() {
         //-------------- retrieve rule -------------------------------
         const rule: string = (document.getElementById("rule") as HTMLSelectElement).value;
 
-        if (rule.length == 0) { alert('Please insert a rule to compile!'); return; }
+        // rimosso l'alert pop up
+        if (rule.length == 0) { 
+          errDiv.className = 'alert alert-danger'; 
+          errDiv.style.cssText = ''; 
+          errDiv.innerText = 'Please insert a rule to compile!'; 
+          return; 
+        }
 
         console.log(rule);
 
         try {
-          parser.feed(rule);
+      parser.feed(rule);
 
-          if (parser.results.length > 0) {
-            parserResult = JSON.stringify(ir(parser.results[0]), null, 2);
-            console.log(parserResult);
-            errDiv.style.backgroundColor = 'rgb(125, 250, 148)'
-            errDiv.style.border = '3px solid green';
-            errDiv.innerText = `Rule "${rule}" successfully compiled!`
-          } else {
-            errDiv.style.backgroundColor = 'rgb(251, 238, 99)'
-            errDiv.style.border = '3px solid orange';
-            errDiv.innerText = `Rule "${rule}" correct so far, but incomplete!`
-          }
+      if (parser.results.length > 0) {
+        parserResult = JSON.stringify(ir(parser.results[0]), null, 2);
+        console.log(parserResult);
+        
+        errDiv.className = 'alert alert-success'; 
+        errDiv.style.cssText = ''; 
+        errDiv.innerText = `Rule "${rule}" successfully compiled!`
+      } else {
+        errDiv.className = 'alert alert-warning'; 
+        errDiv.style.cssText = '';
+        errDiv.innerText = `Rule "${rule}" correct so far, but incomplete!`
+      }
 
-        } catch (error) {
-          console.log(error)
-          errDiv.style.backgroundColor = 'rgb(250, 125, 125)'
-          errDiv.style.border = '3px solid red';
-          errDiv.innerHTML = `<pre>${String(error)}</pre>`
-        } finally {
-          parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
-        }
+    } catch (error) {
+      console.log(error)
+      errDiv.className = 'alert alert-danger'; 
+      errDiv.style.cssText = '';
+      errDiv.innerHTML = `<pre style="color: inherit; background: transparent; border: none; padding: 0;">${String(error)}</pre>`
+    } finally {
+      parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
+    }
       });
   }
 

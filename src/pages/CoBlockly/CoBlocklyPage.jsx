@@ -5,18 +5,22 @@ import 'jsoneditor/dist/jsoneditor.min.css';
 import { startCoBlockly } from './main.ts';
 import { initBlocklyEditor } from './coblockly.ts'
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { useColorScheme } from '@mui/material/styles';
 
 export default function CoBlocklyPage() {
   // ref per agganciare Blockly in modo sicuro
   const blocklyDivRef = useRef(null);
 
+  const { mode } = useColorScheme();
+  const isDarkMode = mode == 'dark';
+
   useEffect(() => {
-    initBlocklyEditor();
+    initBlocklyEditor(isDarkMode);
     startCoBlockly();
-  }, []);
+  }, [isDarkMode]);
 
   return (
-    <div className="container">
+    <div className="container" data-bs-theme={isDarkMode ? 'dark' : 'light'}>
       <header className="mb-2">
         <nav className="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
           <div className="container-fluid">
@@ -174,7 +178,7 @@ export default function CoBlocklyPage() {
       <div className="row mb-2">
         <div className="col-12">
           <div className="card">
-            <div className="card-header bg-light text-black d-flex justify-content-between align-items-center">
+            <div className="card-header d-flex justify-content-between align-items-center">
               <div>
                 <h5 className="mb-0">CoBlockly</h5>
               </div>
@@ -192,7 +196,7 @@ export default function CoBlocklyPage() {
               ></div>
             </div>
 
-            <div className="card-footer bg-light text-muted small">
+            <div className="card-footer text-muted small">
               Drag and drop blocks to model your rule, then click "Translate Rule" to generate the textual rule
             </div>
           </div>
@@ -203,7 +207,7 @@ export default function CoBlocklyPage() {
       <div className="row mb-2">
         <div className="col-12">
           <div className="card">
-            <div className="card-header bg-light text-black">
+            <div className="card-header">
               <div className="d-flex justify-content-between align-items-center">
                 <div>
                   <h5 className="mb-0">CoBlock</h5>
@@ -241,7 +245,7 @@ export default function CoBlocklyPage() {
       <div className="row mb-2">
         <div className="col-12">
           <div className="card">
-            <div className="card-header bg-light text-black d-flex justify-content-between align-items-center">
+            <div className="card-header d-flex justify-content-between align-items-center">
               <div>
                 <h5 className="mb-0">Checking Results</h5>
               </div>

@@ -67,3 +67,72 @@ h1 {
   margin-top: 5px;
   border-radius: 10px;
 }
+
+/* Dark Mode per json editor */
+[data-bs-theme="dark"] .jsoneditor {
+    border-color: #495057 !important;
+    background-color: #212529 !important;
+}
+
+[data-bs-theme="dark"] .jsoneditor-menu {
+    background-color: #2b3035 !important;
+    border-bottom-color: #495057 !important;
+}
+
+[data-bs-theme="dark"] .jsoneditor-menu > button {
+    filter: invert(1);
+}
+
+[data-bs-theme="dark"] .jsoneditor-tree,
+[data-bs-theme="dark"] .jsoneditor-tree table,
+[data-bs-theme="dark"] .jsoneditor-separator,
+[data-bs-theme="dark"] .jsoneditor-readonly {
+    background-color: #212529 !important;
+    color: #e9ecef !important;
+}
+
+[data-bs-theme="dark"] div.jsoneditor-field {
+    color: #e06c75 !important; 
+}
+
+[data-bs-theme="dark"] div.jsoneditor-value {
+    color: #98c379 !important; 
+}
+
+[data-bs-theme="dark"] div.jsoneditor-value.jsoneditor-string {
+    color: #61afef !important;
+}
+
+[data-bs-theme="dark"] .jsoneditor-navigation-bar {
+    background-color: #2b3035 !important;
+    border-bottom: 1px solid #495057 !important;
+    color: #a6a6a6 !important;
+}
+
+[data-bs-theme="dark"] .jsoneditor-navigation-bar span.jsoneditor-navigation-item {
+    color: #e9ecef !important;
+}
+
+[data-bs-theme="dark"] div.jsoneditor-search input {
+    background-color: #212529 !important;
+    color: white !important;
+    border: 1px solid #495057 !important;
+}
+
+[data-bs-theme="dark"] div.jsoneditor-search .jsoneditor-results {
+    color: #a6a6a6 !important;
+}
+
+[data-bs-theme="dark"] div.jsoneditor-search {
+    background-color: transparent !important;
+}
+
+[data-bs-theme="dark"] div.jsoneditor-search .jsoneditor-frame {
+    background-color: #212529 !important;
+    border-color: #495057 !important;
+}
+
+[data-bs-theme="dark"] div.jsoneditor-search .jsoneditor-frame > button {
+    filter: invert(1) brightness(200%) !important;
+    opacity: 1 !important;
+}
