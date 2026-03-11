@@ -61,7 +61,7 @@ export function startCoBlockly() {
         formData.append('file', file);
 
         showSpinner(spinnerContainerLog)
-        axios.post('http://127.0.0.1:8000/api/uploadLog', formData, { headers: { 'Content-Type': 'multipart/form-data' } }
+        axios.post('http://127.0.0.1:8001/api/uploadLog', formData, { headers: { 'Content-Type': 'multipart/form-data' } }
         ).then(response => {
           initLog(response)
           hideSpinner(spinnerContainerLog)
@@ -151,7 +151,7 @@ export function startCoBlockly() {
         const rule: any = { rule: parserResult }
         
         console.log(`processing... ${mapping}`);
-        axios.post('http://127.0.0.1:8000/api/verifyRule', { rule: rule, mapping: mapping })
+        axios.post('http://127.0.0.1:8001/api/verifyRule', { rule: rule, mapping: mapping })
           .then(response => {
             console.log(response.status)
 
