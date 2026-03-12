@@ -146,7 +146,7 @@ export function initBlocklyEditor(isDarkMode: boolean) {
   }
   
   if(ws) {
-      console.log("Blockly già inizializzato.");
+      // console.log("Blockly già inizializzato.");
       ws.setTheme(isDarkMode ? DarkTheme : Blockly.Themes.Classic);
       return;
   }
@@ -206,7 +206,7 @@ export function initBlocklyEditor(isDarkMode: boolean) {
   };
   ws.registerToolboxCategoryCallback('CF', cfFlyoutCallback);
 
-  console.log("...adding event listener - COBLOCKLY (Avviato da React)")
+  console.log("...adding event listener")
   const button = document.getElementById('generateBtn');
   if (button) {
     button.addEventListener('click', () => {

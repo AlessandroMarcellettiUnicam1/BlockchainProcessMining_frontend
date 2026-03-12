@@ -25,7 +25,7 @@ interface Mapping {
 }
 
 export function startCoBlockly() {
-  console.log("...adding event listener")
+  // console.log("...adding event listener"), replaced with onsubmit
   
   const errDiv = document.getElementById('errorParser') as HTMLElement;
   const spinnerContainerRule = document.getElementById('spinner-container-rule') as HTMLDivElement;
@@ -52,7 +52,7 @@ export function startCoBlockly() {
   // ----------- load log from file
   const formLog = document.getElementById('logForm') as HTMLElement;
   if(formLog) {
-      formLog.addEventListener('submit', event => {
+      formLog.onsubmit = (event) => {
         event.preventDefault()
         const fileInput = document.getElementById("logInput") as HTMLInputElement;
         const file = fileInput.files?.[0]; if (!file) { alert('Please select a file to upload'); return; }
@@ -60,21 +60,27 @@ export function startCoBlockly() {
         const formData = new FormData();
         formData.append('file', file);
 
-        showSpinner(spinnerContainerLog)
+        showSpinner(spinnerContainerLog);
+
+        //azzeramento visivo
+        (document.getElementById('eventsLoaded') as HTMLDivElement).innerText = "0";
+        (document.getElementById('tracesLoaded') as HTMLDivElement).innerText = "0";
+
         axios.post('http://127.0.0.1:8001/api/uploadLog', formData, { headers: { 'Content-Type': 'multipart/form-data' } }
         ).then(response => {
           initLog(response)
           hideSpinner(spinnerContainerLog)
         }).catch(error => {
           console.error('Error uploading file:', error);
+          hideSpinner(spinnerContainerLog)
         });
-      });
+      };
   }
 
   // --------------- parse rule
   const compileRule = document.getElementById('compileRule') as HTMLElement;
   if(compileRule) {
-      compileRule.addEventListener('submit', event => {
+      compileRule.onsubmit = (event) => {
         event.preventDefault();
         console.log("Verifying rule with parser...");
         
@@ -92,30 +98,30 @@ export function startCoBlockly() {
         console.log(rule);
 
         try {
-      parser.feed(rule);
+        parser.feed(rule);
 
-      if (parser.results.length > 0) {
-        parserResult = JSON.stringify(ir(parser.results[0]), null, 2);
-        console.log(parserResult);
-        
-        errDiv.className = 'alert alert-success'; 
-        errDiv.style.cssText = ''; 
-        errDiv.innerText = `Rule "${rule}" successfully compiled!`
-      } else {
-        errDiv.className = 'alert alert-warning'; 
-        errDiv.style.cssText = '';
-        errDiv.innerText = `Rule "${rule}" correct so far, but incomplete!`
-      }
+        if (parser.results.length > 0) {
+          parserResult = JSON.stringify(ir(parser.results[0]), null, 2);
+          console.log(parserResult);
+          
+          errDiv.className = 'alert alert-success'; 
+          errDiv.style.cssText = ''; 
+          errDiv.innerText = `Rule "${rule}" successfully compiled!`
+        } else {
+          errDiv.className = 'alert alert-warning'; 
+          errDiv.style.cssText = '';
+          errDiv.innerText = `Rule "${rule}" correct so far, but incomplete!`
+        }
 
-    } catch (error) {
-      console.log(error)
-      errDiv.className = 'alert alert-danger'; 
-      errDiv.style.cssText = '';
-      errDiv.innerHTML = `<pre style="color: inherit; background: transparent; border: none; padding: 0;">${String(error)}</pre>`
-    } finally {
-      parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
-    }
-      });
+        } catch (error) {
+          console.log(error)
+          errDiv.className = 'alert alert-danger'; 
+          errDiv.style.cssText = '';
+          errDiv.innerHTML = `<pre style="color: inherit; background: transparent; border: none; padding: 0;">${String(error)}</pre>`
+        } finally {
+          parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
+        }
+      };
   }
 
   const downloadC = document.getElementById('downloadLinkC') as HTMLLinkElement;
@@ -123,7 +129,7 @@ export function startCoBlockly() {
 
   const verifyRule = document.getElementById('verifyRule') as HTMLElement;
   if(verifyRule) {
-      verifyRule.addEventListener('submit', event => {
+      verifyRule.onsubmit = (event) => {
         event.preventDefault();
         showSpinner(spinnerContainerRule);
         console.log("Applying rule to event log...");
@@ -175,7 +181,7 @@ export function startCoBlockly() {
           })
           .catch(error => console.error('Error submitting data:', error))
           .finally(() => { hideSpinner(spinnerContainerRule); });
-      });
+      };
   }
 }
 
