@@ -59,7 +59,12 @@ const NAVIGATION = [
                 segment: "query",
                 title: "Query",
                 icon: <ContentPasteSearchTwoToneIcon />,
-            }
+            },
+			{
+				segment: "coblockly",
+				title: "Compliance",
+				icon: <FactCheckIcon />,
+			}
         ]
     },
     {
@@ -75,12 +80,7 @@ const NAVIGATION = [
                 segment: "xes",
                 title: "XES",
                 icon: <PersonIcon />,
-            },
-			{
-				segment: "coblockly",
-				title: "CoBlockly",
-				icon: <FactCheckIcon />,
-			}
+            }
         ]
     },
 ];

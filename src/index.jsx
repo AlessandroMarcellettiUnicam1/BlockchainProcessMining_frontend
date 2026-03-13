@@ -67,7 +67,7 @@ const router = createBrowserRouter([
                   Component: NetworkGraph
                 },
                 {
-                  path: "data-mapping/coblockly",
+                  path: "data-analysis/coblockly",
                   Component: CoBlocklyPage
                 }
               ]
