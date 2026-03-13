@@ -62,7 +62,7 @@ function DataExtractionInternalPage() {
     const [gasPrice, setGasPrice] = useState([0, 10000000000])
     const [filterTimestamp, setFilterTimestamp] = useState(false)
     const [timestamp, setTimestamp] = useState([dayjs.utc(defaultDate + 'T' + defaultTime), dayjs.utc(defaultDate + 'T' + defaultTime)])
-
+    const [extractionType,setExtractionType]=useState("OnlyDefault");
     const [senders, setSenders] = useState([])
     const [senderToAdd, setSenderToAdd] = useState("")
 
@@ -81,9 +81,9 @@ function DataExtractionInternalPage() {
             senders: senders,
             functions: functions
         }
-
+        let parameterForExtraction=extractionTypes.indexOf(extractionType)
         const newParams = {
-            contractAddressesFrom, contractAddressesTo, fromBlock, toBlock, network, smartContract, filters
+            contractAddressesFrom, contractAddressesTo, fromBlock, toBlock, network, smartContract, filters,parameterForExtraction
         }
 
         // Use contractAddressesFrom to send data
@@ -97,9 +97,11 @@ function DataExtractionInternalPage() {
             setLoading(false)
         }
     }
-
+     const handelExtractionTypeChange = (e) => {
+        setExtractionType(e.target.value)
+    }
     const networks = ["Mainnet", "Sepolia", "Polygon", "Amoy"]
-
+    const extractionTypes = ["Events-storage-internalExtended","Events-storage-internalPartial","Events","All"]
     useEffect(() => {
         switch (network) {
             case "Mainnet":
@@ -259,136 +261,217 @@ function DataExtractionInternalPage() {
         <>
             {error}
             <Dialog
-                open={openFilters}
                 TransitionComponent={Transition}
                 keepMounted
+                open={openFilters}
                 onClose={() => setOpenFilters(false)}
                 maxWidth=""
             >
-                <DialogTitle>Filters</DialogTitle>
+                <DialogTitle>
+                    Filters
+                </DialogTitle>
                 <DialogContent>
-                    {/*Gas Used*/}
-                    <Box>
-                        <Typography fontWeight={700} fontSize="18px">Gas Used</Typography>
-                        <Checkbox checked={filterGasUsed} onChange={handleGasUsedCheck}/>
-                        <TextField
-                            value={gasUsed[0]}
-                            disabled={!filterGasUsed}
-                            onChange={e => setGasUsed([e.target.value, gasUsed[1]])}
-                            onBlur={handleGasUsedBlur}
-                            type="number"
-                            inputProps={{
-                                step: 50,
-                                min: 0,
-                            }}
-                        />
-                        <TextField
-                            value={gasUsed[1]}
-                            disabled={!filterGasUsed}
-                            onChange={e => setGasUsed([gasUsed[0], e.target.value])}
-                            onBlur={handleGasUsedBlur}
-                            type="number"
-                            inputProps={{
-                                step: 50,
-                                min: 0,
-                            }}
-                        />
-                        <Slider
-                            getAriaLabel={() => 'Gas Used'}
-                            value={gasUsed}
-                            disabled={!filterGasUsed}
-                            onChange={handleGasUsedChange}
-                            max={1000000}
-                            min={0}
-                        />
-                    </Box>
-                    {/*GAS PRICE*/}
-                    <Box>
-                        <Typography fontWeight={700} fontSize="18px">Gas Price</Typography>
-                        <Checkbox checked={filterGasPrice} onChange={handleGasPriceCheck}/>
-                        <TextField
-                            value={gasPrice[0]}
-                            disabled={!filterGasPrice}
-                            onChange={e => setGasPrice([e.target.value, gasPrice[1]])}
-                            onBlur={handleGasPriceBlur}
-                            type="number"
-                            inputProps={{
-                                step: 50,
-                                min: 0,
-                            }}
-                        />
-                        <TextField
-                            value={gasPrice[1]}
-                            disabled={!filterGasPrice}
-                            onChange={e => setGasPrice([gasPrice[0], e.target.value])}
-                            onBlur={handleGasPriceBlur}
-                            type="number"
-                            inputProps={{
-                                step: 50,
-                                min: 0,
-                            }}
-                        />
-                        <Slider
-                            getAriaLabel={() => 'Gas Price'}
-                            value={gasPrice}
-                            disabled={!filterGasPrice}
-                            onChange={handleGasPriceChange}
-                            max={10000000000}
-                            min={0}
-                        />
-                    </Box>
-                    <Box>
-                        <Typography fontWeight={700} fontSize="18px">Senders</Typography>
-                        <TextField value={senderToAdd} onChange={event => setSenderToAdd(event.target.value)}/>
-                        <IconButton onClick={handleAddSenders}>
-                            <AddBoxIcon color={"primary"} fontSize={"large"}/>
-                        </IconButton>
+                    <Box display="flex" justifyContent="space-between" gap={3}>
+                        <Box width={550}>
+                            {/*Gas Used*/}
+                            <Box display="flex" alignItems="center">
+                                <Checkbox checked={filterGasUsed} onChange={handleGasUsedCheck}/>
+                                <Typography fontWeight={700}>Gas Used</Typography>
+                            </Box>
+                            <Box display="flex" justifyContent="space-between" gap={1}>
+                                <Input
+                                    disabled={!filterGasUsed}
+                                    value={gasUsed[0]}
+                                    onChange={(e) => setGasUsed([e.target.value, gasUsed[1]])}
+                                    onBlur={handleGasUsedBlur}
+                                    type="number"
+                                    inputProps={{
+                                        step: 50,
+                                        min: 0,
+                                    }}
+                                />
+                                <Input
+                                    disabled={!filterGasUsed}
+                                    value={gasUsed[1]}
+                                    onChange={(e) => setGasUsed([gasUsed[0], e.target.value])}
+                                    onBlur={handleGasUsedBlur}
+                                    type="number"
+                                    inputProps={{
+                                        step: 50,
+                                        min: 0,
+                                    }}
+                                />
+                            </Box>
+                            <Slider
+                                disabled={!filterGasUsed}
+                                value={gasUsed}
+                                onChange={handleGasUsedChange}
+                                max={1000000}
+                            />
+                            {/*GAS PRICE*/}
+                            <Box display="flex" alignItems="center">
+                                <Checkbox checked={filterGasPrice} onChange={handleGasPriceCheck}/>
+                                <Typography fontWeight={700}>Gas Price</Typography>
+                            </Box>
+                            <Box display="flex" justifyContent="space-between" gap={1}>
+                                <Input
+                                    disabled={!filterGasPrice}
+                                    value={gasPrice[0]}
+                                    onChange={(e) => setGasPrice([e.target.value, gasPrice[1]])}
+                                    onBlur={handleGasPriceBlur}
+                                    type="number"
+                                    inputProps={{
+                                        step: 50,
+                                        min: 0,
+                                    }}
+                                />
+                                <Input
+                                    disabled={!filterGasPrice}
+                                    value={gasPrice[1]}
+                                    onChange={(e) => setGasPrice([gasPrice[0], e.target.value])}
+                                    onBlur={handleGasPriceBlur}
+                                    type="number"
+                                    inputProps={{
+                                        step: 50,
+                                        min: 0,
+                                    }}
+                                />
+                            </Box>
+                            <Slider
+                                disabled={!filterGasPrice}
+                                value={gasPrice}
+                                onChange={handleGasPriceChange}
+                                max={10000000000}
+                            />
+                        </Box>
                         <Box>
-                            {
-                                senders.map((sender, index) => (
-                                    <Chip key={index} label={sender}
-                                          onDelete={e => handleDeleteSender(e)}
-                                          name={sender}
-                                    />
-                                ))
-                            }
+                            <Box height={42} display="flex" alignItems="center">
+                                <Typography fontWeight={700}>Senders</Typography>
+                            </Box>
+                            <Box height={100} overflow="auto">
+                                <Box display="flex" gap={1}>
+                                    <TextField value={senderToAdd}
+                                               onChange={(event) => setSenderToAdd(event.target.value)}/>
+                                    <IconButton onClick={handleAddSenders}>
+                                        <AddBoxIcon color="primary" fontSize="large"/>
+                                    </IconButton>
+                                </Box>
+                                {
+                                    senders.map((sender, index) => (
+                                        <Box key={index} display="flex" justifyContent="space-between"
+                                             alignItems="center">
+                                            <Typography width={220} overflow="hidden"
+                                                        textOverflow="ellipsis">{sender}</Typography>
+                                            <IconButton name={sender} onClick={(e) => handleDeleteSender(e)}>
+                                                <DeleteIcon color="error" fontSize="medium"/>
+                                            </IconButton>
+                                        </Box>
+                                    ))
+                                }
+                            </Box>
                         </Box>
                     </Box>
-                    <Box>
-                        <Typography fontWeight={700} fontSize="18px">Timestamp</Typography>
-                        <Checkbox checked={filterTimestamp} onChange={handleTimestampCheck}/>
-                        <LocalizationProvider dateAdapter={AdapterDayjs}>
-                            <DemoContainer components={['DateTimePicker']}>
-                                <DateTimePicker value={timestamp[0]}
-                                                onChange={newValue => setTimestamp([newValue, timestamp[1]])}
-                                                label="Start" disabled={!filterTimestamp}/>
-                                <DateTimePicker value={timestamp[1]}
-                                                onChange={newValue => setTimestamp([timestamp[0], newValue])}
-                                                label="End" disabled={!filterTimestamp}/>
-                            </DemoContainer>
-                        </LocalizationProvider>
-                    </Box>
-                    <Box>
-                        <Typography fontWeight={700} fontSize="18px">Functions</Typography>
-                        <TextField value={functionToAdd} onChange={event => setFunctionToAdd(event.target.value)}/>
-                        <IconButton onClick={handleAddFunctions}>
-                            <AddBoxIcon color={"primary"} fontSize={"large"}/>
-                        </IconButton>
+                    <Box display="flex" justifyContent="space-between" alignItems="baseline" gap={3} marginTop={2}>
+                        <Box width={550}>
+                            <Box display="flex" alignItems="center">
+                                <Checkbox checked={filterTimestamp}
+                                          onChange={handleTimestampCheck}/>
+                                <Typography fontWeight={700}>Timestamp</Typography>
+                            </Box>
+                            <Box display="flex" justifyContent="space-between" gap={1}>
+                                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                    <DemoContainer components={['DateTimePicker']}>
+                                        <DateTimePicker value={timestamp[0]}
+                                                        onChange={(newValue) => setTimestamp([newValue, timestamp[1]])}
+                                                        label="Start" disabled={!filterTimestamp}/>
+                                    </DemoContainer>
+                                </LocalizationProvider>
+                                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                    <DemoContainer components={['DateTimePicker']}>
+                                        <DateTimePicker value={timestamp[1]}
+                                                        onChange={(newValue) => setTimestamp([timestamp[0], newValue])}
+                                                        label="End" disabled={!filterTimestamp}/>
+                                    </DemoContainer>
+                                </LocalizationProvider>
+                            </Box>
+                        </Box>
                         <Box>
-                            {
-                                functions.map((func, index) => (
-                                    <Chip key={index} label={func}
-                                          onDelete={e => handleDeleteFunction(e)}
-                                          name={func}
-                                    />
-                                ))
-                            }
+                            <Box height={42} display="flex" alignItems="center">
+                                <Typography fontWeight={700}>Functions</Typography>
+                            </Box>
+                            <Box height={100} overflow="auto">
+                                <Box display="flex" gap={1}>
+                                    <TextField value={functionToAdd}
+                                               onChange={(event) => setFunctionToAdd(event.target.value)}/>
+                                    <IconButton onClick={handleAddFunctions}>
+                                        <AddBoxIcon color="primary" fontSize="large"/>
+                                    </IconButton>
+                                </Box>
+                                {
+                                    functions.map((func, index) => (
+                                        <Box key={index} display="flex" justifyContent="space-between"
+                                             alignItems="center">
+                                            <Typography width={220} overflow="hidden"
+                                                        textOverflow="ellipsis">{func}</Typography>
+                                            <IconButton name={func} onClick={(e) => handleDeleteFunction(e)}>
+                                                <DeleteIcon color="error" fontSize="medium"/>
+                                            </IconButton>
+                                        </Box>
+                                    ))
+                                }
+                            </Box>
                         </Box>
                     </Box>
                 </DialogContent>
             </Dialog>
-
+            <Box>
+            </Box>
             <PageLayout>
+                <Box display="flex" alignItems="center" justifyContent="space-between">
+                                    <IconButton size="large" sx={{color: "#ffb703"}} onClick={() => setOpenFilters(true)}>
+                                        <FilterList fontSize="large"/>
+                                    </IconButton>
+                                    {
+                                        [...activeFilter].map((filter, index) => (
+                                            <Chip key={index} color="error" name={filter} label={filter}
+                                                  onDelete={() => handleDeleteFilter(filter)}/>
+                                        ))
+                                    }
+                                    <FormControl fullWidth sx={{width: 200}}>
+                                        <InputLabel>Network</InputLabel>
+                                        <Select
+                                            variant="outlined"
+                                            value={network}
+                                            label="name"
+                                            onChange={(e) => handleNetworkChange(e)}
+                                        >
+                                            {
+                                                networks.map((name, index) => (
+                                                    <MenuItem key={index} value={name}>
+                                                        <Typography>{name}</Typography>
+                                                    </MenuItem>
+                                                ))
+                                            }
+                                        </Select>
+                                    </FormControl>
+                                    <FormControl fullWidth sx={{width: 200}}>
+                                        <InputLabel>ExtractionType</InputLabel>
+                                        <Select
+                                            variant="outlined"
+                                            value={extractionType}
+                                            label="name"
+                                            onChange={(e) => handelExtractionTypeChange(e)}
+                                        >
+                                            {
+                                                extractionTypes.map((name, index) => (
+                                                    <MenuItem key={index} value={name}>
+                                                        <Typography>{name}</Typography>
+                                                    </MenuItem>
+                                                ))
+                                            }
+                                        </Select>
+                                    </FormControl>
+                                </Box>
                 <Typography variant="h2" textAlign="center" marginBottom={2}>Data Extraction Internal</Typography>
                 <Stack spacing={2}>
                     <Box display="flex" gap={2}>
