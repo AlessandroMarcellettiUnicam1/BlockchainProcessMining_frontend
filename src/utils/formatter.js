@@ -49,13 +49,17 @@ export const formatBlockInput = (input) => {
 }
 
 export const formatData = (dataString) => {
-    if (!dataString || dataString.trim() === "") return "0x";
+    if (!dataString || dataString.trim() === "") 
+        return "0x";
+    
     const trimmed = dataString.trim();
     return trimmed.startsWith("0x") ? trimmed : `0x${trimmed}`;
 };
 
 export const formatAccessList = (accessListString) => {
-    if (!accessListString || accessListString.trim() === "") return undefined;
+    if (!accessListString || accessListString.trim() === "") 
+        return undefined;
+
     try {
         return JSON.parse(accessListString);
     } catch (e) {
