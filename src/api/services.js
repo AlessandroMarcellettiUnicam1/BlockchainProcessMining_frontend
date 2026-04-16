@@ -237,7 +237,7 @@ export const _simulateTransaction = async (payload) => {
         const response = await axios.post(serverUrl + "/api/simulate", payload);
         return {status: response.status, data: response.data }
     }
-    catch {
+    catch (error) {
         console.error("Errore durante la simulazione: ", error);
         return { status: error?.response?.status, data: error?.response?.data };
     }
