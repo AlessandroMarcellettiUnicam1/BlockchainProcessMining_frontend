@@ -14,6 +14,8 @@ import { DialogsProvider } from "@toolpad/core/useDialogs";
 import { QueryClient, QueryClientProvider } from "react-query";
 import StorageIcon from "@mui/icons-material/Storage";
 import FactCheckIcon from '@mui/icons-material/FactCheck';
+import { Icon } from "@mui/material";
+import FileCopyIcon from '@mui/icons-material/FileCopy';
 
 const NAVIGATION = [
 	{
@@ -38,7 +40,12 @@ const NAVIGATION = [
                 segment: "extractionInternal",
                 title: "Data Extraction Internal",
                 icon: <StorageIcon />,
-            }
+            },
+			{
+				segment: "simulation",
+				title: "Simulation",
+				icon: <FileCopyIcon />,
+			}
         ]
     },
     {

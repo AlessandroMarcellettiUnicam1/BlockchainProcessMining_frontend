@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import { Container, Typography, Box, Alert, Stack } from '@mui/material';
 import { _simulateTransaction } from "../api/services";
-import { SimulationFrom } from "../components/simulation/SimulationForm";
+import { SimulationForm } from "../components/simulation/SimulationForm";
 import { SimulationResult } from "../components/simulation/SimulationResult";
 
-export const SimulationPage = () => {
+const SimulationPage = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [result, setResult] = useState(null);
     const [apiError, setApiError] = useState(null);
@@ -50,3 +50,5 @@ export const SimulationPage = () => {
         </Container>
     );
 };
+
+export default SimulationPage;

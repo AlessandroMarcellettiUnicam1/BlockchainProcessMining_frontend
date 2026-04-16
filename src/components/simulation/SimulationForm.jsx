@@ -12,7 +12,7 @@ import {
     formatBlockInput  
 } from '../../utils/formatter';
 
-export const SimulationFrom = ({ onSubmit, isLoading }) => {
+export const SimulationForm = ({ onSubmit, isLoading }) => {
     const [formValues, setFormValues] = useState({
         from: '',
         to: '',

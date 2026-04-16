@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Typography, Button, Paper } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
-import ReactJson from 'react-json-view';
+import ReactJson from '@uiw/react-json-view';
 
 export const SimulationResult = ({ result }) => {
     if (!result) return null;

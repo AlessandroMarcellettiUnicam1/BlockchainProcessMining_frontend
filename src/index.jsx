@@ -14,6 +14,7 @@ import DataViewPage from './pages/DataView';
 import NetworkGraph from './pages/VisualModel';
 import DataExtractionInternalPage from './pages/DataExtractionInternal';
 import CoBlocklyPage from './pages/CoBlockly/CoBlocklyPage';
+import SimulationPage from './pages/SimulationPage';
 
 const router = createBrowserRouter([
     {
@@ -69,6 +70,10 @@ const router = createBrowserRouter([
                 {
                   path: "data-analysis/coblockly",
                   Component: CoBlocklyPage
+                },
+                {
+                  path: "data-extraction/simulation",
+                  Component: SimulationPage
                 }
               ]
             },
