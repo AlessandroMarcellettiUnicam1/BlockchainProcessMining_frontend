@@ -3,7 +3,7 @@ import Web3 from "web3";
 const web3 = new Web3();
 
 export const numberToHex = (num) => {
-    if (num === undefined || num === null || null === "")
+    if (num === undefined || num === null || num === "")
         return undefined;
     return web3.utils.numberToHex(num);
 }
@@ -37,6 +37,7 @@ export const ethToHex = (eth) => {
 export const formatBlockInput = (input) => {
     if (!input) 
         return "latest";
+    
     const lowerInput = input.toString().toLowerCase().trim();
 
     if (["latest", "pending", "earliest", "safe", "finalized"].includes(lowerInput)) {
@@ -45,7 +46,7 @@ export const formatBlockInput = (input) => {
     if (lowerInput.startsWith("0x")) {
         return lowerInput;
     }
-    return web3.utils.numberToHex(blockInput);
+    return web3.utils.numberToHex(input);
 }
 
 export const formatData = (dataString) => {
