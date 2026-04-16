@@ -5,12 +5,12 @@ import { GasSelector } from './GasSelector';
 import { AdvancedParams } from './AdvancedParams';
 import { 
     ethToHex, 
-    gweiToHex, 
-    numberToHex, 
-    formatBlockInput, 
     formatData, 
-    formatAccessList
-} from '../utils/formatter';
+    numberToHex, 
+    gweiToHex,
+    formatAccessList,
+    formatBlockInput  
+} from '../../utils/formatter';
 
 export const SimulationFrom = ({ onSubmit, isLoading }) => {
     const [formValues, setFormValues] = useState({
