@@ -232,5 +232,16 @@ export const getData = async ({ type, query}) => {
   }
 }
 
+export const _simulateTransaction = async (payload) => {
+    try {
+        const response = await axios.post(serverUrl + "/api/simulate", payload);
+        return {status: response.status, data: response.data }
+    }
+    catch {
+        console.error("Errore durante la simulazione: ", error);
+        return { status: error?.response?.status, data: error?.response?.data };
+    }
+}
+
 
 
