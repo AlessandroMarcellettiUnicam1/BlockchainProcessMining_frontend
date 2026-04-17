@@ -63,7 +63,6 @@ export const SimulationForm = ({ onSubmit, isLoading }) => {
                 from: formValues.from || undefined,
                 to: formValues.to || undefined,
                 value: ethToHex(formValues.value),
-                data: formatData(formValues.data),
                 gas: numberToHex(formValues.gasLimit),
                 data: formatData(compiledData),
                 nonce: numberToHex(formValues.nonce),

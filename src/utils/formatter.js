@@ -75,13 +75,40 @@ export const encodeABI = (signature, args) => {
         return "0x";
 
     try {
+        const parsedArgs = args.map(arg => {
+            if (typeof arg !== 'string') return arg;
+            
+            const trimmed = arg.trim();
+            
+            if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+                try {
+                    const validJsonString = trimmed.replace(/'/g, '"');
+                    return JSON.parse(validJsonString);
+                } catch (e) {
+                    return trimmed;
+                }
+            }
+            
+            // Gestione opzionale per booleani se in futuro serviranno
+            if (trimmed.toLowerCase() === 'true') return true;
+            if (trimmed.toLowerCase() === 'false') return false;
+
+            return trimmed;
+        });
+
+        if (parsedArgs.some(arg => arg === "")) {
+            throw new Error("Campi incompleti"); 
+        }
+
         const iface = new Interface([`function ${signature}`]);
-        
         const funcName = signature.split('(')[0].trim();
         
-        return iface.encodeFunctionData(funcName, args);
+        return iface.encodeFunctionData(funcName, parsedArgs);
+        
     } catch (error) {
-        console.error("Errore di codifica ABI:", error);
+        if (error.message !== "Campi incompleti") {
+            console.error("Errore di codifica ABI:", error);
+        }
         throw new Error("Codifica fallita: verifica che la firma e i parametri siano corretti.");
     }
 }
