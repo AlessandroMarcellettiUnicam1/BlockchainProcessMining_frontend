@@ -1,4 +1,5 @@
 import Web3 from "web3";
+import { Interface } from "ethers";
 
 const web3 = new Web3();
 
@@ -68,3 +69,19 @@ export const formatAccessList = (accessListString) => {
         throw new Error("L'Access List deve essere un JSON valido.");
     }
 };
+
+export const encodeABI = (signature, args) => {
+    if (!signature || signature.trim() === "") 
+        return "0x";
+
+    try {
+        const iface = new Interface([`function ${signature}`]);
+        
+        const funcName = signature.split('(')[0].trim();
+        
+        return iface.encodeFunctionData(funcName, args);
+    } catch (error) {
+        console.error("Errore di codifica ABI:", error);
+        throw new Error("Codifica fallita: verifica che la firma e i parametri siano corretti.");
+    }
+}
