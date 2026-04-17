@@ -26,7 +26,7 @@ const SimulationPage = () => {
                 dettaglio_server: response.data 
             });
         
-            setApiError("Errore durante la simulazione. Consulta i log nel visualizzatore in basso per i dettagli.");
+            setApiError("Error during the simulation.");
         }
 
         setIsLoading(false);
@@ -39,7 +39,7 @@ const SimulationPage = () => {
                     Transaction Simulator
                 </Typography>
                 <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
-                    Simula transazioni su qualsiasi blocco e analizza la traccia di esecuzione decodificata.
+                    Simulate transactions on any block and analyze the decoded execution trace.
                 </Typography>
             </Box>
 

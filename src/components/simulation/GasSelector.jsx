@@ -18,15 +18,15 @@ export const GasSelector = ({
     onInputChange
 }) => {
     return (
-        <Box sx={{ mt: 3, mb: 3, p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
+        <Box sx={{ mt: 3, mb: 3, p: 2, border: '1px solid dimgray', borderRadius: 1 }}>
             <FormControl component="fieldset" fullWidth>
-                <FormLabel component="legend">Modello Commissioni (Gas)</FormLabel>
+                <FormLabel component="legend">Gas Fee Model</FormLabel>
                 <RadioGroup 
                     row 
                     value={isEIP1559 ? "eip1559" : "legacy"} 
                     onChange={onTypeChange}
                 >
-                    <FormControlLabel value="eip1559" control={<Radio />} label="EIP-1559 (Standard)" />
+                    <FormControlLabel value="eip1559" control={<Radio />} label="EIP-1559" />
                     <FormControlLabel value="legacy" control={<Radio />} label="Legacy (Type 0)" />
                 </RadioGroup>
 

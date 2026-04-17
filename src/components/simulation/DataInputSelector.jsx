@@ -56,7 +56,7 @@ export const DataInputSelector = ({ onDataReady, onError }) => {
     };
 
     return (
-        <Box sx={{ mt: 2, mb: 3, p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
+        <Box sx={{ mt: 2, mb: 3, p: 2, border: '1px solid dimgray', borderRadius: 1 }}>
             <FormControl component="fieldset" fullWidth>
                 <FormLabel component="legend">Input Data (Payload)</FormLabel>
                 <RadioGroup 
@@ -65,7 +65,7 @@ export const DataInputSelector = ({ onDataReady, onError }) => {
                     onChange={(e) => setMode(e.target.value)}
                 >
                     <FormControlLabel value="hex" control={<Radio />} label="Raw Hex" />
-                    <FormControlLabel value="function" control={<Radio />} label="Decodifica ABI (Funzione)" />
+                    <FormControlLabel value="function" control={<Radio />} label="ABI Encoding (Function)" />
                 </RadioGroup>
 
                 <Box sx={{ mt: 2 }}>
@@ -77,25 +77,25 @@ export const DataInputSelector = ({ onDataReady, onError }) => {
                             fullWidth
                             value={hexValue}
                             onChange={(e) => setHexValue(e.target.value)}
-                            placeholder="es. 0x..."
+                            placeholder="e.g. 0x..."
                         />
                     ) : (
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                             <TextField
-                                label="Firma Funzione"
+                                label="Function Signature"
                                 fullWidth
                                 value={signature}
                                 onChange={(e) => setSignature(e.target.value)}
-                                placeholder="es. transfer(address,uint256)"
-                                helperText="Attenzione: Inserire il nome e i tipi esatti senza spazi tra i parametri."
+                                placeholder="e.g. transfer(address,uint256)"
+                                helperText="Warning: Enter the exact name and types without spaces between the parameters."
                             />
                             
-                            <Typography variant="subtitle2" color="text.secondary">Parametri:</Typography>
+                            <Typography variant="subtitle2" color="text.secondary">Parameters:</Typography>
                             
                             {args.map((arg, index) => (
                                 <Box key={index} sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                                     <TextField
-                                        label={`Parametro ${index + 1}`}
+                                        label={`Parameter ${index + 1}`}
                                         fullWidth
                                         size="small"
                                         value={arg}
@@ -112,7 +112,7 @@ export const DataInputSelector = ({ onDataReady, onError }) => {
                                 onClick={handleAddArg} 
                                 sx={{ alignSelf: 'flex-start' }}
                             >
-                                Aggiungi Parametro
+                                Add Parameter
                             </Button>
                         </Box>
                     )}

@@ -19,7 +19,7 @@ export const AdvancedParams = ({
     return (
         <Accordion sx={{ mb: 3 }}>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Typography fontWeight="medium">Parametri Avanzati (Opzionali)</Typography>
+                <Typography fontWeight="medium">Advanced Parameters (Optional)</Typography>
             </AccordionSummary>
             <AccordionDetails>
                 <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
@@ -29,7 +29,7 @@ export const AdvancedParams = ({
                         fullWidth
                         value={nonce || ''}
                         onChange={(e) => onInputChange('nonce', e.target.value)}
-                        placeholder="es. 12"
+                        placeholder="e.g. 12"
                     />
                     <TextField
                         label="Chain ID"
@@ -37,7 +37,7 @@ export const AdvancedParams = ({
                         fullWidth
                         value={chainId || ''}
                         onChange={(e) => onInputChange('chainId', e.target.value)}
-                        placeholder="es. 1 (Mainnet)"
+                        placeholder="e.g. 1 (Mainnet)"
                     />
                     <TextField
                         label="Transaction Index"
@@ -45,7 +45,7 @@ export const AdvancedParams = ({
                         fullWidth
                         value={txIndex || ''}
                         onChange={(e) => onInputChange('txIndex', e.target.value)}
-                        helperText="Simulazione intra-blocco"
+                        helperText="Intra-block simulation"
                     />
                 </Box>
                 <TextField

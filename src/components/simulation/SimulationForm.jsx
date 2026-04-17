@@ -104,7 +104,7 @@ export const SimulationForm = ({ onSubmit, isLoading }) => {
     return (
         <Paper elevation={3} sx={{ p: 3, borderRadius: 2 }}>
             <Typography variant="h6" fontWeight="bold" mb={3}>
-                Configura Transazione
+                Transaction Configuration
             </Typography>
 
             {/* bannder di errore */}
@@ -191,7 +191,7 @@ export const SimulationForm = ({ onSubmit, isLoading }) => {
                         startIcon={<PlayArrowIcon />}
                         disableElevation
                     >
-                        {isLoading ? 'Simulazione in corso...' : 'Esegui Simulazione'}
+                        {isLoading ? 'Simulating...' : 'Run Simulation'}
                     </Button>
                 </Box>
             </Stack>

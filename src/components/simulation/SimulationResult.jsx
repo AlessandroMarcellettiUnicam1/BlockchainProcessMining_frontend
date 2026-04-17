@@ -36,7 +36,7 @@ export const SimulationResult = ({ result }) => {
                 pb: 2
             }}>
                 <Typography variant="h6" fontWeight="bold">
-                    Risultato Simulazione
+                    Simulation Result
                 </Typography>
                 
                 <Button 
@@ -46,7 +46,7 @@ export const SimulationResult = ({ result }) => {
                     onClick={handleDownload}
                     disableElevation
                 >
-                    Scarica JSON
+                    Download JSON
                 </Button>
             </Box>
 
