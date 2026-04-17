@@ -76,10 +76,13 @@ export const SimulationForm = ({ onSubmit, isLoading }) => {
                 configParams.transactionIndex = numberToHex(formValues.txIndex);
             
             }
+
             const finalPayload = {
-                transaction: transactionParams,
-                blockNumber: formatBlockInput(formValues.blockNumber),
-                config: configParams
+                params: [
+                    transactionParams,                             
+                    formatBlockInput(formValues.blockNumber),      
+                    configParams                                   
+                ]
             };
 
             onSubmit(finalPayload);

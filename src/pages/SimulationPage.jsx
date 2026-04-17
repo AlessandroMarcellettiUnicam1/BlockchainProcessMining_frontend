@@ -3,6 +3,7 @@ import { Container, Typography, Box, Alert, Stack } from '@mui/material';
 import { _simulateTransaction } from "../api/services";
 import { SimulationForm } from "../components/simulation/SimulationForm";
 import { SimulationResult } from "../components/simulation/SimulationResult";
+import { RotateLoader } from "react-spinners";
 
 const SimulationPage = () => {
     const [isLoading, setIsLoading] = useState(false);
@@ -19,8 +20,13 @@ const SimulationPage = () => {
         if (response.status === 200 || response.status === 201) {
             setResult(response.data);
         } else {
-            const errorMessage = response.data?.message || "Errore imprevisto durante la simulazione";
-            setApiError(errorMessage);
+            setResult({
+                simulazione_fallita: true,
+                codice_errore: response.status,
+                dettaglio_server: response.data 
+            });
+        
+            setApiError("Errore durante la simulazione. Consulta i log nel visualizzatore in basso per i dettagli.");
         }
 
         setIsLoading(false);
@@ -30,7 +36,7 @@ const SimulationPage = () => {
         <Container maxWidth="lg" sx={{ py: 4 }}>
             <Box sx={{ mb: 4 }}>
                 <Typography variant="h4" fontWeight="bold">
-                    EVM Transaction Simulator
+                    Transaction Simulator
                 </Typography>
                 <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
                     Simula transazioni su qualsiasi blocco e analizza la traccia di esecuzione decodificata.
@@ -45,7 +51,19 @@ const SimulationPage = () => {
 
             <Stack spacing={4}>
                 <SimulationForm onSubmit={handleSimulate} isLoading={isLoading} />
-                <SimulationResult result={result} />
+
+                {isLoading && (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 5 }}>
+                        <RotateLoader 
+                            color="#1976d2"
+                            loading={isLoading} 
+                            size={15} 
+                            margin={2}
+                        />
+                    </Box>
+                )}
+
+                {!isLoading && <SimulationResult result={result} />}
             </Stack>
         </Container>
     );

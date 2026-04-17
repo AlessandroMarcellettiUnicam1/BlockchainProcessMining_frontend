@@ -59,7 +59,7 @@ export const SimulationResult = ({ result }) => {
                 borderRadius: 1 
             }}>
                 <ReactJson 
-                    src={result} 
+                    value={result} 
                     theme="rjv-default" 
                     name={false} 
                     collapsed={2} 
