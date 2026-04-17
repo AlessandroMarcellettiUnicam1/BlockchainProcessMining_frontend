@@ -3,6 +3,7 @@ import { Box, TextField, Button, Paper, Typography, Stack, Alert } from '@mui/ma
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import { GasSelector } from './GasSelector';
 import { AdvancedParams } from './AdvancedParams';
+import { DataInputSelector } from './DataInputSelector';
 import { 
     ethToHex, 
     formatData, 
@@ -17,7 +18,6 @@ export const SimulationForm = ({ onSubmit, isLoading }) => {
         from: '',
         to: '',
         value: '',
-        data: '',
         gasLimit: '',
         blockNumber: '',
         gasPrice: '',
@@ -31,6 +31,9 @@ export const SimulationForm = ({ onSubmit, isLoading }) => {
 
     const [isEIP1559, setIsEIP1559] = useState(true);
     const [formError, setFormError] = useState(null);
+
+    const [compiledData, setCompiledData] = useState('0x');
+    const [abiError, setAbiError] = useState(null);
 
     const handleInputChange = (field, value) => {
         setFormValues(prev => ({ ...prev, [field]: value }));
@@ -50,6 +53,11 @@ export const SimulationForm = ({ onSubmit, isLoading }) => {
     };
 
     const handleSubmit = () => {
+        if (abiError) {
+            setFormError(abiError);
+            return;
+        }
+
         try {
             const transactionParams = {
                 from: formValues.from || undefined,
@@ -57,6 +65,7 @@ export const SimulationForm = ({ onSubmit, isLoading }) => {
                 value: ethToHex(formValues.value),
                 data: formatData(formValues.data),
                 gas: numberToHex(formValues.gasLimit),
+                data: formatData(compiledData),
                 nonce: numberToHex(formValues.nonce),
                 chainId: numberToHex(formValues.chainId),
                 accessList: formatAccessList(formValues.accessList)
@@ -151,14 +160,9 @@ export const SimulationForm = ({ onSubmit, isLoading }) => {
                     />
                 </Box>
 
-                <TextField
-                    label="Input Data (Hex)"
-                    multiline
-                    rows={4}
-                    fullWidth
-                    value={formValues.data}
-                    onChange={(e) => handleInputChange('data', e.target.value)}
-                    placeholder="0x..."
+                <DataInputSelector 
+                    onDataReady={(hex) => setCompiledData(hex)} 
+                    onError={(err) => setAbiError(err)} 
                 />
 
                 <GasSelector 
