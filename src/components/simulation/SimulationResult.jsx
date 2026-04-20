@@ -2,8 +2,13 @@ import React from 'react';
 import { Box, Typography, Button, Paper } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
 import ReactJson from '@uiw/react-json-view';
+import { useTheme } from '@mui/material/styles';
 
 export const SimulationResult = ({ result }) => {
+
+    const theme = useTheme();
+    const isDark = theme.palette.mode === 'dark';
+
     if (!result) return null;
 
     // Funzione per forzare il download del file JSON tramite il browser
@@ -54,17 +59,18 @@ export const SimulationResult = ({ result }) => {
             <Box sx={{ 
                 maxHeight: '600px', 
                 overflow: 'auto', 
-                backgroundColor: '#f5f5f5', 
+                backgroundColor: isDark ? '#121212' : '#f5f5f5', 
                 p: 2, 
-                borderRadius: 1 
+                borderRadius: 1
             }}>
                 <ReactJson 
                     value={result} 
-                    theme="rjv-default" 
+                    theme={isDark ? 'dark' : 'light'} 
                     name={false} 
                     collapsed={2} 
                     displayDataTypes={false} 
                     enableClipboard={true}
+                    style={{ backgroundColor: 'transparent' }}
                 />
             </Box>
         </Paper>

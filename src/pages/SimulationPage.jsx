@@ -4,28 +4,33 @@ import { _simulateTransaction } from "../api/services";
 import { SimulationForm } from "../components/simulation/SimulationForm";
 import { SimulationResult } from "../components/simulation/SimulationResult";
 import { RotateLoader } from "react-spinners";
+import { SimulationConsole } from "../components/simulation/SimulationConsole";
 
 const SimulationPage = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [result, setResult] = useState(null);
     const [apiError, setApiError] = useState(null);
+    const [logs, setLogs] = useState([]);
 
     const handleSimulate = async (payload) => {
         setIsLoading(true);
         setApiError(null);
         setResult(null);
+        setLogs([]);
  
         const response = await _simulateTransaction(payload);
 
         if (response.status === 200 || response.status === 201) {
-            setResult(response.data);
+            setResult(response.data.data);
+            setLogs(response.data.logs || []);
         } else {
             setResult({
                 simulazione_fallita: true,
                 codice_errore: response.status,
-                dettaglio_server: response.data 
+                dettaglio_server: response.data?.error || response.data
             });
         
+            setLogs(response.data?.logs || []);
             setApiError("Error during the simulation.");
         }
 
@@ -63,7 +68,12 @@ const SimulationPage = () => {
                     </Box>
                 )}
 
-                {!isLoading && <SimulationResult result={result} />}
+                {!isLoading && (
+                    <>
+                        <SimulationResult result={result} />
+                        <SimulationConsole logs={logs} />
+                    </>
+                )}
             </Stack>
         </Container>
     );
