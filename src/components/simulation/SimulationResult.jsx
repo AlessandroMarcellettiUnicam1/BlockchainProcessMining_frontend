@@ -2,12 +2,12 @@ import React from 'react';
 import { Box, Typography, Button, Paper } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
 import ReactJson from '@uiw/react-json-view';
-import { useTheme } from '@mui/material/styles';
+import { useColorScheme } from '@mui/material/styles';
 
 export const SimulationResult = ({ result }) => {
 
-    const theme = useTheme();
-    const isDark = theme.palette.mode === 'dark';
+    const { mode } = useColorScheme();
+    const isDarkMode = mode === 'dark';
 
     if (!result) return null;
 
@@ -37,7 +37,7 @@ export const SimulationResult = ({ result }) => {
                 justifyContent: 'space-between', 
                 alignItems: 'center', 
                 mb: 2,
-                borderBottom: '1px solid #e0e0e0',
+                borderBottom: '1px solid',
                 pb: 2
             }}>
                 <Typography variant="h6" fontWeight="bold">
@@ -59,18 +59,23 @@ export const SimulationResult = ({ result }) => {
             <Box sx={{ 
                 maxHeight: '600px', 
                 overflow: 'auto', 
-                backgroundColor: isDark ? '#121212' : '#f5f5f5', 
+                backgroundColor: isDarkMode ? '#2b2b2b' : '#f5f5f5', 
                 p: 2, 
                 borderRadius: 1
             }}>
                 <ReactJson 
                     value={result} 
-                    theme={isDark ? 'dark' : 'light'} 
+                    theme={ isDarkMode ? 'dark' : 'light'} 
                     name={false} 
                     collapsed={2} 
                     displayDataTypes={false} 
                     enableClipboard={true}
-                    style={{ backgroundColor: 'transparent' }}
+                    style={{ 
+                        backgroundColor: 'transparent',
+                        '--w-rjv-key-string': isDarkMode ? '#9cdcfe' : '#000000', 
+                        '--w-rjv-line-color': isDarkMode ? '#333333' : '#e0e0e0',
+                        '--w-rjv-info-color': isDarkMode ? '#8b949e' : '#999999',
+                    }}
                 />
             </Box>
         </Paper>

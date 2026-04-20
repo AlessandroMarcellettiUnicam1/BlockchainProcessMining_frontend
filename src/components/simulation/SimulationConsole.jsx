@@ -1,11 +1,12 @@
 import React, { useEffect, useRef } from 'react';
 import { Box, Typography, Paper } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
+import { useColorScheme } from '@mui/material/styles';
+import { use } from 'react';
 
 export const SimulationConsole = ({ logs }) => {
     const endOfLogsRef = useRef(null);
-    const theme = useTheme();
-    const isDark = theme.palette.mode === 'dark';
+    const { mode } = useColorScheme();
+    const isDarkMode = mode === 'dark';
 
     useEffect(() => {
         if (endOfLogsRef.current) {
@@ -19,7 +20,7 @@ export const SimulationConsole = ({ logs }) => {
         <Paper 
             elevation={3} 
             sx={{ 
-                bgcolor: isDark ? '#1e1e1e' : '#f5f5f5',
+                bgcolor: isDarkMode ? '#1e1e1e' : '#f5f5f5',
                 p: 2, 
                 mt: 2, 
                 borderRadius: 2,
@@ -29,13 +30,22 @@ export const SimulationConsole = ({ logs }) => {
                 borderColor: 'divider'
             }}
         >
-            <Typography variant="overline" sx={{ color: '#858585', display: 'block', mb: 1, borderBottom: '1px solid #333', pb: 1 }}>
+            <Typography 
+                variant="overline" 
+                sx={{ 
+                    color: '#858585', 
+                    display: 'block', 
+                    mb: 1, 
+                    borderBottom: 1, 
+                    borderColor: 'divider', 
+                    pb: 1 
+                }}
+            >
                 System Console // Execution logs
             </Typography>
             
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                 {logs.map((logMsg, index) => {
-                    // Colora di rosso i messaggi di errore per un rapido colpo d'occhio
                     const isError = logMsg.includes('[Errore') || logMsg.includes('(REVERT)');
                     
                     return (
@@ -49,7 +59,7 @@ export const SimulationConsole = ({ logs }) => {
                             }}
                         >
                             <span style={{ 
-                                color: theme.palette.text.secondary, 
+                                color: isDarkMode ? '#858585' : '#a0a0a0', 
                                 marginRight: '8px' 
                             }}>
                                 &gt;
@@ -58,7 +68,6 @@ export const SimulationConsole = ({ logs }) => {
                         </Typography>
                     );
                 })}
-                {/* elemento invisibile per gestire l'auto-scroll */}
                 <div ref={endOfLogsRef} />
             </Box>
         </Paper>
