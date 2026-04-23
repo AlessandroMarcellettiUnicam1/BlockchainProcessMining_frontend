@@ -14,8 +14,8 @@ import { DialogsProvider } from "@toolpad/core/useDialogs";
 import { QueryClient, QueryClientProvider } from "react-query";
 import StorageIcon from "@mui/icons-material/Storage";
 import FactCheckIcon from '@mui/icons-material/FactCheck';
-import { Icon } from "@mui/material";
 import FileCopyIcon from '@mui/icons-material/FileCopy';
+import WaterIcon from '@mui/icons-material/Water';
 
 const NAVIGATION = [
 	{
@@ -45,6 +45,11 @@ const NAVIGATION = [
 				segment: "simulation",
 				title: "Simulation",
 				icon: <FileCopyIcon />,
+			},
+			{
+				segment: "mempool-simulation",
+				title: "Mempool Simulation",
+				icon: <WaterIcon/>,
 			}
         ]
     },

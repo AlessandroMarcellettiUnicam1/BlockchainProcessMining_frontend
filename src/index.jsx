@@ -15,6 +15,7 @@ import NetworkGraph from './pages/VisualModel';
 import DataExtractionInternalPage from './pages/DataExtractionInternal';
 import CoBlocklyPage from './pages/CoBlockly/CoBlocklyPage';
 import SimulationPage from './pages/SimulationPage';
+import MempoolSimulationPage from './pages/MempoolSimulationPage';
 
 const router = createBrowserRouter([
     {
@@ -74,6 +75,10 @@ const router = createBrowserRouter([
                 {
                   path: "data-extraction/simulation",
                   Component: SimulationPage
+                },
+                {
+                  path: "data-extraction/mempool-simulation",
+                  Component: MempoolSimulationPage
                 }
               ]
             },
