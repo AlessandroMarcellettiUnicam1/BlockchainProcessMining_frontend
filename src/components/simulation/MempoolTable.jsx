@@ -84,7 +84,7 @@ export default function MempoolTable({ transactions, selectedHashes, setSelected
 
                                     {/* RIGA ESPANSA */}
                                     <TableRow>
-                                        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={5}>
+                                        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={4}>
                                             <Collapse in={isExpanded} timeout="auto" unmountOnExit>
                                                 <Box sx={{ 
                                                     margin: 2, 
