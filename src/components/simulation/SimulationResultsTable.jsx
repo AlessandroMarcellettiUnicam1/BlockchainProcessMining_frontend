@@ -32,7 +32,7 @@ export default function SimulationResultsTable({ results }) {
         <Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
                 <Typography variant="h6" sx={{ margin: 0 }}>
-                    Esiti della Simulazione ({results.length})
+                    Simulation Results ({results.length})
                 </Typography>
     
                 <Button 
@@ -42,7 +42,7 @@ export default function SimulationResultsTable({ results }) {
                     startIcon={<DownloadIcon />} 
                     onClick={handleDownloadAll}
                 >
-                    Scarica Tutto (JSON)
+                    Download all (JSON)
                 </Button>
             </Box>
             <TableContainer component={Paper}>

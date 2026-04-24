@@ -9,21 +9,17 @@ import ReactJson from '@uiw/react-json-view';
 import { useColorScheme } from '@mui/material/styles';
 
 export default function MempoolTable({ transactions, selectedHashes, setSelectedHashes }) {
-    // Stato locale per tracciare quale riga è attualmente espansa (solo una alla volta)
     const [expandedRow, setExpandedRow] = useState(null);
     
-    // Gestione del tema dark/light per il visualizzatore JSON
     const { mode } = useColorScheme();
     const isDarkMode = mode === 'dark';
 
-    // Aggiunge o rimuove una singola transazione dalla selezione
     const handleSelect = (hash) => {
         setSelectedHashes(prev => 
             prev.includes(hash) ? prev.filter(h => h !== hash) : [...prev, hash]
         );
     };
 
-    // Gestisce il checkbox "Seleziona Tutto" nell'intestazione
     const handleSelectAll = (event) => {
         if (event.target.checked) {
             setSelectedHashes(transactions.map(tx => tx.hash));
@@ -35,7 +31,7 @@ export default function MempoolTable({ transactions, selectedHashes, setSelected
     return (
         <Box sx={{ mt: 2 }}>
             <Typography variant="h6" gutterBottom>
-                Transazioni in Mempool ({transactions.length})
+                Mempool Transactions ({transactions.length})
             </Typography>
             
             <TableContainer component={Paper} elevation={2}>
@@ -44,17 +40,15 @@ export default function MempoolTable({ transactions, selectedHashes, setSelected
                         <TableRow>
                             <TableCell padding="checkbox">
                                 <Checkbox 
-                                    // Mostra un trattino se ci sono selezioni parziali
                                     indeterminate={selectedHashes.length > 0 && selectedHashes.length < transactions.length}
-                                    // Spuntato se tutto è selezionato
                                     checked={transactions.length > 0 && selectedHashes.length === transactions.length}
                                     onChange={handleSelectAll}
                                 />
                             </TableCell>
-                            <TableCell width="50px" /> {/* Colonna freccia espansione */}
-                            <TableCell>Hash</TableCell>
-                            <TableCell>Da (From)</TableCell>
-                            <TableCell>A (To)</TableCell>
+                            <TableCell width="50px" />
+
+                            <TableCell>From</TableCell>
+                            <TableCell>To</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -64,7 +58,7 @@ export default function MempoolTable({ transactions, selectedHashes, setSelected
 
                             return (
                                 <React.Fragment key={tx.hash}>
-                                    {/* RIGA PRINCIPALE: Dati di base e Checkbox */}
+                                    {/* RIGA PRINCIPALE */}
                                     <TableRow hover selected={isSelected}>
                                         <TableCell padding="checkbox">
                                             <Checkbox 
@@ -81,17 +75,14 @@ export default function MempoolTable({ transactions, selectedHashes, setSelected
                                             </IconButton>
                                         </TableCell>
                                         <TableCell sx={{ fontFamily: 'monospace' }}>
-                                            {tx.hash.substring(0, 16)}...
+                                            {tx.from}
                                         </TableCell>
                                         <TableCell sx={{ fontFamily: 'monospace' }}>
-                                            {tx.from.substring(0, 12)}...
-                                        </TableCell>
-                                        <TableCell sx={{ fontFamily: 'monospace' }}>
-                                            {tx.to ? tx.to.substring(0, 12) + "..." : "Creazione Contratto"}
+                                            {tx.to ? tx.to : "Contract Creation"}
                                         </TableCell>
                                     </TableRow>
 
-                                    {/* RIGA ESPANSA: Visualizzatore JSON della transazione grezza */}
+                                    {/* RIGA ESPANSA */}
                                     <TableRow>
                                         <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={5}>
                                             <Collapse in={isExpanded} timeout="auto" unmountOnExit>
@@ -104,7 +95,7 @@ export default function MempoolTable({ transactions, selectedHashes, setSelected
                                                     borderColor: 'divider'
                                                 }}>
                                                     <Typography variant="overline" color="text.secondary" gutterBottom display="block">
-                                                        Payload Mempool Grezzo
+                                                        Raw Mempool Payolad
                                                     </Typography>
                                                     <ReactJson 
                                                         value={tx} 
@@ -112,6 +103,12 @@ export default function MempoolTable({ transactions, selectedHashes, setSelected
                                                         collapsed={1} 
                                                         displayDataTypes={false} 
                                                         name={false}
+                                                        style={{ 
+                                                            backgroundColor: 'transparent',
+                                                            '--w-rjv-key-string': isDarkMode ? '#9cdcfe' : '#000000', 
+                                                            '--w-rjv-line-color': isDarkMode ? '#333333' : '#e0e0e0',
+                                                            '--w-rjv-info-color': isDarkMode ? '#8b949e' : '#999999',
+                                                        }}
                                                     />
                                                 </Box>
                                             </Collapse>

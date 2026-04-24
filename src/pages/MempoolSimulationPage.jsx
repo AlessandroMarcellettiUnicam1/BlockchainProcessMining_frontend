@@ -5,23 +5,20 @@ import SimulationResultsTable from '../components/simulation/SimulationResultsTa
 import { _getMempoolTxs, _simulateMempoolTxs } from '../api/services'; 
 
 const MempoolSimulationPage = () => {
-    // Stati Generali
     const [limit, setLimit] = useState(100);
     const [isFetching, setIsFetching] = useState(false);
     const [isSimulating, setIsSimulating] = useState(false);
 
-    // Stati dei Dati
     const [mempoolTxs, setMempoolTxs] = useState([]);
     const [selectedHashes, setSelectedHashes] = useState([]);
     const [simulationResults, setSimulationResults] = useState([]);
 
-    // 1. Estrazione dalla Mempool
     const handleFetchMempool = async () => {
         if (limit > 500) return alert("Il limite massimo è 500 transazioni.");
         
         setIsFetching(true);
-        setSelectedHashes([]); // Resetta le selezioni precedenti
-        setSimulationResults([]); // Resetta i risultati precedenti
+        setSelectedHashes([]); 
+        setSimulationResults([]); 
         
         const response = await _getMempoolTxs(limit);
         
@@ -34,12 +31,10 @@ const MempoolSimulationPage = () => {
         setIsFetching(false);
     };
 
-    // 2. Simulazione del Batch Selezionato
     const handleSimulate = async () => {
         if (selectedHashes.length === 0) return;
         
         setIsSimulating(true);
-        // Filtriamo l'array originale per prendere solo gli oggetti interi delle tx selezionate
         const txsToSimulate = mempoolTxs.filter(tx => selectedHashes.includes(tx.hash));
         
         const response = await _simulateMempoolTxs(txsToSimulate);
@@ -48,7 +43,7 @@ const MempoolSimulationPage = () => {
             setSimulationResults(response.data.data);
         } else {
             console.error("Errore simulazione:", response);
-            alert("La simulazione batch è fallita.");
+            alert("La simulazione è fallita.");
         }
         setIsSimulating(false);
     };
@@ -56,13 +51,12 @@ const MempoolSimulationPage = () => {
     return (
         <Box sx={{ p: { xs: 2, md: 4 }, width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
             <Typography variant="h4" gutterBottom fontWeight="bold">
-                Analisi e Simulazione Mempool
+                Mempool Simulation and Analysis
             </Typography>
 
-            {/* ACTION BAR: Controlli per input e avvio */}
             <Paper elevation={2} sx={{ p: 2, display: 'flex', gap: 2, alignItems: 'center', mb: 4 }}>
                 <TextField 
-                    label="Numero di Transazioni" 
+                    label="Number of transactions" 
                     type="number" 
                     variant="outlined" 
                     size="small"
@@ -89,7 +83,7 @@ const MempoolSimulationPage = () => {
                     onClick={handleFetchMempool} 
                     disabled={isFetching || isSimulating}
                 >
-                    {isFetching ? <CircularProgress size={24} /> : "Estrai dalla Mempool"}
+                    {isFetching ? <CircularProgress size={24} /> : "Fetch From Mempool"}
                 </Button>
 
                 <Divider orientation="vertical" flexItem />
@@ -100,11 +94,11 @@ const MempoolSimulationPage = () => {
                     onClick={handleSimulate} 
                     disabled={selectedHashes.length === 0 || isSimulating || isFetching}
                 >
-                    {isSimulating ? <CircularProgress size={24} color="inherit" /> : `Simula Selezionate (${selectedHashes.length})`}
+                    {isSimulating ? <CircularProgress size={24} color="inherit" /> : `Simulate Selected (${selectedHashes.length})`}
                 </Button>
             </Paper>
 
-            {/* TABELLA MEMPOOL (Mostrata solo se ci sono transazioni e non ci sono ancora risultati) */}
+            {/* TABELLA MEMPOOL */}
             {mempoolTxs.length > 0 && simulationResults.length === 0 && (
                 <MempoolTable 
                     transactions={mempoolTxs} 
@@ -113,7 +107,7 @@ const MempoolSimulationPage = () => {
                 />
             )}
 
-            {/* TABELLA RISULTATI SIMULAZIONE (Sostituisce la mempool una volta finita) */}
+            {/* TABELLA RISULTATI SIMULAZIONE */}
             {simulationResults.length > 0 && (
                 <SimulationResultsTable results={simulationResults} />
             )}
