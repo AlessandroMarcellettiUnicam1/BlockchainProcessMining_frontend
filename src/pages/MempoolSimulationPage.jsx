@@ -135,7 +135,7 @@ const activeFilterCount = Object.values(currentFilters.active).filter(Boolean).l
 
                 <Divider orientation="vertical" flexItem />
 
-                <Tooltip title="Filtra Transazioni">
+                <Tooltip title="Filter Transactions">
                     <IconButton 
                         onClick={() => setOpenFilters(true)} 
                         disabled={mempoolTxs.length === 0}

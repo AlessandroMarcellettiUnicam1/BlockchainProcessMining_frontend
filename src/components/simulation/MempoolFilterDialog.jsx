@@ -77,7 +77,7 @@ export default function MempoolFilterDialog({ open, onClose, onFiltersUpdate }) 
 
     return (
         <Dialog TransitionComponent={Transition} keepMounted open={open} onClose={onClose} maxWidth="md" fullWidth>
-            <DialogTitle sx={{ fontWeight: 'bold' }}>Filtri Mempool</DialogTitle>
+            <DialogTitle sx={{ fontWeight: 'bold' }}>Mempool Filters</DialogTitle>
             <DialogContent>
                 <Box display="flex" gap={4} mt={1}>
                     {/* COLONNA DESTRA: Indirizzi e Funzioni */}
@@ -122,6 +122,7 @@ export default function MempoolFilterDialog({ open, onClose, onFiltersUpdate }) 
                             onChange={(e, val) => setGasPrice(val)} sx={{ mx: 1, width: '95%' }}
                         />
 
+                        {/* FUNCTIONS */}
                         <Typography fontWeight={700} mb={1}>Functions (Method ID)</Typography>
                         <Box display="flex" gap={1} mb={1}>
                             <TextField size="small" fullWidth placeholder="0xa9059cbb" value={functionToAdd} onChange={(e) => setFunctionToAdd(e.target.value)} />
@@ -140,7 +141,7 @@ export default function MempoolFilterDialog({ open, onClose, onFiltersUpdate }) 
                     {/* Indirizzi (From / To) */}
                     <Box flex={1}>
                         {/* FROM */}
-                        <Typography fontWeight={700} mb={1}>Indirizzi Mittenti (From)</Typography>
+                        <Typography fontWeight={700} mb={1}>From</Typography>
                         <Box display="flex" gap={1} mb={1}>
                             <TextField 
                                 size="small" fullWidth placeholder="0x..." value={fromToAdd}
@@ -162,7 +163,7 @@ export default function MempoolFilterDialog({ open, onClose, onFiltersUpdate }) 
                         </Box>
 
                         {/* TO */}
-                        <Typography fontWeight={700} mb={1}>Indirizzi Destinatari (To)</Typography>
+                        <Typography fontWeight={700} mb={1}>To</Typography>
                         <Box display="flex" gap={1} mb={1}>
                             <TextField 
                                 size="small" fullWidth placeholder="0x..." value={toToAdd}
