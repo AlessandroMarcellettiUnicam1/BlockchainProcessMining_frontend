@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { 
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow, 
-    IconButton, Collapse, Box, Paper, Typography, Chip 
+    IconButton, Collapse, Box, Paper, Typography, Chip, Button 
 } from '@mui/material';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import ReactJson from '@uiw/react-json-view';
+import DownloadIcon from '@mui/icons-material/Download';
 import { useColorScheme } from '@mui/material/styles';
 
 export default function SimulationResultsTable({ results }) {
@@ -13,9 +14,37 @@ export default function SimulationResultsTable({ results }) {
     const { mode } = useColorScheme();
     const isDarkMode = mode === 'dark';
 
+    const handleDownloadAll = () => {
+        const jsonString = JSON.stringify(results, null, 2);
+        const blob = new Blob([jsonString], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        link.download = `simulazioni_mempool_${timestamp}.json`; 
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    };
+
     return (
         <Box>
-            <Typography variant="h6" gutterBottom>Esiti della Simulazione</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                <Typography variant="h6" sx={{ margin: 0 }}>
+                    Esiti della Simulazione ({results.length})
+                </Typography>
+    
+                <Button 
+                    variant="outlined" 
+                    color="primary" 
+                    size="small"
+                    startIcon={<DownloadIcon />} 
+                    onClick={handleDownloadAll}
+                >
+                    Scarica Tutto (JSON)
+                </Button>
+            </Box>
             <TableContainer component={Paper}>
                 <Table size="small">
                     <TableHead>

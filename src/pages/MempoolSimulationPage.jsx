@@ -67,8 +67,22 @@ const MempoolSimulationPage = () => {
                     variant="outlined" 
                     size="small"
                     value={limit}
-                    onChange={(e) => setLimit(Number(e.target.value))}
+                    onChange={(e) => {
+                        const val = e.target.value;
+        
+                        if (val === '') {
+                            setLimit('');
+                        } 
+
+                        else if (Number(val) > 500) {
+                            setLimit(500);
+                        } 
+                        else {
+                            setLimit(Number(val));
+                        }
+                    }}
                     inputProps={{ max: 500, min: 1 }}
+                    sx={{ minWidth: '220px' }}
                 />
                 <Button 
                     variant="contained" 
