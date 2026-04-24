@@ -23,22 +23,27 @@ export default function MempoolFilterDialog({ open, onClose, onFiltersUpdate }) 
     const [toList, setToList] = useState([]);
     const [toToAdd, setToToAdd] = useState("");
 
+    const [functionList, setFunctionList] = useState([]);
+    const [functionToAdd, setFunctionToAdd] = useState("");
+
     useEffect(() => {
         onFiltersUpdate({
             active: {
                 gas: filterGas,
                 gasPrice: filterGasPrice,
                 from: fromList.length > 0,
-                to: toList.length > 0
+                to: toList.length > 0,
+                functions: functionList.length > 0
             },
             values: {
                 gasLimit,
                 gasPrice,
                 fromList,
-                toList
+                toList,
+                functionList
             }
         });
-    }, [filterGas, filterGasPrice, gasLimit, gasPrice, fromList, toList]);
+    }, [filterGas, filterGasPrice, gasLimit, gasPrice, fromList, toList, functionList]);
 
     const handleAddFrom = () => {
         if (fromToAdd && !fromList.includes(fromToAdd.toLowerCase())) {
@@ -56,11 +61,26 @@ export default function MempoolFilterDialog({ open, onClose, onFiltersUpdate }) 
     };
     const handleDeleteTo = (address) => setToList(toList.filter(a => a !== address));
 
+    const handleAddFunction = () => {
+        if (functionToAdd) {
+            // Normalizzazione
+            let normalized = functionToAdd.toLowerCase().trim();
+            if (!normalized.startsWith("0x")) normalized = "0x" + normalized;
+            
+            if (!functionList.includes(normalized)) {
+                setFunctionList([...functionList, normalized]);
+                setFunctionToAdd("");
+            }
+        }
+    };
+    const handleDeleteFunction = (func) => setFunctionList(functionList.filter(f => f !== func));
+
     return (
         <Dialog TransitionComponent={Transition} keepMounted open={open} onClose={onClose} maxWidth="md" fullWidth>
             <DialogTitle sx={{ fontWeight: 'bold' }}>Filtri Mempool</DialogTitle>
             <DialogContent>
                 <Box display="flex" gap={4} mt={1}>
+                    {/* COLONNA DESTRA: Indirizzi e Funzioni */}
                     <Box flex={1}>
                         {/* GAS LIMIT */}
                         <Box display="flex" alignItems="center">
@@ -101,6 +121,20 @@ export default function MempoolFilterDialog({ open, onClose, onFiltersUpdate }) 
                             disabled={!filterGasPrice} value={gasPrice} max={500000000000} step={1000000000}
                             onChange={(e, val) => setGasPrice(val)} sx={{ mx: 1, width: '95%' }}
                         />
+
+                        <Typography fontWeight={700} mb={1}>Functions (Method ID)</Typography>
+                        <Box display="flex" gap={1} mb={1}>
+                            <TextField size="small" fullWidth placeholder="0xa9059cbb" value={functionToAdd} onChange={(e) => setFunctionToAdd(e.target.value)} />
+                            <IconButton onClick={handleAddFunction} color="primary" sx={{ p: 0 }}><AddBoxIcon fontSize="large" /></IconButton>
+                        </Box>
+                        <Box height={85} overflow="auto" border={1} borderColor="divider" borderRadius={1} p={1}>
+                            {functionList.map(func => (
+                                <Box key={func} display="flex" justifyContent="space-between" alignItems="center">
+                                    <Typography variant="body2" sx={{ fontFamily: 'monospace', fontWeight: 'bold' }}>{func}</Typography>
+                                    <IconButton size="small" onClick={() => handleDeleteFunction(func)}><DeleteIcon color="error" fontSize="small" /></IconButton>
+                                </Box>
+                            ))}
+                        </Box>
                     </Box>
 
                     {/* Indirizzi (From / To) */}

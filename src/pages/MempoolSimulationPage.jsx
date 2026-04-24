@@ -3,6 +3,9 @@ import { Box, Typography, Button, TextField, CircularProgress, Divider, Paper } 
 import MempoolTable from '../components/simulation/MempoolTable';
 import SimulationResultsTable from '../components/simulation/SimulationResultsTable';
 import { _getMempoolTxs, _simulateMempoolTxs } from '../api/services'; 
+import { FilterList } from "@mui/icons-material";
+import { IconButton, Badge, Tooltip } from "@mui/material";
+import MempoolFilterDialog from '../components/simulation/MempoolFilterDialog';
 
 const MempoolSimulationPage = () => {
     const [limit, setLimit] = useState(100);
@@ -12,6 +15,12 @@ const MempoolSimulationPage = () => {
     const [mempoolTxs, setMempoolTxs] = useState([]);
     const [selectedHashes, setSelectedHashes] = useState([]);
     const [simulationResults, setSimulationResults] = useState([]);
+
+    const [openFilters, setOpenFilters] = useState(false);
+    const [currentFilters, setCurrentFilters] = useState({
+        active: { gas: false, gasPrice: false, from: false, to: false, functions: false },
+        values: { gasLimit: [], gasPrice: [], fromList: [], toList: [], functionList: [] }
+    });
 
     const handleFetchMempool = async () => {
         if (limit > 500) return alert("Il limite massimo è 500 transazioni.");
@@ -47,6 +56,44 @@ const MempoolSimulationPage = () => {
         }
         setIsSimulating(false);
     };
+
+
+    const filteredMempoolTxs = mempoolTxs.filter(tx => {
+        const { active, values } = currentFilters;
+
+        if (active.gas) {
+            const gas = Number(tx.gas || 0);
+            if (gas < values.gasLimit[0] || gas > values.gasLimit[1]) return false;
+        }
+
+        if (active.gasPrice) {
+            const price = Number(tx.gasPrice || tx.maxFeePerGas || 0);
+            if (price < values.gasPrice[0] || price > values.gasPrice[1]) return false;
+        }
+
+        if (active.from) {
+            if (!tx.from || !values.fromList.includes(tx.from.toLowerCase())) return false;
+        }
+
+        if (active.to) {
+            if (!tx.to || !values.toList.includes(tx.to.toLowerCase())) return false;
+        }
+
+        if (active.functions) {
+            const txData = tx.input || tx.data || "0x";
+        
+            const matchFound = values.functionList.some(methodId => 
+                txData.toLowerCase().startsWith(methodId)
+            );
+
+            if (!matchFound) return false;
+        }
+
+        return true; 
+    });
+
+// Calcolo per il numerino rosso sul bottone filtri
+const activeFilterCount = Object.values(currentFilters.active).filter(Boolean).length;
 
     return (
         <Box sx={{ p: { xs: 2, md: 4 }, width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
@@ -88,6 +135,20 @@ const MempoolSimulationPage = () => {
 
                 <Divider orientation="vertical" flexItem />
 
+                <Tooltip title="Filtra Transazioni">
+                    <IconButton 
+                        onClick={() => setOpenFilters(true)} 
+                        disabled={mempoolTxs.length === 0}
+                        sx={{ color: activeFilterCount > 0 ? "#ffb703" : "action.active" }}
+                    >
+                        <Badge badgeContent={activeFilterCount} color="error">
+                            <FilterList fontSize="large" />
+                        </Badge>
+                    </IconButton>
+                </Tooltip>
+
+                <Divider orientation="vertical" flexItem />
+
                 <Button 
                     variant="contained" 
                     color="secondary"
@@ -98,10 +159,16 @@ const MempoolSimulationPage = () => {
                 </Button>
             </Paper>
 
+            <MempoolFilterDialog 
+                open={openFilters} 
+                onClose={() => setOpenFilters(false)} 
+                onFiltersUpdate={setCurrentFilters} 
+            />
+
             {/* TABELLA MEMPOOL */}
             {mempoolTxs.length > 0 && simulationResults.length === 0 && (
                 <MempoolTable 
-                    transactions={mempoolTxs} 
+                    transactions={filteredMempoolTxs} 
                     selectedHashes={selectedHashes}
                     setSelectedHashes={setSelectedHashes}
                 />
