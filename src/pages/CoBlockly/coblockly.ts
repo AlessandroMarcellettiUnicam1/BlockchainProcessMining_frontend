@@ -146,9 +146,14 @@ export function initBlocklyEditor(isDarkMode: boolean) {
   }
   
   if(ws) {
-      console.log("Blockly già inizializzato.");
-      ws.setTheme(isDarkMode ? DarkTheme : Blockly.Themes.Classic);
-      return;
+      if (blocklyDiv.innerHTML === '') { // la div è stat svuotata?
+        ws.dispose(); // distruggo il vecchio ws
+      }
+      else {
+        console.log("Blockly già inizializzato");
+        ws.setTheme(isDarkMode ? DarkTheme : Blockly.Themes.Classic);
+        return;
+      }
   }
 
   ws = Blockly.inject(blocklyDiv, { 
@@ -206,7 +211,7 @@ export function initBlocklyEditor(isDarkMode: boolean) {
   };
   ws.registerToolboxCategoryCallback('CF', cfFlyoutCallback);
 
-  console.log("...adding event listener - COBLOCKLY (Avviato da React)")
+  console.log("...adding event listener")
   const button = document.getElementById('generateBtn');
   if (button) {
     button.addEventListener('click', () => {

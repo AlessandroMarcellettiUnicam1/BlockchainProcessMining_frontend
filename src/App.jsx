@@ -14,6 +14,8 @@ import { DialogsProvider } from "@toolpad/core/useDialogs";
 import { QueryClient, QueryClientProvider } from "react-query";
 import StorageIcon from "@mui/icons-material/Storage";
 import FactCheckIcon from '@mui/icons-material/FactCheck';
+import FileCopyIcon from '@mui/icons-material/FileCopy';
+import WaterIcon from '@mui/icons-material/Water';
 
 const NAVIGATION = [
 	{
@@ -38,7 +40,17 @@ const NAVIGATION = [
                 segment: "extractionInternal",
                 title: "Data Extraction Internal",
                 icon: <StorageIcon />,
-            }
+            },
+			{
+				segment: "simulation",
+				title: "Simulation",
+				icon: <FileCopyIcon />,
+			},
+			{
+				segment: "mempool-simulation",
+				title: "Mempool Simulation",
+				icon: <WaterIcon/>,
+			}
         ]
     },
     {
@@ -59,7 +71,12 @@ const NAVIGATION = [
                 segment: "query",
                 title: "Query",
                 icon: <ContentPasteSearchTwoToneIcon />,
-            }
+            },
+			{
+				segment: "coblockly",
+				title: "Compliance",
+				icon: <FactCheckIcon />,
+			}
         ]
     },
     {
@@ -75,12 +92,7 @@ const NAVIGATION = [
                 segment: "xes",
                 title: "XES",
                 icon: <PersonIcon />,
-            },
-			{
-				segment: "coblockly",
-				title: "CoBlockly",
-				icon: <FactCheckIcon />,
-			}
+            }
         ]
     },
 ];

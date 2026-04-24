@@ -46,7 +46,7 @@ export default function CoBlocklyPage() {
               </div>
               <form id="logForm">
                 <div className="mb-4">
-                  <input type="file" className="form-control" id="logInput" accept=".xes" />
+                  <input type="file" className="form-control" id="logInput" accept=".xes, .csv" />
                 </div>
                 <div className="d-flex align-items-center gap-2">
                   <button type="submit" className="btn btn-primary">

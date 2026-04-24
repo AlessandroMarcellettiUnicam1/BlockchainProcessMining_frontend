@@ -1,3 +1,4 @@
+import { continuousColorLegendClasses } from "@mui/x-charts";
 import axios from "axios";
 const serverUrl = "http://localhost:8000";
 
@@ -230,6 +231,43 @@ export const getData = async ({ type, query}) => {
     console.error(error)
     return {status: error.response.status, data: error.response.data}
   }
+}
+
+export const _simulateTransaction = async (payload) => {
+    try {
+        const response = await axios.post(serverUrl + "/api/simulate", payload);
+        return {status: response.status, data: response.data };
+    }
+    catch (error) {
+        console.error("Errore durante la simulazione: ", error);
+        return { status: error?.response?.status, data: error?.response?.data };
+    }
+}
+
+export const _getMempoolTxs = async (limit) => {
+    try {
+        const response = await axios.get(`${serverUrl}/api/get-mempool-txs`, {
+            params: { limit: limit }
+        });
+        return { status: response.status, data: response.data };
+    }
+    catch (err) {
+        console.error("Errore durante il ricevimento delle transazioni dalla mempool: ", err);
+        return { status: err?.response?.status, data: err?.response?.data };
+    }
+}
+
+export const _simulateMempoolTxs = async (payload) => {
+    try {
+        const response = await axios.post(serverUrl + "/api/simulate/mempool-txs", {
+            transactions: payload 
+        });
+        return { status: response.status, data: response.data };
+    }
+    catch (err) {
+        console.error("Errore durante la simulazione della mempool: ", err);
+        return { status: err?.response?.status, data: err?.response?.data };
+    }
 }
 
 

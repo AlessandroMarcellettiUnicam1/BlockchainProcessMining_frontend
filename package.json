@@ -27,6 +27,7 @@
     "concurrently": "^8.2.2",
     "date-fns": "^3.6.0",
     "dayjs": "^1.11.11",
+    "ethers": "^6.16.0",
     "graphology": "^0.26.0",
     "graphology-generators": "^0.11.2",
     "graphology-layout": "^0.6.1",
@@ -43,13 +44,15 @@
     "react-graph-vis": "^1.0.7",
     "react-query": "^3.39.3",
     "react-router": "^7.6.0",
+    "react-spinners": "^0.17.0",
     "react-xml-viewer": "^2.0.5",
     "recharts": "^3.1.0",
     "rollup": "^4.52.4",
     "sigma": "^3.0.1",
     "vis-data": "^7.1.9",
     "vis-network": "^9.1.9",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "web3": "^4.16.0"
   },
   "scripts": {
     "test": "react-scripts test",
