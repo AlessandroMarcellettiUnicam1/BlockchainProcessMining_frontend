@@ -14,6 +14,8 @@ export default function SimulationResultsTable({ results }) {
     const { mode } = useColorScheme();
     const isDarkMode = mode === 'dark';
 
+    const safeResults = Array.isArray(results) ? results : [];
+
     const handleDownloadAll = () => {
         const jsonString = JSON.stringify(results, null, 2);
         const blob = new Blob([jsonString], { type: "application/json" });
@@ -26,6 +28,14 @@ export default function SimulationResultsTable({ results }) {
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
+    };
+
+    const getStatusColor = (statusText) => {
+        const lowerStatus = (statusText || "").toLowerCase();
+        if (lowerStatus === "success") return "success";
+        if (lowerStatus.includes("out of gas")) return "warning";
+        if (lowerStatus.includes("system error")) return "default";
+        return "error"; // Reverted, Invalid Opcode, System Error, etc.
     };
 
     return (
@@ -55,27 +65,30 @@ export default function SimulationResultsTable({ results }) {
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {results.map((sim, index) => {
-                            const isExpanded = expandedRow === sim.hash;
-                            const isSuccess = sim.status === "success";
+                        {safeResults.map((sim, index) => {
+                            const payloadData = sim?.data || {};
+                            const txHash = payloadData?.transactionHash || `Missing-Hash-${index}`;
+                            const txStatus = payloadData?.status || "Unknown";
+                            
+                            const isExpanded = expandedRow === txHash;
 
                             return (
-                                <React.Fragment key={sim.hash + index}>
+                                <React.Fragment key={txHash + index}>
                                     {/* Riga Principale */}
                                     <TableRow hover>
                                         <TableCell>
-                                            <IconButton size="small" onClick={() => setExpandedRow(isExpanded ? null : sim.hash)}>
+                                            <IconButton size="small" onClick={() => setExpandedRow(isExpanded ? null : txHash)}>
                                                 {isExpanded ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
                                             </IconButton>
                                         </TableCell>
                                         <TableCell>
                                             <Chip 
-                                                label={isSuccess ? "Success" : "Failed"} 
-                                                color={isSuccess ? "success" : "error"} 
+                                                label={txStatus} 
+                                                color={getStatusColor(txStatus)} 
                                                 size="small" 
                                             />
                                         </TableCell>
-                                        <TableCell sx={{ fontFamily: 'monospace' }}>{sim.hash}</TableCell>
+                                        <TableCell sx={{ fontFamily: 'monospace' }}>{txHash}</TableCell>
                                     </TableRow>
 
                                     {/* Riga Espansa (Il JSON finale) */}
@@ -89,7 +102,7 @@ export default function SimulationResultsTable({ results }) {
                                                     borderRadius: 1 
                                                 }}>
                                                     <ReactJson 
-                                                        value={sim.result} 
+                                                        value={sim || {}} 
                                                         theme={isDarkMode ? 'dark' : 'light'}
                                                         collapsed={2} 
                                                         displayDataTypes={false} 
