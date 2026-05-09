@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import './style.css';
 import './blockly_style.css';
 import 'jsoneditor/dist/jsoneditor.min.css';
@@ -6,13 +6,15 @@ import { startCoBlockly } from './main.ts';
 import { initBlocklyEditor } from './coblockly.ts'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { useColorScheme } from '@mui/material/styles';
+import LogHandler from './coblockComponents/LogHandler.tsx';
 
 export default function CoBlocklyPage() {
   // ref per agganciare Blockly in modo sicuro
   const blocklyDivRef = useRef(null);
-
   const { mode } = useColorScheme();
   const isDarkMode = mode == 'dark';
+
+  const [logColumns, setLogColumns] = useState([]); // stato per il logHandler
 
   useEffect(() => {
     initBlocklyEditor(isDarkMode);
@@ -34,66 +36,8 @@ export default function CoBlocklyPage() {
       </header>
 
       {/* -----------------------------Blockchain Log Handling--------------------------------------- */}
-      <div className="row mb-2">
-        <div className="col-md-6">
-          <div className="card h-100">
-            <div className="card-body">
-              <div className="mb-2">
-                <div className="d-flex justify-content-between align-items-center">
-                  <h5 className="card-title">Log Upload</h5>
-                  <span className="form-text">Accepted format: .xes, .csv</span>
-                </div>
-              </div>
-              <form id="logForm">
-                <div className="mb-4">
-                  <input type="file" className="form-control" id="logInput" accept=".xes, .csv" />
-                </div>
-                <div className="d-flex align-items-center gap-2">
-                  <button type="submit" className="btn btn-primary">
-                    Upload Log
-                  </button>
-                  <div id="spinner-container-log" className="spinner-container" style={{ display: 'none' }}>
-                    <div className="d-flex align-items-center">
-                      <div className="spinner-border spinner-border-sm me-2" role="status">
-                        <span className="visually-hidden">Loading...</span>
-                      </div>
-                      <span id="logPhase">Uploading blockchain log...</span>
-                    </div>
-                  </div>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-
-        {/* -- Log Statistics Setion --*/}
-        <div className="col-md-6">
-          <div className="card h-100">
-            <div className="card-body">
-              <div className="mb-2">
-                <div className="d-flex justify-content-between align-items-center">
-                  <h5 className="card-title">Log Statistics</h5>
-                  <span id="logLoaded" className="badge bg-secondary">No log loaded</span>
-                </div>
-              </div>
-              <div className="row g-3">
-                <div className="col-6">
-                  <div className="text-center p-3 border rounded">
-                    <div className="text-muted mb-1">Events Loaded</div>
-                    <div id="eventsLoaded" className="fs-4 fw-bold text-primary">0</div>
-                  </div>
-                </div>
-                <div className="col-6">
-                  <div className="text-center p-3 border rounded">
-                    <div className="text-muted mb-1">Traces Loaded</div>
-                    <div id="tracesLoaded" className="fs-4 fw-bold text-primary">0</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      
+      <LogHandler onLogUploaded={setLogColumns}/>
 
       {/* -----------------------------------Blockchain Log Mapping------------------------------------------------- */}
       <div className="row mb-2">
