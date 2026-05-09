@@ -9,6 +9,7 @@ import LogHandler from './coblockComponents/LogHandler.tsx';
 import LogMapper from './coblockComponents/logMapper.tsx';
 import CoBlocklyEditor from './coblockComponents/CoBlocklyEditor.tsx';
 import RuleParser from './coblockComponents/RuleParser.tsx';
+import RuleApplier from './coblockComponents/RuleApplier.tsx';
 
 export default function CoBlocklyPage() {
 
@@ -57,60 +58,8 @@ export default function CoBlocklyPage() {
       />
 
       {/* -------------------------------------------Apply rule------------------------------------------------- */}
-      <div className="row mb-2">
-        <div className="col-12">
-          <div className="card">
-            <div className="card-header d-flex justify-content-between align-items-center">
-              <div>
-                <h5 className="mb-0">Checking Results</h5>
-              </div>
-              <div id="spinner-container-rule" className="spinner-container" style={{ display: 'none' }}>
-                <div className="d-flex align-items-center">
-                  <div className="spinner-border spinner-border-sm me-2" role="status">
-                    <span className="visually-hidden">Loading...</span>
-                  </div>
-                  <span id="phase">Checking rule over log...</span>
-                </div>
-              </div>
-              <form id="verifyRule">
-                <button type="submit" className="btn btn-primary">Check rule over blockchain log</button>
-              </form>
-            </div>
-            
-            <div className="row p-4">
-              <div className="col-4">
-                <div className="text-center p-3 border rounded">
-                  <div className="text-muted mb-1" style={{ color: 'darkgreen' }}>Compliant Traces</div>
-                  <div id="ct" className="fs-4 fw-bold text-success">0</div>
-                </div>
-              </div>
-              <div className="col-4">
-                <div className="text-center p-3 border rounded">
-                  <div className="text-muted mb-1">Non-compliant Traces</div>
-                  <div id="nct" className="fs-4 fw-bold text-danger">0</div>
-                </div>
-              </div>
-              <div className="col-4">
-                <div className="text-center p-3 border rounded">
-                  <div className="text-muted mb-1">Ignored Traces</div>
-                  <div id="it" className="fs-4 fw-bold">0</div>
-                </div>
-              </div>
-            </div>
 
-            <div className="row mb-4 px-4">
-              <div className="col-6">
-                <h5>[preview] Compliant traces - <a id="downloadLinkC" href="#">Download full JSON</a></h5>
-                <div id="jsoneditorC"></div>
-              </div>
-              <div className="col-6">
-                <h5>[preview] Non-compliant traces - <a id="downloadLinkNC" href="#">Download full JSON</a></h5>
-                <div id="jsoneditorNC"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <RuleApplier logMapping={logMapping} parsedRule={parsedRule} />
 
     </div>
   );
