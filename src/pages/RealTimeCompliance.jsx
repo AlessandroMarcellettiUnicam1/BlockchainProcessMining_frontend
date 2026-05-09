@@ -1,0 +1,1 @@
+import RuleParser from './CoBlockly/coblockComponents/NomeDelFile';
