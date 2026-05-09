@@ -3,25 +3,20 @@ import './style.css';
 import './blockly_style.css';
 import 'jsoneditor/dist/jsoneditor.min.css';
 import { startCoBlockly } from './main.ts';
-import { initBlocklyEditor } from './coblockly.ts'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { useColorScheme } from '@mui/material/styles';
 import LogHandler from './coblockComponents/LogHandler.tsx';
 import LogMapper from './coblockComponents/logMapper.tsx';
+import CoBlocklyEditor from './coblockComponents/CoBlocklyEditor.tsx';
 
 export default function CoBlocklyPage() {
-  // ref per agganciare Blockly in modo sicuro
-  const blocklyDivRef = useRef(null);
+
   const { mode } = useColorScheme();
   const isDarkMode = mode == 'dark';
 
   const [logColumns, setLogColumns] = useState([]); // stato per il LogHandler
   const [logMapping, setLogMapping] = useState({}); // stato per il LogMapper
-
-  useEffect(() => {
-    initBlocklyEditor(isDarkMode);
-    startCoBlockly();
-  }, [isDarkMode]);
+  const [ruleText, setRuleText] = useState(""); // stato per l'editor CoBlockly
 
   return (
     <div className="container" data-bs-theme={isDarkMode ? 'dark' : 'light'}>
@@ -48,33 +43,8 @@ export default function CoBlocklyPage() {
       />
 
       {/* -----------------------------------CoBlockly------------------------------------------------- */}
-      <div className="row mb-2">
-        <div className="col-12">
-          <div className="card">
-            <div className="card-header d-flex justify-content-between align-items-center">
-              <div>
-                <h5 className="mb-0">CoBlockly</h5>
-              </div>
-              <button type="button" className="btn btn-primary" id="generateBtn">
-                Translate Rule
-              </button>
-            </div>
 
-            <div className="card-body p-0">
-              {/* Nessun position absolute/relative, diamo solo altezza e larghezza al div direttamente */}
-              <div 
-                ref={blocklyDivRef} 
-                id="blocklyDiv" 
-                style={{ width: '100%', height: '400px' }}
-              ></div>
-            </div>
-
-            <div className="card-footer text-muted small">
-              Drag and drop blocks to model your rule, then click "Translate Rule" to generate the textual rule
-            </div>
-          </div>
-        </div>
-      </div>
+      <CoBlocklyEditor onRuleTranslated={setRuleText} />
 
       {/* -----------------------------------Blockchain-based compliance rules------------------------------------------------- */}
       <div className="row mb-2">

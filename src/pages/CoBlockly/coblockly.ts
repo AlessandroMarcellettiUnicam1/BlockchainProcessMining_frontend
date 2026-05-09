@@ -7,7 +7,7 @@
 import * as Blockly from 'blockly';
 import { blocks } from './blocks/text';
 import 'blockly/javascript';
-import { toolbox } from './toolbox';
+import { toolbox } from './toolbox.ts';
 import { javascriptGenerator } from 'blockly/javascript';
 import DarkTheme from '@blockly/theme-dark';
 
@@ -134,29 +134,8 @@ javascriptGenerator.forBlock['coblock_control_binary'] = function (block: Blockl
   return ` ${cf} ${ti} `;
 };
 
-
-let ws: Blockly.WorkspaceSvg; // workspace globale per questo file
-
-export function initBlocklyEditor(isDarkMode: boolean) {
-  const blocklyDiv = document.getElementById('blocklyDiv');
-
-  if (!blocklyDiv) {
-    console.error(`div with id 'blocklyDiv' not found.`);
-    return;
-  }
-  
-  if(ws) {
-      if (blocklyDiv.innerHTML === '') { // la div è stat svuotata?
-        ws.dispose(); // distruggo il vecchio ws
-      }
-      else {
-        console.log("Blockly già inizializzato");
-        ws.setTheme(isDarkMode ? DarkTheme : Blockly.Themes.Classic);
-        return;
-      }
-  }
-
-  ws = Blockly.inject(blocklyDiv, { 
+export function setupBlocklyEditor(containerElement: HTMLElement, isDarkMode: boolean) {
+  const ws = Blockly.inject(containerElement, { 
     toolbox: toolbox,
     theme: isDarkMode ? DarkTheme : Blockly.Themes.Classic
   });
@@ -165,97 +144,147 @@ export function initBlocklyEditor(isDarkMode: boolean) {
     Blockly.svgResize(ws);
   }, 100);
 
-  // Register custom blocks/toolbar
-  var ruleFlyoutCallback = function () {
-    return [
-      { kind: 'block', type: 'coblock_rule' },
-      { kind: 'block', type: 'coblock_tx' }
-    ];
-  };
-  ws.registerToolboxCategoryCallback('RULE', ruleFlyoutCallback);
+  // blocchi custom
+  ws.registerToolboxCategoryCallback('RULE', () => [{ kind: 'block', type: 'coblock_rule' }, { kind: 'block', type: 'coblock_tx' }]);
+  ws.registerToolboxCategoryCallback('FIELDS', () => [{ kind: 'block', type: 'tx_field_leaf' }, { kind: 'block', type: 'tx_field_logic' }]);
+  ws.registerToolboxCategoryCallback('ATTRS', () => [{ kind: 'block', type: 'attr_leaf' }, { kind: 'block', type: 'attr_logic' }, { kind: 'block', type: 'cond_leaf' }, { kind: 'block', type: 'cond_logic' }]);
+  ws.registerToolboxCategoryCallback('CALLS', () => [{ kind: 'block', type: 'coblock_call' }, { kind: 'block', type: 'call_logic' }, { kind: 'block', type: 'call_field_leaf' }, { kind: 'block', type: 'call_field_logic' }]);
+  ws.registerToolboxCategoryCallback('CF', () => [{ kind: 'block', type: 'coblock_control_unary' }, { kind: 'block', type: 'coblock_control_binary' }, { kind: 'block', type: 'coblock_interval' }]);
 
-  var fieldsFlyoutCallback = function () {
-    return [
-      { kind: 'block', type: 'tx_field_leaf' },
-      { kind: 'block', type: 'tx_field_logic' }
-    ];
-  };
-  ws.registerToolboxCategoryCallback('FIELDS', fieldsFlyoutCallback);
-
-  var attrsFlyoutCallback = function () {
-    return [
-      { kind: 'block', type: 'attr_leaf' },
-      { kind: 'block', type: 'attr_logic' },
-      { kind: 'block', type: 'cond_leaf' },
-      { kind: 'block', type: 'cond_logic' }
-    ];
-  };
-  ws.registerToolboxCategoryCallback('ATTRS', attrsFlyoutCallback);
-
-  var callsFlyoutCallback = function () {
-    return [
-      { kind: 'block', type: 'coblock_call' },
-      { kind: 'block', type: 'call_logic' },
-      { kind: 'block', type: 'call_field_leaf' },
-      { kind: 'block', type: 'call_field_logic' },
-    ];
-  };
-  ws.registerToolboxCategoryCallback('CALLS', callsFlyoutCallback);
-
-  var cfFlyoutCallback = function () {
-    return [
-      { kind: 'block', type: 'coblock_control_unary' },
-      { kind: 'block', type: 'coblock_control_binary' },
-      { kind: 'block', type: 'coblock_interval' },
-    ];
-  };
-  ws.registerToolboxCategoryCallback('CF', cfFlyoutCallback);
-
-  console.log("...adding event listener")
-  const button = document.getElementById('generateBtn');
-  if (button) {
-    button.addEventListener('click', () => {
-      console.log('Button clicked!');
-      sendRuleToBackend();
-    });
-  } else {
-    console.error('Button with ID "generateBtn" not found.');
-  }
+  return ws;
 }
 
-// Generate and send rule string
-function generateRuleString(): string {
-  console.log("Workspace to code")
+// funzione per estrarre la stringa da un workspace specifico
+export function generateRuleStringFromWorkspace(ws: Blockly.WorkspaceSvg): string {
   if (javascriptGenerator && ws) {
     const code = javascriptGenerator.workspaceToCode(ws);
-    console.log('Generated Code:', code);
-    return code;
-  } else {
-    console.error('javascriptGenerator or workspace not loaded');
-    return '';
+    return code ? code.trim().replace(/\s+/g, ' ') : '';
   }
+  return '';
 }
 
-export function sendRuleToBackend() {
-  console.log("Retrieving rule from Blockly")
-  const rule = generateRuleString();
-  console.log('Generated Rule:', rule);
 
-  var divOutput = document.getElementById("outputCoBlockly")
-  if (divOutput) {
-    const textEl = document.createElement('p') as HTMLParagraphElement;
-    divOutput.innerHTML = '';
-    textEl.innerText = rule;
-    divOutput.appendChild(textEl);
-  }
+// let ws: Blockly.WorkspaceSvg; // workspace globale per questo file
 
-  var divRule = document.getElementById("rule") as HTMLInputElement;
-  if (divRule) {
-    divRule.value = (rule) ? (rule).trim().replace(/\s+/g, ' ') : "";
-  }
+// export function initBlocklyEditor(isDarkMode: boolean) {
+//   const blocklyDiv = document.getElementById('blocklyDiv');
 
-  if (divRule?.value) {
-    const button = document.getElementById('parserButton') as HTMLButtonElement;
-    if(button) button.click();
-  }
-}
+//   if (!blocklyDiv) {
+//     console.error(`div with id 'blocklyDiv' not found.`);
+//     return;
+//   }
+  
+//   if(ws) {
+//       if (blocklyDiv.innerHTML === '') { // la div è stat svuotata?
+//         ws.dispose(); // distruggo il vecchio ws
+//       }
+//       else {
+//         console.log("Blockly già inizializzato");
+//         ws.setTheme(isDarkMode ? DarkTheme : Blockly.Themes.Classic);
+//         return;
+//       }
+//   }
+
+//   ws = Blockly.inject(blocklyDiv, { 
+//     toolbox: toolbox,
+//     theme: isDarkMode ? DarkTheme : Blockly.Themes.Classic
+//   });
+
+//   setTimeout(() => {
+//     Blockly.svgResize(ws);
+//   }, 100);
+
+//   // Register custom blocks/toolbar
+//   var ruleFlyoutCallback = function () {
+//     return [
+//       { kind: 'block', type: 'coblock_rule' },
+//       { kind: 'block', type: 'coblock_tx' }
+//     ];
+//   };
+//   ws.registerToolboxCategoryCallback('RULE', ruleFlyoutCallback);
+
+//   var fieldsFlyoutCallback = function () {
+//     return [
+//       { kind: 'block', type: 'tx_field_leaf' },
+//       { kind: 'block', type: 'tx_field_logic' }
+//     ];
+//   };
+//   ws.registerToolboxCategoryCallback('FIELDS', fieldsFlyoutCallback);
+
+//   var attrsFlyoutCallback = function () {
+//     return [
+//       { kind: 'block', type: 'attr_leaf' },
+//       { kind: 'block', type: 'attr_logic' },
+//       { kind: 'block', type: 'cond_leaf' },
+//       { kind: 'block', type: 'cond_logic' }
+//     ];
+//   };
+//   ws.registerToolboxCategoryCallback('ATTRS', attrsFlyoutCallback);
+
+//   var callsFlyoutCallback = function () {
+//     return [
+//       { kind: 'block', type: 'coblock_call' },
+//       { kind: 'block', type: 'call_logic' },
+//       { kind: 'block', type: 'call_field_leaf' },
+//       { kind: 'block', type: 'call_field_logic' },
+//     ];
+//   };
+//   ws.registerToolboxCategoryCallback('CALLS', callsFlyoutCallback);
+
+//   var cfFlyoutCallback = function () {
+//     return [
+//       { kind: 'block', type: 'coblock_control_unary' },
+//       { kind: 'block', type: 'coblock_control_binary' },
+//       { kind: 'block', type: 'coblock_interval' },
+//     ];
+//   };
+//   ws.registerToolboxCategoryCallback('CF', cfFlyoutCallback);
+
+//   console.log("...adding event listener")
+//   const button = document.getElementById('generateBtn');
+//   if (button) {
+//     button.addEventListener('click', () => {
+//       console.log('Button clicked!');
+//       sendRuleToBackend();
+//     });
+//   } else {
+//     console.error('Button with ID "generateBtn" not found.');
+//   }
+// }
+
+// // Generate and send rule string
+// function generateRuleString(): string {
+//   console.log("Workspace to code")
+//   if (javascriptGenerator && ws) {
+//     const code = javascriptGenerator.workspaceToCode(ws);
+//     console.log('Generated Code:', code);
+//     return code;
+//   } else {
+//     console.error('javascriptGenerator or workspace not loaded');
+//     return '';
+//   }
+// }
+
+// export function sendRuleToBackend() {
+//   console.log("Retrieving rule from Blockly")
+//   const rule = generateRuleString();
+//   console.log('Generated Rule:', rule);
+
+//   var divOutput = document.getElementById("outputCoBlockly")
+//   if (divOutput) {
+//     const textEl = document.createElement('p') as HTMLParagraphElement;
+//     divOutput.innerHTML = '';
+//     textEl.innerText = rule;
+//     divOutput.appendChild(textEl);
+//   }
+
+//   var divRule = document.getElementById("rule") as HTMLInputElement;
+//   if (divRule) {
+//     divRule.value = (rule) ? (rule).trim().replace(/\s+/g, ' ') : "";
+//   }
+
+//   if (divRule?.value) {
+//     const button = document.getElementById('parserButton') as HTMLButtonElement;
+//     if(button) button.click();
+//   }
+// }
