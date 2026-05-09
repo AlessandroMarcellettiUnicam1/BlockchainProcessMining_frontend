@@ -7,6 +7,7 @@ import { initBlocklyEditor } from './coblockly.ts'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { useColorScheme } from '@mui/material/styles';
 import LogHandler from './coblockComponents/LogHandler.tsx';
+import LogMapper from './coblockComponents/logMapper.tsx';
 
 export default function CoBlocklyPage() {
   // ref per agganciare Blockly in modo sicuro
@@ -14,7 +15,8 @@ export default function CoBlocklyPage() {
   const { mode } = useColorScheme();
   const isDarkMode = mode == 'dark';
 
-  const [logColumns, setLogColumns] = useState([]); // stato per il logHandler
+  const [logColumns, setLogColumns] = useState([]); // stato per il LogHandler
+  const [logMapping, setLogMapping] = useState({}); // stato per il LogMapper
 
   useEffect(() => {
     initBlocklyEditor(isDarkMode);
@@ -40,83 +42,10 @@ export default function CoBlocklyPage() {
       <LogHandler onLogUploaded={setLogColumns}/>
 
       {/* -----------------------------------Blockchain Log Mapping------------------------------------------------- */}
-      <div className="row mb-2">
-        <div className="col-12">
-          <div className="card">
-            <div className="card-body">
-              <div className="d-flex" style={{ justifyContent: 'space-between' }}>
-                <h5 className="card-title mb-3">Blockchain Log Mapping</h5>
-                <span className="small">Scroll horizontally to view all mapping fields</span>
-              </div>
-              <div className="overflow-auto" style={{ maxHeight: '200px', overflowX: 'auto', overflowY: 'hidden' }}>
-                <div className="d-flex flex-nowrap gap-1 pb-1">
-                  
-                  <div className="d-flex flex-column" style={{ minWidth: '140px', flex: '0 0 140px' }}>
-                    <label htmlFor="fun" className="form-label fw-semibold mb-2">Function</label>
-                    <select id="fun" className="form-select log-columns"><option>activity</option></select>
-                  </div>
-
-                  <div className="d-flex flex-column" style={{ minWidth: '140px', flex: '0 0 140px' }}>
-                    <label htmlFor="ca" className="form-label fw-semibold mb-2">Contract</label>
-                    <select id="ca" className="form-select log-columns"><option>receivingContract</option></select>
-                  </div>
-
-                  <div className="d-flex flex-column" style={{ minWidth: '140px', flex: '0 0 140px' }}>
-                    <label htmlFor="b" className="form-label fw-semibold mb-2">Block</label>
-                    <select id="b" className="form-select log-columns"><option>blockNumber</option></select>
-                  </div>
-
-                  <div className="d-flex flex-column" style={{ minWidth: '140px', flex: '0 0 140px' }}>
-                    <label htmlFor="s" className="form-label fw-semibold mb-2">Sender</label>
-                    <select id="s" className="form-select log-columns"><option>requester</option></select>
-                  </div>
-
-                  <div className="d-flex flex-column" style={{ minWidth: '140px', flex: '0 0 140px' }}>
-                    <label htmlFor="time" className="form-label fw-semibold mb-2">Timestamp</label>
-                    <select id="time" className="form-select log-columns"><option>timestamp</option></select>
-                  </div>
-
-                  <div className="d-flex flex-column" style={{ minWidth: '140px', flex: '0 0 140px' }}>
-                    <label htmlFor="gL" className="form-label fw-semibold mb-2">Gas Limit</label>
-                    <select id="gL" className="form-select log-columns"><option>gasLimit</option></select>
-                  </div>
-
-                  <div className="d-flex flex-column" style={{ minWidth: '140px', flex: '0 0 140px' }}>
-                    <label htmlFor="gU" className="form-label fw-semibold mb-2">Gas Used</label>
-                    <select id="gU" className="form-select log-columns"><option>gasUsed</option></select>
-                  </div>
-
-                  <div className="d-flex flex-column" style={{ minWidth: '140px', flex: '0 0 140px' }}>
-                    <label htmlFor="V" className="form-label fw-semibold mb-2">Value</label>
-                    <select id="V" className="form-select log-columns"><option>value</option></select>
-                  </div>
-
-                  <div className="d-flex flex-column" style={{ minWidth: '140px', flex: '0 0 140px' }}>
-                    <label htmlFor="sv" className="form-label fw-semibold mb-2">Storage Variables</label>
-                    <select id="sv" className="form-select log-columns"><option>stateVariable</option></select>
-                  </div>
-
-                  <div className="d-flex flex-column" style={{ minWidth: '140px', flex: '0 0 140px' }}>
-                    <label htmlFor="call" className="form-label fw-semibold mb-2">Internal Txs</label>
-                    <select id="call" className="form-select log-columns"><option>internalTxs</option></select>
-                  </div>
-
-                  <div className="d-flex flex-column" style={{ minWidth: '140px', flex: '0 0 140px' }}>
-                    <label htmlFor="i" className="form-label fw-semibold mb-2">Inputs</label>
-                    <select id="i" className="form-select log-columns"><option>inputs</option></select>
-                  </div>
-
-                  <div className="d-flex flex-column" style={{ minWidth: '140px', flex: '0 0 140px' }}>
-                    <label htmlFor="e" className="form-label fw-semibold mb-2">Events</label>
-                    <select id="e" className="form-select log-columns"><option>events</option></select>
-                  </div>
-
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <LogMapper 
+        columns={logColumns} 
+        onMappingChange={setLogMapping} 
+      />
 
       {/* -----------------------------------CoBlockly------------------------------------------------- */}
       <div className="row mb-2">
