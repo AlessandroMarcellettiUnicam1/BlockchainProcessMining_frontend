@@ -8,6 +8,7 @@ import { useColorScheme } from '@mui/material/styles';
 import LogHandler from './coblockComponents/LogHandler.tsx';
 import LogMapper from './coblockComponents/logMapper.tsx';
 import CoBlocklyEditor from './coblockComponents/CoBlocklyEditor.tsx';
+import RuleParser from './coblockComponents/RuleParser.tsx';
 
 export default function CoBlocklyPage() {
 
@@ -17,6 +18,7 @@ export default function CoBlocklyPage() {
   const [logColumns, setLogColumns] = useState([]); // stato per il LogHandler
   const [logMapping, setLogMapping] = useState({}); // stato per il LogMapper
   const [ruleText, setRuleText] = useState(""); // stato per l'editor CoBlockly
+  const [parsedRule, setParsedRule] = useState(null); // stato per il parser
 
   return (
     <div className="container" data-bs-theme={isDarkMode ? 'dark' : 'light'}>
@@ -47,42 +49,12 @@ export default function CoBlocklyPage() {
       <CoBlocklyEditor onRuleTranslated={setRuleText} />
 
       {/* -----------------------------------Blockchain-based compliance rules------------------------------------------------- */}
-      <div className="row mb-2">
-        <div className="col-12">
-          <div className="card">
-            <div className="card-header">
-              <div className="d-flex justify-content-between align-items-center">
-                <div>
-                  <h5 className="mb-0">CoBlock</h5>
-                </div>
-              </div>
-            </div>
 
-            <div className="card-body">
-              <div className="mb-1">
-                <label htmlFor="rule" className="form-label fw-semibold d-flex align-items-center">
-                  <span>Textual Rule</span>
-                </label>
-                <form id="compileRule">
-                  <div className="input-group">
-                    <input 
-                      id="rule" 
-                      type="text" 
-                      className="form-control form-control-lg"
-                      placeholder="e.g., tx1(function == approveOrder AND sender == 0x123) occ"
-                      aria-describedby="ruleHelp" 
-                    />
-                    <button type="submit" id="parserButton" className="btn btn-primary px-4">
-                      Parse Rule
-                    </button>
-                  </div>
-                </form>
-              </div>
-              <div id="errorParser"></div>{/*-- Dynamic message will appear here--*/}
-            </div>
-          </div>
-        </div>
-      </div>
+      <RuleParser 
+        ruleText={ruleText} 
+        setRuleText={setRuleText} 
+        onRuleParsed={setParsedRule} 
+      />
 
       {/* -------------------------------------------Apply rule------------------------------------------------- */}
       <div className="row mb-2">
