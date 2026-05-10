@@ -16,6 +16,7 @@ import StorageIcon from "@mui/icons-material/Storage";
 import FactCheckIcon from '@mui/icons-material/FactCheck';
 import FileCopyIcon from '@mui/icons-material/FileCopy';
 import WaterIcon from '@mui/icons-material/Water';
+import LibraryAddCheckIcon from '@mui/icons-material/LibraryAddCheck';
 
 const NAVIGATION = [
 	{
@@ -50,6 +51,11 @@ const NAVIGATION = [
 				segment: "mempool-simulation",
 				title: "Mempool Simulation",
 				icon: <WaterIcon/>,
+			},
+			{
+				segment: "real-time-compliance",
+				title: "Real Time Compliance",
+				icon : <LibraryAddCheckIcon/>,
 			}
         ]
     },
