@@ -16,7 +16,7 @@ import DataExtractionInternalPage from './pages/DataExtractionInternal';
 import CoBlocklyPage from './pages/CoBlockly/CoBlocklyPage';
 import SimulationPage from './pages/SimulationPage';
 import MempoolSimulationPage from './pages/MempoolSimulationPage';
-import RealTimeCompliance from './pages/RealTimeCompliance';
+import RealTimeCompliancePage from './pages/RealTimeCompliancePage';
 
 const router = createBrowserRouter([
     {
@@ -83,7 +83,7 @@ const router = createBrowserRouter([
                 },
                 {
                   path: "data-extraction/real-time-compliance",
-                  Component: RealTimeCompliance
+                  Component: RealTimeCompliancePage
                 }
               ]
             },

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Box, Typography } from '@mui/material';
 import RuleParser from './CoBlockly/coblockComponents/RuleParser.tsx';
+import CoBlocklyEditor from './CoBlockly/coblockComponents/CoBlocklyEditor.tsx';
 
-export default function RealTimeCompliance() {
+export default function RealTimeCompliancePage() {
 
     const [ruleText, setRuleText] = useState("");
     const [parsedRule, setParsedRule] = useState(null);
@@ -16,6 +17,8 @@ export default function RealTimeCompliance() {
                 <Typography variant="h6" mb={3} fontWeight="bold" color="primary">
                     1. Define a CoBlock rule
                 </Typography>
+
+                <CoBlocklyEditor onRuleTranslated={setRuleText} />
                 
                 <RuleParser 
                     ruleText={ruleText} 
@@ -29,6 +32,14 @@ export default function RealTimeCompliance() {
                     </Typography>
                 )}
 
+            </Box>
+
+            <Box>
+                <Typography variant="h6" mb={3} fontWeight="bold" color="primary">
+                    2. Choose logs from DB
+                </Typography>
+
+                
             </Box>
             
         </Box>
