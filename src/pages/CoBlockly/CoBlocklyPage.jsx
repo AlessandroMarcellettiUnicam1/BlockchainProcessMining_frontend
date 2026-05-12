@@ -6,7 +6,7 @@ import { startCoBlockly } from './main.ts';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { useColorScheme } from '@mui/material/styles';
 import LogHandler from './coblockComponents/LogHandler.tsx';
-import LogMapper from './coblockComponents/logMapper.tsx';
+import LogMapper from './coblockComponents/LogMapper.tsx';
 import CoBlocklyEditor from './coblockComponents/CoBlocklyEditor.tsx';
 import RuleParser from './coblockComponents/RuleParser.tsx';
 import RuleApplier from './coblockComponents/RuleApplier.tsx';
