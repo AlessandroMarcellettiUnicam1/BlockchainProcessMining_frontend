@@ -270,5 +270,15 @@ export const _simulateMempoolTxs = async (payload) => {
     }
 }
 
+export const _getCollections = async () => {
+    const response = await axios.get(`${serverUrl}/api/collections`);
+    return response.data; 
+}
+
+export const _getTransactionsFromDb = async (queryPayload) => {
+    const response = await axios.post(`${serverUrl}/api/transactions`, queryPayload);
+    return response.data;
+}
+
 
 
