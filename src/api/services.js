@@ -168,17 +168,50 @@ export const _occelMapping = async (objectsToMap,blockchainLog) => {
         return {status: error.response.status, data: error.response.data}
     }
 }
+//OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
+export const _ocelXes = async (objectsToXes, jsonFile) => {
+  try {
+    const formData = new FormData();
+    formData.append("jsonFile", jsonFile);
+    formData.append("objectsToXes", JSON.stringify(objectsToXes));
 
-export const _ocelXes = async (objectsToXes,jsonToXes)=>{
+    const response = await axios.post(serverUrl + "/api/xes", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    return { status: response.status, data: response.data };
+  } catch (error) {
+    console.error(error);
+    return {
+      status: error.response?.status ?? 500,
+      data: error.response?.data ?? { message: error.message },
+    };
+  }
+};
+
+export const _extractXesKeys = async (jsonFile) => {
     try {
-        const response = await axios.post(serverUrl + "/api/xes", {objectsToXes,jsonToXes})
-        return {status: response.status, data: response.data}
-    } catch (error) {
-        console.error(error)
-        return {status: error.response.status, data: error.response.data}
-    }
+        const formData = new FormData();
+        formData.append("jsonFile", jsonFile);
 
-}
+        const response = await axios.post(serverUrl + "/api/xes/keys", formData, {
+            headers: {
+                "Content-Type": "multipart/form-data",
+            },
+        });
+
+        return { status: response.status, data: response.data };
+    } catch (error) {
+        console.error(error);
+        return {
+            status: error.response?.status,
+            data: error.response?.data,
+        };
+    }
+};
+//OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
 
 export const _generateGraph=async (jsonData,edges)=>{
     try {
@@ -269,6 +302,3 @@ export const _simulateMempoolTxs = async (payload) => {
         return { status: err?.response?.status, data: err?.response?.data };
     }
 }
-
-
-

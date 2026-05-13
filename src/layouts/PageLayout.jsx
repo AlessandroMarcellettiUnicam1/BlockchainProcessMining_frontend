@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
     Box,
     Button,
@@ -88,21 +88,31 @@ const limitJsonSize = (data) => {
 
 function PageLayout({children, loading, setLoading}) {
     const {results, setResults, ocel, setOcel,setXes,xes} = useDataContext()
+console.log("XES LENGTH:", xes?.xesString?.length);
 
     const [showOcel, setShowOcel] = useState(false);
     const [showXes, setShowXes] = useState(false);
 
+    const path = window.location.pathname;
 
-    const path = window.location.pathname
+    useEffect(() => {
+    if (path === "/xes" && xes?.xesString) {
+        setShowXes(true);
+    }
+}, [path, xes]);
 
+    
     const handleShowXes =() =>{
         setShowXes(!showXes)
     }
     const handleDeleteXes=()=>{
         setResults(null)
         setXes({
-            xes:null
+            //
+             xesString: null
         })
+        //
+        setShowXes(false);
         window.history.replaceState({}, '', path)
     }
     const handleShowOcel = () => {
@@ -313,7 +323,7 @@ function PageLayout({children, loading, setLoading}) {
                                         </Box>
                                     ) : showOcel ? (
                                         <JsonView value={ocel} style={{ ...darkTheme, fontSize: '14px' }} width="100%" />
-                                    ) : showXes ? (
+                                    ) : path === "/xes" && (showXes || xes?.xesString) ? (
                                         <Box sx={{
                                             width: "100%",
                                             maxWidth: "100%",
@@ -326,7 +336,10 @@ function PageLayout({children, loading, setLoading}) {
                                                 display: "inline-block",  // Ensures the box takes the exact width of the XML content
                                                 minWidth: "100%"  // Prevents shrinking
                                             }}>
-                                                <XMLViewer xml={xes.xesString || "<empty></empty>"} />
+                                               {/* <XMLViewer xml={xes.xesString || "<empty></empty>"} /> */}
+                                               <pre style={{ whiteSpace: "pre-wrap" }}>
+                                                    {(xes?.xesString || "<empty></empty>").slice(0, 5000)}
+                                                </pre>
                                             </Box>
                                         </Box>
                                     ) : results && (
