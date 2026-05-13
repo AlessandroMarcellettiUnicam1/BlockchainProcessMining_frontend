@@ -280,5 +280,9 @@ export const _getTransactionsFromDb = async (queryPayload) => {
     return response.data;
 }
 
+export const _convertLogsToXes = async (payload) => {
+    const response = await axios.post(`${serverUrl}/api/generate-base-xes`, payload);
+    return response.data;
+}
 
 

@@ -12,9 +12,10 @@ import { FileUpload } from "@mui/icons-material";
 import { useQuery } from "react-query";
 import RuleParser from './CoBlockly/coblockComponents/RuleParser.tsx';
 import CoBlocklyEditor from './CoBlockly/coblockComponents/CoBlocklyEditor.tsx';
-import { _getCollections, _getTransactionsFromDb } from '../api/services.js';
+import { _getCollections, _getTransactionsFromDb, _convertLogsToXes } from '../api/services.js';
 import { HiddenInput } from "../components/HiddenInput"; 
 import { CollectionDropdown } from "../components/dataVisualization/CollectionDropdown"; 
+
 
 export default function RealTimeCompliancePage() {
 
@@ -27,6 +28,9 @@ export default function RealTimeCompliancePage() {
     const [selectedCollections, setSelectedCollections] = useState([]);
     const [query, setQuery] = useState({});
     const [transactionsJson, setTransactionsJson] = useState(null);
+
+    const [isConverting, setIsConverting] = useState(false); // stato per la conversione in xes base
+    const [sessionId, setSessionId] = useState(null); // stato per il sessionId di Redis
 
     const { isLoading: isLoadingCollections, data: collections, isError } = useQuery({
         queryKey: ["collections"],
@@ -51,7 +55,7 @@ export default function RealTimeCompliancePage() {
             const content = event.target.result;
             try {
                 const parsed = JSON.parse(content);
-                setTransactionsJson(parsed); // Salviamo il file JSON direttamente nello stato
+                setTransactionsJson(parsed); 
             } catch (err) {
                 console.error("Invalid JSON file");
             }
@@ -62,43 +66,50 @@ export default function RealTimeCompliancePage() {
         e.target.value = null;
     };
 
+    const handleConfirmAndConvert = async () => {
+        setIsConverting(true);
+        try {
+
+            // normalizzazione dell'array json
+            let cleanData = transactionsJson;
+
+            if (cleanData && cleanData.data) {
+                cleanData = cleanData.data;
+            }
+
+            if (!Array.isArray(cleanData)) {
+                cleanData = [cleanData];
+            }
+
+            // payload con mapping standard 
+            const payload = {
+                data: cleanData, 
+                case_col: "transactionHash", 
+                activity_col: "functionName",
+                time_col: "timestamp",
+                xes_name: "base_log_session" 
+            };
+            
+            const response = await _convertLogsToXes(payload);
+            setSessionId(response.sessionId); 
+            alert("Conversione XES completata! Session ID: " + response.sessionId);
+        } catch (error) {
+            console.error("Errore durante la conversione", error);
+            alert("Errore durante la conversione");
+        } finally {
+            setIsConverting(false);
+        }
+    };
+
     return (
         <Box p={4}>
-    
-            {/* Definizione della regola CoBlock */}
             <Box mb={4} p={3} border={1} borderRadius={2} borderColor="grey.300">
-                
                 <Typography variant="h6" mb={3} fontWeight="bold" color="primary">
-                    1. Define a CoBlock rule
-                </Typography>
-
-                <CoBlocklyEditor onRuleTranslated={setRuleText} />
-                
-                <RuleParser 
-                    ruleText={ruleText} 
-                    setRuleText={setRuleText} 
-                    onRuleParsed={setParsedRule} 
-                />
-
-                {parsedRule && (
-                    <Typography variant="body2" color="success.main" mt={1}>
-                        ✓ Rule parsed and saved in page memory.
-                    </Typography>
-                )}
-
-            </Box>
-
-            <Box>
-                <Typography variant="h6" mb={3} fontWeight="bold" color="primary">
-                    2. Upload logs or choose from DB
+                    1. Upload logs or choose from DB
                 </Typography>
 
                 <FormControl mb={2}>
-                    <RadioGroup
-                        row
-                        value={dataSource}
-                        onChange={(e) => setDataSource(e.target.value)}
-                    >
+                    <RadioGroup row value={dataSource} onChange={(e) => setDataSource(e.target.value)}>
                         <FormControlLabel value="file" control={<Radio />} label="JSON File" />
                         <FormControlLabel value="database" control={<Radio />} label="Database" />
                     </RadioGroup>
@@ -106,14 +117,12 @@ export default function RealTimeCompliancePage() {
 
                 <Box mt={2}>
                     {dataSource === "file" && (
-                        <Button
-                            component="label"
-                            variant="contained"
-                            startIcon={<FileUpload />}
-                            sx={{ padding: 1, height: "55px" }}
-                        >
-                            Upload File
-                            <HiddenInput type="file" onChange={handleFileChange} />
+                        <Button component="label" variant="contained" startIcon={<FileUpload />}>
+                            Upload File 
+                            <HiddenInput 
+                                type="file" 
+                                accept=".json, application/json"
+                                onChange={handleFileChange} />
                         </Button>
                     )}
 
@@ -130,11 +139,43 @@ export default function RealTimeCompliancePage() {
 
                 {transactionsJson && (
                     <Typography variant="body2" color="success.main" mt={2}>
-                        ✓ {transactionsJson.length} transactions loaded in memory and ready for conversion.
+                        ✓ Transactions loaded and ready for conversion.
                     </Typography>
                 )}
-                
+
+                <Box mt={3}>
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        disabled={isConverting || !transactionsJson || transactionsJson.length === 0}
+                        onClick={handleConfirmAndConvert}
+                    >
+                        {isConverting ? "Converting..." : "Generate base XES"}
+                    </Button>
+                </Box>
             </Box>
+
+            <Box mb={4} p={3} border={1} borderRadius={2} borderColor="grey.300">
+                
+                <Typography variant="h6" mb={3} fontWeight="bold" color="primary">
+                    2. Define a CoBlock rule
+                </Typography>
+
+                <CoBlocklyEditor onRuleTranslated={setRuleText} />
+                
+                <RuleParser 
+                    ruleText={ruleText} 
+                    setRuleText={setRuleText} 
+                    onRuleParsed={setParsedRule} 
+                />
+
+                {parsedRule && (
+                    <Typography variant="body2" color="success.main" mt={1}>
+                        ✓ Rule parsed and saved in page memory.
+                    </Typography>
+                )}
+            </Box>
+
             
         </Box>
     );
