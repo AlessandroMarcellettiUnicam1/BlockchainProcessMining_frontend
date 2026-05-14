@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { isAddress } from "web3-validator";
 import { 
     Box, 
     Typography, 
@@ -6,7 +7,8 @@ import {
     RadioGroup, 
     FormControlLabel, 
     Radio,
-    Button 
+    Button,
+    TextField
 } from '@mui/material';
 import { FileUpload } from "@mui/icons-material";
 import { useQuery } from "react-query";
@@ -31,6 +33,12 @@ export default function RealTimeCompliancePage() {
 
     const [isConverting, setIsConverting] = useState(false); // stato per la conversione in xes base
     const [sessionId, setSessionId] = useState(null); // stato per il sessionId di Redis
+
+    // stati per il contratto per filtrare la mempool
+    const [inputAddress, setInputAddress] = useState("");
+    const [validAddress, setValidAddress] = useState("");
+    const [addressFilters, setAddressFilters] = useState("from") // from, to o both
+    const [addressError, setAddressError] = useState(false);
 
     const { isLoading: isLoadingCollections, data: collections, isError } = useQuery({
         queryKey: ["collections"],
@@ -100,6 +108,18 @@ export default function RealTimeCompliancePage() {
             setIsConverting(false);
         }
     };
+
+    // funzione per validare l'indirizzo inserito in input dall'utente per filtrare sulla mempool
+    const handleConfirmAddress = async () => {
+        if (isAddress(inputAddress)) {
+            setValidAddress(inputAddress.toLowerCase());
+            setAddressError(false);
+        } 
+        else {
+            setValidAddress("");
+            setAddressError(true);
+        }
+    }
 
     return (
         <Box p={4}>
@@ -174,6 +194,50 @@ export default function RealTimeCompliancePage() {
                         ✓ Rule parsed and saved in page memory.
                     </Typography>
                 )}
+            </Box>
+
+            <Box mb={4} p={3} border={1} borderRadius={2} borderColor="grey.300">
+
+                <Typography variant="h6" mb={3} fontWeight="bold" color="primary">
+                    3. Insert an address to filter the mempool
+                </Typography>
+
+                <Box display="flex" alignItems="flex-start" gap={2} mb={3}>
+                    <TextField 
+                        label="Contract Address" 
+                        variant="outlined" 
+                        fullWidth
+                        value={inputAddress}
+                        onChange={(e) => setInputAddress(e.target.value)}
+                        error={addressError} 
+                        helperText={addressError ? "Invalid EVM Address (Must be 0x... and 42 chars)" : "Enter a valid 0x... address"}
+                    />
+                    <Button 
+                        variant="contained" 
+                        color="primary" 
+                        onClick={handleConfirmAddress}
+                        disabled={!inputAddress} 
+                        sx={{ height: '56px' }}
+                    >
+                        Confirm
+                    </Button>
+                </Box>
+
+                <FormControl>
+                    <Typography variant="body2" color="textSecondary" mb={1}>Filter Direction:</Typography>
+                    <RadioGroup row value={addressFilters} onChange={(e) => setAddressFilters(e.target.value)}>
+                        <FormControlLabel value="from" control={<Radio />} label="From" />
+                        <FormControlLabel value="to" control={<Radio />} label="To" />
+                        <FormControlLabel value="both" control={<Radio />} label="Both" />
+                    </RadioGroup>
+                </FormControl>
+
+                {validAddress && (
+                    <Typography variant="body2" color="success.main" mt={2}>
+                        ✓ Filter locked: Listening for transactions {addressFilters === 'both' ? 'to/from' : addressFilters} {validAddress.substring(0,6)}...{validAddress.substring(38)}
+                    </Typography>
+                )}
+                
             </Box>
 
             

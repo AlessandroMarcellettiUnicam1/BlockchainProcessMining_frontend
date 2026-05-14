@@ -52,7 +52,8 @@
     "vis-data": "^7.1.9",
     "vis-network": "^9.1.9",
     "web-vitals": "^2.1.4",
-    "web3": "^4.16.0"
+    "web3": "^4.16.0",
+    "web3-validator": "^2.0.6"
   },
   "scripts": {
     "test": "react-scripts test",
