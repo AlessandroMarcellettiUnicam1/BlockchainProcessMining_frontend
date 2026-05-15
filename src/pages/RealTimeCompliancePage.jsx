@@ -11,9 +11,12 @@ import {
     TextField,
     Select,
     MenuItem,
-    InputLabel
+    InputLabel,
+    Tooltip,
+    IconButton
 } from '@mui/material';
 import { FileUpload } from "@mui/icons-material";
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { useQuery } from "react-query";
 import RuleParser from './CoBlockly/coblockComponents/RuleParser.tsx';
 import CoBlocklyEditor from './CoBlockly/coblockComponents/CoBlocklyEditor.tsx';
@@ -114,12 +117,13 @@ export default function RealTimeCompliancePage() {
                 case_col: mapping.case_col, 
                 activity_col: mapping.activity_col,
                 time_col: mapping.time_col,
-                xes_name: "base_log_session" 
+                xes_name: "base_log_session",
+                previousSessionId: sessionId
             };
             
             const response = await _convertLogsToXes(payload);
-            setSessionId(response.sessionId); 
 
+            setSessionId(response.sessionId); 
             setLogColumns(response.columns);
 
             alert("Conversione XES completata. Session ID: " + response.sessionId);
@@ -146,9 +150,43 @@ export default function RealTimeCompliancePage() {
     return (
         <Box p={4}>
             <Box mb={4} p={3} border={1} borderRadius={2} borderColor="grey.300">
-                <Typography variant="h6" mb={3} fontWeight="bold" color="primary">
-                    1. Upload logs or choose from DB
-                </Typography>
+                <Box display="flex" alignItems="center" mb={3}>
+                    <Typography variant="h6" fontWeight="bold" color="primary">
+                        1. Upload logs or choose from DB
+                    </Typography>
+                    
+                    {/* Tooltip con il formato JSON */}
+                    <Tooltip 
+                        title={
+                            <Box sx={{ whiteSpace: 'pre-wrap', fontSize: '0.85rem', p: 0.5 }}>
+            {`The uploaded log must contain these keys:
+
+{
+    "functionName",
+    "transactionHash",
+    "blockNumber",
+    "contractAddress",
+    "sender",
+    "gasUsed",
+    "timestamp",
+    "inputs",
+    "value",
+    "storageState",
+    "internalTxs",
+    "events"
+}`
+        
+        }
+                            </Box>
+                        } 
+                        placement="right" 
+                        arrow
+                    >
+                        <IconButton size="small" sx={{ ml: 1, color: 'text.secondary' }}>
+                            <InfoOutlinedIcon fontSize="small" />
+                        </IconButton>
+                    </Tooltip>
+                </Box>
 
                 <FormControl mb={2}>
                     <RadioGroup row value={dataSource} onChange={(e) => setDataSource(e.target.value)}>
@@ -327,6 +365,10 @@ export default function RealTimeCompliancePage() {
                     </Typography>
                 )}
                 
+            </Box>
+
+            <Box>
+                { /* Bottone per avviare il monitor automatico che avvia mempool listenere e worker indipendente */}
             </Box>
 
             
