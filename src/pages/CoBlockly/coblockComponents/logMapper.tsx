@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 interface LogMapperProps {
-  columns: string[]; // colonne estratte dal LogUploader
+  columns: string[]; // colonne estratte dal logHandler
   onMappingChange: (mapping: any) => void; // per inviare il mapping finale al padre
 }
 

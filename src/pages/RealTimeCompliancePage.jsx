@@ -17,6 +17,7 @@ import { FileUpload } from "@mui/icons-material";
 import { useQuery } from "react-query";
 import RuleParser from './CoBlockly/coblockComponents/RuleParser.tsx';
 import CoBlocklyEditor from './CoBlockly/coblockComponents/CoBlocklyEditor.tsx';
+import LogMapper from './CoBlockly/coblockComponents/LogMapper.tsx';
 import { _getCollections, _getTransactionsFromDb, _convertLogsToXes } from '../api/services.js';
 import { HiddenInput } from "../components/HiddenInput"; 
 import { CollectionDropdown } from "../components/dataVisualization/CollectionDropdown"; 
@@ -42,6 +43,10 @@ export default function RealTimeCompliancePage() {
     const [validAddress, setValidAddress] = useState("");
     const [addressFilters, setAddressFilters] = useState("from") // from, to o both
     const [addressError, setAddressError] = useState(false);
+
+    // stati per il mapping
+    const [logColumns, setLogColumns] = useState([]);
+    const [logMapping, setLogMapping] = useState({});
 
     // costanti per il mapping di conversione
     const jsonKeys = [
@@ -114,6 +119,9 @@ export default function RealTimeCompliancePage() {
             
             const response = await _convertLogsToXes(payload);
             setSessionId(response.sessionId); 
+
+            setLogColumns(response.columns);
+
             alert("Conversione XES completata. Session ID: " + response.sessionId);
         } catch (error) {
             console.error("Errore durante la conversione", error);
@@ -240,9 +248,26 @@ export default function RealTimeCompliancePage() {
             </Box>
 
             <Box mb={4} p={3} border={1} borderRadius={2} borderColor="grey.300">
+                <Typography variant="h6" mb={3} fontWeight="bold" color="primary">
+                    2. XES mapping
+                </Typography>
+
+                {logColumns.length > 0 ? (
+                    <LogMapper 
+                        columns={logColumns} 
+                        onMappingChange={setLogMapping} 
+                    />
+                ) : (
+                    <Typography variant="body2" color="textSecondary">
+                        Upload log first
+                    </Typography>
+                )}
+            </Box>
+
+            <Box mb={4} p={3} border={1} borderRadius={2} borderColor="grey.300">
                 
                 <Typography variant="h6" mb={3} fontWeight="bold" color="primary">
-                    2. Define a CoBlock rule
+                    3. Define a CoBlock rule
                 </Typography>
 
                 <CoBlocklyEditor onRuleTranslated={setRuleText} />
@@ -263,7 +288,7 @@ export default function RealTimeCompliancePage() {
             <Box mb={4} p={3} border={1} borderRadius={2} borderColor="grey.300">
 
                 <Typography variant="h6" mb={3} fontWeight="bold" color="primary">
-                    3. Insert an address to filter the mempool
+                    4. Insert an address to filter the mempool
                 </Typography>
 
                 <Box display="flex" alignItems="flex-start" gap={2} mb={3}>
