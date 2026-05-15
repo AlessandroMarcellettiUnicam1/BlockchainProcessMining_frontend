@@ -28,6 +28,11 @@ import { CollectionDropdown } from "../components/dataVisualization/CollectionDr
 
 export default function RealTimeCompliancePage() {
 
+    // stati per ascoltare dinamicamente le transazioni
+    const [liveTxs, setLiveTxs] = useState([]);
+    const [isListening, setIsListening] = useState(false);
+    const [eventSource, setEventSource] = useState(null);
+
     // stati per coblockly e coblock parser
     const [ruleText, setRuleText] = useState("");
     const [parsedRule, setParsedRule] = useState(null);
@@ -66,7 +71,9 @@ export default function RealTimeCompliancePage() {
 
     const { isLoading: isLoadingCollections, data: collections, isError } = useQuery({
         queryKey: ["collections"],
-        queryFn: _getCollections 
+        queryFn: _getCollections,
+        refetchOnWindowFocus: false, // Disabilita il refetch al cambio scheda
+        staleTime: Infinity          // Considera i dati sempre validi (non fa refetch automatici)
     });
 
     const { data: dbResults } = useQuery({
@@ -146,6 +153,69 @@ export default function RealTimeCompliancePage() {
             setAddressError(true);
         }
     }
+
+    //OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
+
+    const startMonitor = async () => {
+        if (!sessionId) return alert("Genera prima il base XES!");
+        
+        try {
+            // 1. Chiami il tuo endpoint originale per far partire il Listener Node.js
+            await fetch('http://localhost:8000/api/start-compliance-monitoring', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    sessionId, addressFilters, validAddress: inputAddress, mapping, parsedRule
+                })
+            });
+
+            setIsListening(true);
+            setLiveTxs([]); // Pulisce le tx precedenti
+
+            // 2. Apri il canale in tempo reale SSE
+            const source = new EventSource(`http://localhost:8000/api/stream-mempool/${sessionId}`);
+            
+            source.onmessage = (event) => {
+                const newTx = JSON.parse(event.data);
+                // Aggiunge la nuova transazione in cima alla lista
+                setLiveTxs((prev) => [newTx, ...prev]); 
+            };
+
+            setEventSource(source);
+
+        } catch (err) {
+            console.error("Errore avvio monitor:", err);
+        }
+    };
+
+    const stopMonitor = async () => {
+        // 1. Chiude immediatamente il canale Server-Sent Events (SSE) lato frontend
+        if (eventSource) {
+            eventSource.close(); 
+            setEventSource(null);
+        }
+        
+        // Sblocca i pulsanti della UI
+        setIsListening(false);
+        
+        // 2. Invia il comando di spegnimento al backend
+        try {
+            const response = await fetch('http://localhost:8000/api/stop-compliance-monitoring', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sessionId })
+            });
+
+            if (!response.ok) {
+                throw new Error("Errore durante lo spegnimento lato server");
+            }
+
+            console.log("Monitoraggio e WebSocket fermati con successo.");
+        } catch (err) {
+            console.error("Errore durante la chiusura del monitoraggio:", err);
+            alert("Il monitoraggio si è fermato nel browser, ma potrebbe esserci un errore nel server.");
+        }
+    };
 
     return (
         <Box p={4}>
@@ -367,8 +437,43 @@ export default function RealTimeCompliancePage() {
                 
             </Box>
 
-            <Box>
                 { /* Bottone per avviare il monitor automatico che avvia mempool listenere e worker indipendente */}
+                <Box mb={4} p={3} border={1} borderRadius={2} borderColor="grey.300">
+                <Box display="flex" gap={2} mb={3}>
+                    <Button 
+                        variant="contained" 
+                        color="success" 
+                        onClick={startMonitor}
+                        disabled={isListening || !validAddress || !sessionId}
+                    >
+                        START LIVE MONITOR
+                    </Button>
+                    <Button 
+                        variant="outlined" 
+                        color="error" 
+                        onClick={stopMonitor}
+                        disabled={!isListening}
+                    >
+                        STOP MONITOR
+                    </Button>
+                </Box>
+
+                {/* VISUALIZZAZIONE GREZZA DELLE TRANSAZIONI */}
+                {liveTxs.length > 0 && (
+                    <Box mt={3} p={2} bgcolor="grey.100" borderRadius={2} maxHeight="400px" overflow="auto">
+                        <Typography variant="subtitle2" color="textSecondary" mb={2}>
+                            Transazioni catturate: {liveTxs.length}
+                        </Typography>
+                        
+                        {liveTxs.map((tx, idx) => (
+                            <Box key={idx} p={2} mb={2} bgcolor="white" border={1} borderColor="grey.300" borderRadius={1}>
+                                <pre style={{ margin: 0, fontSize: '0.75rem', overflowX: 'auto' }}>
+                                    {JSON.stringify({ hash: tx.hash, from: tx.from, to: tx.to, value: tx.value }, null, 2)}
+                                </pre>
+                            </Box>
+                        ))}
+                    </Box>
+                )}
             </Box>
 
             
