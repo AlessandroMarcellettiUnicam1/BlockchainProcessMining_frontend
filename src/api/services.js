@@ -285,4 +285,14 @@ export const _convertLogsToXes = async (payload) => {
     return response.data;
 }
 
+export const _startComplianceMonitoring = async (payload) => {
+    const response = await axios.post(`${serverUrl}/api/start-compliance-monitoring`, payload);
+    return response.data;
+};
+
+export const _stopComplianceMonitoring = async (payload) => {
+    const response = await axios.post(`${serverUrl}/api/stop-compliance-monitoring`, payload);
+    return response.data;
+};
+
 
