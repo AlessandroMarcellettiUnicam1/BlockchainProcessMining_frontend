@@ -28,7 +28,7 @@ import {
   _getTransactionsFromDb,
   _convertLogsToXes,
   _startComplianceMonitoring,
-  _stopComplianceMonitoring
+  _stopComplianceMonitoring,
 } from "../api/services.js";
 import { HiddenInput } from "../components/HiddenInput";
 import { CollectionDropdown } from "../components/dataVisualization/CollectionDropdown";
@@ -60,7 +60,7 @@ export default function RealTimeCompliancePage() {
     time_col: "",
   });
 
-const startMonitor = async () => {
+  const startMonitor = async () => {
     if (!sessionId) return alert("Genera prima il base XES!");
 
     try {
@@ -80,9 +80,10 @@ const startMonitor = async () => {
       // apertura del canale in tempo reale SSE (questo rimane qui perché è nativo del browser)
       // Se hai una variabile globale per l'host, puoi sostituire "http://localhost:8000"
       const source = new EventSource(
-        `http://localhost:8000/api/stream-mempool/${sessionId}`
+        `http://localhost:8000/api/stream-mempool/${sessionId}`,
       );
 
+      // TODO: metti un limite altimeti si satura la RAM. 
       source.onmessage = (event) => {
         const newTx = JSON.parse(event.data);
         // aggiunge la nuova transazione in cima alla lista
@@ -112,7 +113,7 @@ const startMonitor = async () => {
     } catch (err) {
       console.error("Errore durante la chiusura del monitoraggio:", err);
       alert(
-        "Il monitoraggio si è fermato nel browser, ma potrebbe esserci un errore nel server."
+        "Il monitoraggio si è fermato nel browser, ma potrebbe esserci un errore nel server.",
       );
     }
   };
