@@ -83,11 +83,14 @@ export default function RealTimeCompliancePage() {
         `http://localhost:8000/api/stream-mempool/${sessionId}`,
       );
 
-      // TODO: metti un limite altimeti si satura la RAM. 
+      // TODO: metti un limite altimeti si satura la RAM.
       source.onmessage = (event) => {
-        const newTx = JSON.parse(event.data);
-        // aggiunge la nuova transazione in cima alla lista
-        setLiveTxs((prev) => [newTx, ...prev]);
+        const incomingData = JSON.parse(event.data);
+        
+        // Accetta solo i messaggi elaborati e inviati dal Worker
+        if (incomingData.type === 'SIMULATION_RESULT') {
+          setLiveTxs((prev) => [incomingData, ...prev].slice(0, 50));
+        }
       };
 
       setEventSource(source);
@@ -241,11 +244,11 @@ export default function RealTimeCompliancePage() {
             p={2}
             bgcolor="grey.100"
             borderRadius={2}
-            maxHeight="400px"
+            maxHeight="500px" // Aumentato leggermente lo spazio per JSON più lunghi
             overflow="auto"
           >
             <Typography variant="subtitle2" color="textSecondary" mb={2}>
-              Transazioni catturate: {liveTxs.length}
+              Transazioni Simulate: {liveTxs.length}
             </Typography>
 
             {liveTxs.map((tx, idx) => (
@@ -258,19 +261,20 @@ export default function RealTimeCompliancePage() {
                 borderColor="grey.300"
                 borderRadius={1}
               >
+                <Typography
+                  variant="caption"
+                  color="primary"
+                  fontWeight="bold"
+                  display="block"
+                  mb={1}
+                >
+                  Hash: {tx.hash} | Target: {tx.target}
+                </Typography>
                 <pre
                   style={{ margin: 0, fontSize: "0.75rem", overflowX: "auto" }}
                 >
-                  {JSON.stringify(
-                    {
-                      hash: tx.hash,
-                      from: tx.from,
-                      to: tx.to,
-                      value: tx.value,
-                    },
-                    null,
-                    2,
-                  )}
+                  {/* Stampiamo interamente i dati risultanti dalla simulazione */}
+                  {JSON.stringify(tx.simulationData, null, 2)}
                 </pre>
               </Box>
             ))}
