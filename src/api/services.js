@@ -211,6 +211,28 @@ export const _extractXesKeys = async (jsonFile) => {
         };
     }
 };
+
+export const _getCollections = async () => {
+  try {
+    const response = await axios.get(serverUrl + "/api/collections");
+    return { status: response.status, data: response.data };
+  } catch (error) {
+    console.error(error);
+    return { status: error.response?.status, data: error.response?.data };
+  }
+};
+
+export const _getTransactionsFromCollections = async (selectedCollections) => {
+  try {
+    const response = await axios.post(serverUrl + "/api/transactions", {
+      selectedCollection: selectedCollections,
+    });
+    return { status: response.status, data: response.data };
+  } catch (error) {
+    console.error(error);
+    return { status: error.response?.status, data: error.response?.data };
+  }
+};
 //OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
 
 export const _generateGraph=async (jsonData,edges)=>{
