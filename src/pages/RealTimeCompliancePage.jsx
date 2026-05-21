@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { isAddress } from "web3-validator";
 import {
   Box,
@@ -23,6 +23,9 @@ import CoBlocklyEditor from "./CoBlockly/coblockComponents/CoBlocklyEditor.tsx";
 import LogMapper from "./CoBlockly/coblockComponents/LogMapper.tsx";
 import MempoolFilter from "../components/liveCompliance/MempoolFilter.jsx";
 import XesConverter from "../components/liveCompliance/XesConverter.jsx";
+import LiveComplianceViewer from "../components/liveCompliance/LiveComplianceViewer.jsx";
+import { HiddenInput } from "../components/HiddenInput";
+import { CollectionDropdown } from "../components/dataVisualization/CollectionDropdown";
 import {
   _getCollections,
   _getTransactionsFromDb,
@@ -30,20 +33,15 @@ import {
   _startComplianceMonitoring,
   _stopComplianceMonitoring,
 } from "../api/services.js";
-import { HiddenInput } from "../components/HiddenInput";
-import { CollectionDropdown } from "../components/dataVisualization/CollectionDropdown";
+import { dexieDB } from "../dexie.js";
 
 export default function RealTimeCompliancePage() {
-  // stati per ascoltare dinamicamente le transazioni
-  const [liveTxs, setLiveTxs] = useState([]);
   const [isListening, setIsListening] = useState(false);
   const [eventSource, setEventSource] = useState(null);
 
   // stati per coblockly e coblock parser
   const [ruleText, setRuleText] = useState("");
   const [parsedRule, setParsedRule] = useState(null);
-
-  const [isConverting, setIsConverting] = useState(false); // stato per la conversione in xes base
   const [sessionId, setSessionId] = useState(null); // stato per il sessionId di Redis
 
   // stati per il contratto per filtrare la mempool
@@ -60,11 +58,51 @@ export default function RealTimeCompliancePage() {
     time_col: "",
   });
 
+  // stati per visualizzatore live
+  const [latestLiveData, setLatestLiveData] = useState(null); // Dati per la visualizzazione Live
+  const [playbackMode, setPlaybackMode] = useState(false); // Flag Modalità Navigazione
+  const [currentIndex, setCurrentIndex] = useState(0); // Cursore temporale
+  const [maxIndex, setMaxIndex] = useState(0); // Max step raggiunti
+  const [viewData, setViewData] = useState(null); // Dati caricati da IndexedDB per il Playback
+  const processedHashesRef = useRef(new Set());
+  const stepCounterRef = useRef(0);
+
+  useEffect(() => {
+    return () => {
+      if (eventSource) {
+        eventSource.close();
+      }
+    };
+  }, [eventSource]);
+
+  useEffect(() => {
+    if (playbackMode && currentIndex > 0) {
+      dexieDB.history.where('step').equals(currentIndex).first().then((snapshot) => {
+        if (snapshot) setViewData(snapshot);
+      });
+    }
+  }, [currentIndex, playbackMode]);
+
   const startMonitor = async () => {
     if (!sessionId) return alert("Genera prima il base XES!");
 
     try {
-      // 1. Chiamata API standardizzata tramite servizi
+
+      if (eventSource) {
+        eventSource.close();
+        setEventSource(null);
+      }
+      // 1. Reset completo del database e degli stati per la nuova sessione
+      await dexieDB.history.clear();
+      setPlaybackMode(false);
+      setCurrentIndex(0);
+      setMaxIndex(0);
+      setLatestLiveData(null);
+      setViewData(null);
+      processedHashesRef.current.clear();
+      stepCounterRef.current = 0;
+
+      // 2. Chiamata API standardizzata tramite servizi
       await _startComplianceMonitoring({
         sessionId,
         addressFilters,
@@ -75,21 +113,58 @@ export default function RealTimeCompliancePage() {
       });
 
       setIsListening(true);
-      setLiveTxs([]);
 
-      // apertura del canale in tempo reale SSE (questo rimane qui perché è nativo del browser)
-      // Se hai una variabile globale per l'host, puoi sostituire "http://localhost:8000"
       const source = new EventSource(
         `http://localhost:8000/api/stream-mempool/${sessionId}`,
       );
 
-      // TODO: metti un limite altimeti si satura la RAM.
-      source.onmessage = (event) => {
+      source.onmessage = async (event) => {
         const incomingData = JSON.parse(event.data);
-        
-        // Accetta solo i messaggi elaborati e inviati dal Worker
-        if (incomingData.type === 'SIMULATION_RESULT') {
-          setLiveTxs((prev) => [incomingData, ...prev].slice(0, 50));
+        const txHash = incomingData.hash;
+
+        if (processedHashesRef.current.has(txHash)) {
+          return;
+        }
+
+        if (
+          incomingData.type === "SIMULATION_RESULT" &&
+          incomingData.complianceResult
+        ) {
+
+          processedHashesRef.current.add(txHash);
+          stepCounterRef.current += 1;
+          const currentStep = stepCounterRef.current;
+
+          // Estrazione sicura dei dati
+          const c = incomingData.complianceResult.compliant || [];
+          const nc = incomingData.complianceResult.noncompliant || [];
+          const currentStats = {
+            compliant: c.length,
+            nonCompliant: nc.length,
+            ignored: 0,
+          };
+
+          // Creazione del pacchetto da salvare
+          const snapshot = {
+            sessionId: incomingData.sessionId,
+            hash: incomingData.hash,
+            step: currentStep,
+            compliantData: c,
+            nonCompliantData: nc,
+            stats: currentStats,
+          };
+
+          // Salvataggio asincrono su disco (IndexedDB)
+          await dexieDB.history.add(snapshot);
+
+          // Aggiornamento della UI Live (Tailing dell'ultimo evento)
+          setMaxIndex(currentStep);
+          setLatestLiveData({
+            hash: incomingData.hash,
+            compliantData: c,
+            nonCompliantData: nc,
+            stats: currentStats,
+          });
         }
       };
 
@@ -100,29 +175,28 @@ export default function RealTimeCompliancePage() {
   };
 
   const stopMonitor = async () => {
-    // chiude immediatamente il canale Server-Sent Events (SSE) lato frontend
     if (eventSource) {
       eventSource.close();
       setEventSource(null);
     }
 
-    // Sblocca i pulsanti della UI
     setIsListening(false);
 
-    // invia il comando di spegnimento al backend tramite servizi
+    // Attivazione automatica del Playback all'ultimo frame disponibile
+    setPlaybackMode(true);
+    setCurrentIndex(maxIndex);
+
     try {
       await _stopComplianceMonitoring({ sessionId });
-      console.log("Monitoraggio e WebSocket fermati con successo.");
+      console.log("Monitoraggio fermato con successo.");
     } catch (err) {
       console.error("Errore durante la chiusura del monitoraggio:", err);
-      alert(
-        "Il monitoraggio si è fermato nel browser, ma potrebbe esserci un errore nel server.",
-      );
     }
   };
 
   return (
     <Box p={4}>
+      {/* 1. XES Converter */}
       <Box mb={4} p={3} border={1} borderRadius={2} borderColor="grey.300">
         <Box display="flex" alignItems="center" gap={1} mb={3}>
           <Typography variant="h6" fontWeight="bold" color="primary">
@@ -170,6 +244,7 @@ export default function RealTimeCompliancePage() {
         />
       </Box>
 
+      {/* 2. XES Mapping */}
       <Box mb={4} p={3} border={1} borderRadius={2} borderColor="grey.300">
         <Typography variant="h6" mb={3} fontWeight="bold" color="primary">
           2. XES mapping
@@ -184,6 +259,7 @@ export default function RealTimeCompliancePage() {
         )}
       </Box>
 
+      {/* 3. CoBlock Rule */}
       <Box mb={4} p={3} border={1} borderRadius={2} borderColor="grey.300">
         <Typography variant="h6" mb={3} fontWeight="bold" color="primary">
           3. Define a CoBlock rule
@@ -204,6 +280,7 @@ export default function RealTimeCompliancePage() {
         )}
       </Box>
 
+      {/* 4. Mempool Filter */}
       <Box mb={4} p={3} border={1} borderRadius={2} borderColor="grey.300">
         <Typography variant="h6" mb={3} fontWeight="bold" color="primary">
           4. Insert an address to filter the mempool
@@ -217,6 +294,7 @@ export default function RealTimeCompliancePage() {
         />
       </Box>
 
+      {/* 5. LIVE COMPLIANCE AREA */}
       <Box mb={4} p={3} border={1} borderRadius={2} borderColor="grey.300">
         <Box display="flex" gap={2} mb={3}>
           <Button
@@ -237,47 +315,97 @@ export default function RealTimeCompliancePage() {
           </Button>
         </Box>
 
-        {/* VISUALIZZAZIONE GREZZA DELLE TRANSAZIONI */}
-        {liveTxs.length > 0 && (
+        {/* --- MODALITÀ LIVE --- */}
+        {isListening && latestLiveData && (
           <Box
             mt={3}
             p={2}
-            bgcolor="grey.100"
+            bgcolor="grey.50"
             borderRadius={2}
-            maxHeight="500px" // Aumentato leggermente lo spazio per JSON più lunghi
-            overflow="auto"
+            border={1}
+            borderColor="success.light"
           >
-            <Typography variant="subtitle2" color="textSecondary" mb={2}>
-              Transazioni Simulate: {liveTxs.length}
+            <Typography
+              variant="subtitle1"
+              color="success.main"
+              fontWeight="bold"
+              mb={1}
+            >
+              🔴 LIVE STREAMING - Ultima Transazione Analizzata
+            </Typography>
+            <Typography variant="caption" display="block" mb={2}>
+              Hash: {latestLiveData.hash}
             </Typography>
 
-            {liveTxs.map((tx, idx) => (
-              <Box
-                key={idx}
-                p={2}
-                mb={2}
-                bgcolor="white"
-                border={1}
-                borderColor="grey.300"
-                borderRadius={1}
+            <LiveComplianceViewer
+              compliantData={latestLiveData.compliantData}
+              nonCompliantData={latestLiveData.nonCompliantData}
+              stats={latestLiveData.stats}
+            />
+          </Box>
+        )}
+
+        {/* --- MODALITÀ PLAYBACK --- */}
+        {playbackMode && viewData && maxIndex > 0 && (
+          <Box
+            mt={3}
+            p={2}
+            bgcolor="info.50"
+            borderRadius={2}
+            border={1}
+            borderColor="info.light"
+          >
+            <Typography
+              variant="subtitle1"
+              color="primary.main"
+              fontWeight="bold"
+              mb={2}
+            >
+              ⏸ STORICO COMPLIANCE (Playback)
+            </Typography>
+
+            <Box
+              display="flex"
+              justifyContent="space-between"
+              alignItems="center"
+              mb={3}
+              p={2}
+              bgcolor="white"
+              borderRadius={1}
+            >
+              <Button
+                variant="contained"
+                onClick={() => setCurrentIndex((prev) => Math.max(1, prev - 1))}
+                disabled={currentIndex <= 1}
               >
-                <Typography
-                  variant="caption"
-                  color="primary"
-                  fontWeight="bold"
-                  display="block"
-                  mb={1}
-                >
-                  Hash: {tx.hash} | Target: {tx.target}
+                ⬅️ Precedente
+              </Button>
+
+              <Box textAlign="center">
+                <Typography variant="body1" fontWeight="bold">
+                  Step {currentIndex} di {maxIndex}
                 </Typography>
-                <pre
-                  style={{ margin: 0, fontSize: "0.75rem", overflowX: "auto" }}
-                >
-                  {/* Stampiamo interamente i dati risultanti dalla simulazione */}
-                  {JSON.stringify(tx.simulationData, null, 2)}
-                </pre>
+                <Typography variant="caption" color="textSecondary">
+                  Hash: {viewData.hash}
+                </Typography>
               </Box>
-            ))}
+
+              <Button
+                variant="contained"
+                onClick={() =>
+                  setCurrentIndex((prev) => Math.min(maxIndex, prev + 1))
+                }
+                disabled={currentIndex >= maxIndex}
+              >
+                Successivo ➡️
+              </Button>
+            </Box>
+
+            <LiveComplianceViewer
+              compliantData={viewData.compliantData}
+              nonCompliantData={viewData.nonCompliantData}
+              stats={viewData.stats}
+            />
           </Box>
         )}
       </Box>
