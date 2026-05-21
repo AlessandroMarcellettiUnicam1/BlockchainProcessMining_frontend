@@ -37,6 +37,7 @@ const jsonKeys = [
   "storageState",
   "internalTxs",
   "events",
+  "status"
 ];
 
 export default function XesConverter({
@@ -95,9 +96,13 @@ export default function XesConverter({
   const handleConfirmAndConvert = async () => {
     setIsConverting(true);
     try {
-      let cleanData = transactionsJson;
-      if (cleanData && cleanData.data) cleanData = cleanData.data;
-      if (!Array.isArray(cleanData)) cleanData = [cleanData];
+      let cleanData = [];
+
+      if (dataSource !== "empty") {
+        cleanData = transactionsJson;
+        if (cleanData && cleanData.data) cleanData = cleanData.data;
+        if (!Array.isArray(cleanData)) cleanData = [cleanData];
+      }
 
       const payload = {
         data: cleanData,
@@ -110,7 +115,13 @@ export default function XesConverter({
 
       const response = await _convertLogsToXes(payload);
 
-      onConversionSuccess(response.sessionId, response.columns);
+      let columnsToPass = response.columns;
+      
+      if (dataSource === "empty" || !columnsToPass || columnsToPass.length === 0) {
+        columnsToPass = [...jsonKeys];
+      }
+
+      onConversionSuccess(response.sessionId, columnsToPass);
 
       alert("Conversione XES completata. Session ID: " + response.sessionId);
     } catch (error) {
@@ -120,6 +131,12 @@ export default function XesConverter({
       setIsConverting(false);
     }
   };
+
+  const isDataReady =
+    dataSource === "empty" ||
+    (transactionsJson && Object.keys(transactionsJson).length > 0);
+  const isMappingComplete =
+    mapping.case_col && mapping.activity_col && mapping.time_col;
 
   return (
     <Box>
@@ -138,6 +155,11 @@ export default function XesConverter({
             value="database"
             control={<Radio />}
             label="Database"
+          />
+          <FormControlLabel
+            value="empty"
+            control={<Radio />}
+            label="No starting log"
           />
         </RadioGroup>
       </FormControl>
@@ -166,75 +188,73 @@ export default function XesConverter({
             setQueryState={setQuery}
           />
         )}
+        {dataSource === "empty" && (
+          <Typography variant="body2" color="textSecondary" sx={{ py: 1 }}>
+            Monitoring will start with an empty log
+          </Typography>
+        )}
       </Box>
 
-      {transactionsJson && (
-        <Box mt={3}>
-          <Typography variant="body2" color="success.main" mb={2}>
-            ✓ Transactions loaded
-          </Typography>
-
-          <Box display="flex" gap={2} mb={3}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Case Id</InputLabel>
-              <Select
-                value={mapping.case_col}
-                label="Case Id"
-                onChange={handleMappingChange("case_col")}
-              >
-                {jsonKeys.map((key) => (
-                  <MenuItem key={key} value={key}>
-                    {key}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
-            <FormControl fullWidth size="small">
-              <InputLabel>Activity Key</InputLabel>
-              <Select
-                value={mapping.activity_col}
-                label="Activity Key"
-                onChange={handleMappingChange("activity_col")}
-              >
-                {jsonKeys.map((key) => (
-                  <MenuItem key={key} value={key}>
-                    {key}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
-            <FormControl fullWidth size="small">
-              <InputLabel>Timestamp</InputLabel>
-              <Select
-                value={mapping.time_col}
-                label="Timestamp"
-                onChange={handleMappingChange("time_col")}
-              >
-                {jsonKeys.map((key) => (
-                  <MenuItem key={key} value={key}>
-                    {key}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Box>
-        </Box>
+      {dataSource !== "empty" && transactionsJson && (
+        <Typography variant="body2" color="success.main" mb={2}>
+          ✓ Transactions loaded
+        </Typography>
       )}
+
+      <Box mt={3}>
+        <Box display="flex" gap={2} mb={3}>
+          <FormControl fullWidth size="small">
+            <InputLabel>Case Id</InputLabel>
+            <Select
+              value={mapping.case_col}
+              label="Case Id"
+              onChange={handleMappingChange("case_col")}
+            >
+              {jsonKeys.map((key) => (
+                <MenuItem key={key} value={key}>
+                  {key}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <FormControl fullWidth size="small">
+            <InputLabel>Activity Key</InputLabel>
+            <Select
+              value={mapping.activity_col}
+              label="Activity Key"
+              onChange={handleMappingChange("activity_col")}
+            >
+              {jsonKeys.map((key) => (
+                <MenuItem key={key} value={key}>
+                  {key}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <FormControl fullWidth size="small">
+            <InputLabel>Timestamp</InputLabel>
+            <Select
+              value={mapping.time_col}
+              label="Timestamp"
+              onChange={handleMappingChange("time_col")}
+            >
+              {jsonKeys.map((key) => (
+                <MenuItem key={key} value={key}>
+                  {key}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
+      </Box>
 
       <Box mt={3}>
         <Button
           variant="contained"
           color="primary"
-          disabled={
-            isConverting ||
-            !transactionsJson ||
-            transactionsJson.length === 0 ||
-            !mapping.case_col ||
-            !mapping.activity_col ||
-            !mapping.time_col
-          }
+          disabled={isConverting || !isDataReady || !isMappingComplete}
           onClick={handleConfirmAndConvert}
         >
           {isConverting ? "Converting..." : "Generate base XES"}
