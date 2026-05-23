@@ -267,7 +267,7 @@ export default function XesConverter({
       </Box>
 
       {isConversionDone && (
-        <Typography variant="body2" color="success.main" mt={4}>
+        <Typography variant="body2" color="success.main" mt={3}>
           ✓ Base XES log created.
         </Typography>
       )}

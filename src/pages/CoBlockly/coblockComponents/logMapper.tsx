@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useColorScheme } from '@mui/material/styles';
 
 interface LogMapperProps {
   columns: string[]; // colonne estratte dal logHandler
@@ -9,6 +10,9 @@ export default function LogMapper({
   columns,
   onMappingChange,
 }: LogMapperProps) {
+  const { mode } = useColorScheme();
+  const isDarkMode = mode === 'dark'; 
+
   // valori di default
   const [mapping, setMapping] = useState({
     function: "activity",
@@ -75,7 +79,7 @@ export default function LogMapper({
   ];
 
   return (
-    <div className="row mb-2">
+    <div className="row mb-2" data-bs-theme={isDarkMode ? 'dark' : 'light'}>
       <div className="col-12">
         <div className="card">
           <div className="card-body">
