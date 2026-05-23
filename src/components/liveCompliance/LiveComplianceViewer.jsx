@@ -1,12 +1,16 @@
 import React, { useState, useRef, useEffect } from "react";
 import JSONEditor from "jsoneditor";
 import "jsoneditor/dist/jsoneditor.min.css";
+import { useColorScheme } from '@mui/material/styles';
 
 export default function LiveComplianceViewer({
   compliantData,
   nonCompliantData,
   stats,
 }) {
+  const { mode } = useColorScheme(); 
+  const isDarkMode = mode === 'dark';
+
   const [downloadUrls, setDownloadUrls] = useState({
     compliant: "#",
     nonCompliant: "#",
@@ -77,7 +81,7 @@ export default function LiveComplianceViewer({
   }, [compliantData, nonCompliantData]);
 
   return (
-    <div className="card mb-2">
+    <div className="card mb-2" data-bs-theme={isDarkMode ? 'dark' : 'light'}>
       {/* Riquadro Statistiche */}
       <div className="row p-4">
         <div className="col-4">

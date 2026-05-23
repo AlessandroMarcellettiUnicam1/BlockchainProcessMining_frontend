@@ -304,7 +304,7 @@ export default function RealTimeCompliancePage() {
       </Box>
 
       {/* 5. LIVE COMPLIANCE AREA */}
-      <Box mb={4} p={3} border={1} borderRadius={2} borderColor="grey.300">
+      <Box mb={4} p={3} border={1} borderRadius={2} borderColor="divider" bgcolor="background.paper">
         <Box display="flex" alignItems="center" gap={2} mb={3}>
           <Button
             variant="contained"
@@ -335,7 +335,7 @@ export default function RealTimeCompliancePage() {
           <Box
             mt={3}
             p={2}
-            bgcolor="grey.50"
+            bgcolor="action.hover" 
             borderRadius={2}
             border={1}
             borderColor="success.light"
@@ -355,10 +355,10 @@ export default function RealTimeCompliancePage() {
               gap={3}
               mb={3}
               p={1.5}
-              bgcolor="white"
+              bgcolor="background.paper"
               borderRadius={1}
               border={1}
-              borderColor="grey.200"
+              borderColor="divider"
             >
               <Typography
                 variant="body2"
@@ -372,7 +372,7 @@ export default function RealTimeCompliancePage() {
             {/* Render condizionale interno per i risultati */}
             {latestLiveData ? (
               <Box>
-                <Typography variant="subtitle2" color="textSecondary" mb={1}>
+                <Typography variant="subtitle2" color="text.secondary" mb={1}>
                   Last Analyzed Transaction
                 </Typography>
                 <Typography variant="caption" display="block" mb={2}>
@@ -387,15 +387,15 @@ export default function RealTimeCompliancePage() {
             ) : (
               // Mostrato finché non arriva la prima transazione
               <Box
-                textAlign="center"
-                p={4}
-                bgcolor="white"
-                borderRadius={1}
-                border={1}
-                borderColor="grey.200"
+                textAlign="center" 
+                p={4} 
+                bgcolor="background.paper" 
+                borderRadius={1} 
+                border={1} 
+                borderColor="divider" 
                 borderStyle="dashed"
               >
-                <Typography variant="body2" color="textSecondary">
+                <Typography variant="body2" color="text.secondary">
                   Waiting for the first transaction...
                 </Typography>
               </Box>
@@ -408,7 +408,7 @@ export default function RealTimeCompliancePage() {
           <Box
             mt={3}
             p={2}
-            bgcolor="info.50"
+            bgcolor="action.hover"
             borderRadius={2}
             border={1}
             borderColor="info.light"
@@ -431,7 +431,7 @@ export default function RealTimeCompliancePage() {
                   alignItems="center"
                   mb={3}
                   p={2}
-                  bgcolor="white"
+                  bgcolor="background.paper"
                   borderRadius={1}
                 >
                   <Button
@@ -447,7 +447,7 @@ export default function RealTimeCompliancePage() {
                     <Typography variant="body1" fontWeight="bold">
                       Step {currentIndex} of {maxIndex}
                     </Typography>
-                    <Typography variant="caption" color="textSecondary">
+                    <Typography variant="caption" color="text.secondary">
                       Hash: {viewData.hash}
                     </Typography>
                   </Box>
@@ -469,13 +469,13 @@ export default function RealTimeCompliancePage() {
               </Box>
             ) : (
               // Mostrato se si preme STOP prima che sia arrivata alcuna transazione
-              <Box
-                textAlign="center"
-                p={4}
-                bgcolor="white"
-                borderRadius={1}
-                border={1}
-                borderColor="grey.200"
+              <Box 
+                textAlign="center" 
+                p={4} 
+                bgcolor="background.paper" 
+                borderRadius={1} 
+                border={1} 
+                borderColor="divider" 
                 borderStyle="dashed"
               >
                 <Typography variant="body2" color="textSecondary">
