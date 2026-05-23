@@ -33,6 +33,7 @@ import {
   _startComplianceMonitoring,
   _stopComplianceMonitoring,
 } from "../api/services.js";
+import { CircularProgress } from "@mui/material";
 import { dexieDB } from "../dexie.js";
 
 export default function RealTimeCompliancePage() {
@@ -67,6 +68,9 @@ export default function RealTimeCompliancePage() {
   const processedHashesRef = useRef(new Set());
   const stepCounterRef = useRef(0);
 
+  // stato per le transazioni in coda
+  const [queueWaiting, setQueueWaiting] = useState(0);
+
   useEffect(() => {
     return () => {
       if (eventSource) {
@@ -77,9 +81,13 @@ export default function RealTimeCompliancePage() {
 
   useEffect(() => {
     if (playbackMode && currentIndex > 0) {
-      dexieDB.history.where('step').equals(currentIndex).first().then((snapshot) => {
-        if (snapshot) setViewData(snapshot);
-      });
+      dexieDB.history
+        .where("step")
+        .equals(currentIndex)
+        .first()
+        .then((snapshot) => {
+          if (snapshot) setViewData(snapshot);
+        });
     }
   }, [currentIndex, playbackMode]);
 
@@ -87,12 +95,11 @@ export default function RealTimeCompliancePage() {
     if (!sessionId) return alert("Genera prima il base XES!");
 
     try {
-
       if (eventSource) {
         eventSource.close();
         setEventSource(null);
       }
-      // 1. Reset completo del database e degli stati per la nuova sessione
+      // reset completo del database e degli stati per la nuova sessione
       await dexieDB.history.clear();
       setPlaybackMode(false);
       setCurrentIndex(0);
@@ -101,8 +108,8 @@ export default function RealTimeCompliancePage() {
       setViewData(null);
       processedHashesRef.current.clear();
       stepCounterRef.current = 0;
+      setQueueWaiting(0);
 
-      // 2. Chiamata API standardizzata tramite servizi
       await _startComplianceMonitoring({
         sessionId,
         addressFilters,
@@ -130,7 +137,6 @@ export default function RealTimeCompliancePage() {
           incomingData.type === "SIMULATION_RESULT" &&
           incomingData.complianceResult
         ) {
-
           processedHashesRef.current.add(txHash);
           stepCounterRef.current += 1;
           const currentStep = stepCounterRef.current;
@@ -165,6 +171,9 @@ export default function RealTimeCompliancePage() {
             nonCompliantData: nc,
             stats: currentStats,
           });
+        } else if (incomingData.type === "QUEUE_STATS") {
+          setQueueWaiting(incomingData.waiting);
+          return;
         }
       };
 
@@ -296,7 +305,7 @@ export default function RealTimeCompliancePage() {
 
       {/* 5. LIVE COMPLIANCE AREA */}
       <Box mb={4} p={3} border={1} borderRadius={2} borderColor="grey.300">
-        <Box display="flex" gap={2} mb={3}>
+        <Box display="flex" alignItems="center" gap={2} mb={3}>
           <Button
             variant="contained"
             color="success"
@@ -313,10 +322,16 @@ export default function RealTimeCompliancePage() {
           >
             STOP MONITOR
           </Button>
+
+          {isListening && (
+            <Box display="flex" alignItems="center" gap={1} ml={2}>
+              <CircularProgress size={24} color="primary" />
+            </Box>
+          )}
         </Box>
 
         {/* --- MODALITÀ LIVE --- */}
-        {isListening && latestLiveData && (
+        {isListening && (
           <Box
             mt={3}
             p={2}
@@ -331,22 +346,65 @@ export default function RealTimeCompliancePage() {
               fontWeight="bold"
               mb={1}
             >
-              🔴 LIVE STREAMING - Ultima Transazione Analizzata
-            </Typography>
-            <Typography variant="caption" display="block" mb={2}>
-              Hash: {latestLiveData.hash}
+              LIVE MONITORING
             </Typography>
 
-            <LiveComplianceViewer
-              compliantData={latestLiveData.compliantData}
-              nonCompliantData={latestLiveData.nonCompliantData}
-              stats={latestLiveData.stats}
-            />
+            {/* Il box della coda è SEMPRE visibile durante il monitoring */}
+            <Box
+              display="flex"
+              gap={3}
+              mb={3}
+              p={1.5}
+              bgcolor="white"
+              borderRadius={1}
+              border={1}
+              borderColor="grey.200"
+            >
+              <Typography
+                variant="body2"
+                color="warning.main"
+                fontWeight="bold"
+              >
+                Queued transactions: {queueWaiting}
+              </Typography>
+            </Box>
+
+            {/* Render condizionale interno per i risultati */}
+            {latestLiveData ? (
+              <Box>
+                <Typography variant="subtitle2" color="textSecondary" mb={1}>
+                  Last Analyzed Transaction
+                </Typography>
+                <Typography variant="caption" display="block" mb={2}>
+                  Hash: {latestLiveData.hash}
+                </Typography>
+                <LiveComplianceViewer
+                  compliantData={latestLiveData.compliantData}
+                  nonCompliantData={latestLiveData.nonCompliantData}
+                  stats={latestLiveData.stats}
+                />
+              </Box>
+            ) : (
+              // Mostrato finché non arriva la prima transazione
+              <Box
+                textAlign="center"
+                p={4}
+                bgcolor="white"
+                borderRadius={1}
+                border={1}
+                borderColor="grey.200"
+                borderStyle="dashed"
+              >
+                <Typography variant="body2" color="textSecondary">
+                  Waiting for the first transaction...
+                </Typography>
+              </Box>
+            )}
           </Box>
         )}
 
         {/* --- MODALITÀ PLAYBACK --- */}
-        {playbackMode && viewData && maxIndex > 0 && (
+        {playbackMode && (
           <Box
             mt={3}
             p={2}
@@ -361,51 +419,70 @@ export default function RealTimeCompliancePage() {
               fontWeight="bold"
               mb={2}
             >
-              ⏸ STORICO COMPLIANCE (Playback)
+              Compliance History
             </Typography>
 
-            <Box
-              display="flex"
-              justifyContent="space-between"
-              alignItems="center"
-              mb={3}
-              p={2}
-              bgcolor="white"
-              borderRadius={1}
-            >
-              <Button
-                variant="contained"
-                onClick={() => setCurrentIndex((prev) => Math.max(1, prev - 1))}
-                disabled={currentIndex <= 1}
+            {/* Controllo se ci sono effettivamente dati storici salvati */}
+            {maxIndex > 0 && viewData ? (
+              <Box>
+                <Box
+                  display="flex"
+                  justifyContent="space-between"
+                  alignItems="center"
+                  mb={3}
+                  p={2}
+                  bgcolor="white"
+                  borderRadius={1}
+                >
+                  <Button
+                    variant="contained"
+                    onClick={() =>
+                      setCurrentIndex((prev) => Math.max(1, prev - 1))
+                    }
+                    disabled={currentIndex <= 1}
+                  >
+                    Previous
+                  </Button>
+                  <Box textAlign="center">
+                    <Typography variant="body1" fontWeight="bold">
+                      Step {currentIndex} of {maxIndex}
+                    </Typography>
+                    <Typography variant="caption" color="textSecondary">
+                      Hash: {viewData.hash}
+                    </Typography>
+                  </Box>
+                  <Button
+                    variant="contained"
+                    onClick={() =>
+                      setCurrentIndex((prev) => Math.min(maxIndex, prev + 1))
+                    }
+                    disabled={currentIndex >= maxIndex}
+                  >
+                    Next
+                  </Button>
+                </Box>
+                <LiveComplianceViewer
+                  compliantData={viewData.compliantData}
+                  nonCompliantData={viewData.nonCompliantData}
+                  stats={viewData.stats}
+                />
+              </Box>
+            ) : (
+              // Mostrato se si preme STOP prima che sia arrivata alcuna transazione
+              <Box
+                textAlign="center"
+                p={4}
+                bgcolor="white"
+                borderRadius={1}
+                border={1}
+                borderColor="grey.200"
+                borderStyle="dashed"
               >
-                ⬅️ Precedente
-              </Button>
-
-              <Box textAlign="center">
-                <Typography variant="body1" fontWeight="bold">
-                  Step {currentIndex} di {maxIndex}
-                </Typography>
-                <Typography variant="caption" color="textSecondary">
-                  Hash: {viewData.hash}
+                <Typography variant="body2" color="textSecondary">
+                  No transactions recorded in this session.
                 </Typography>
               </Box>
-
-              <Button
-                variant="contained"
-                onClick={() =>
-                  setCurrentIndex((prev) => Math.min(maxIndex, prev + 1))
-                }
-                disabled={currentIndex >= maxIndex}
-              >
-                Successivo ➡️
-              </Button>
-            </Box>
-
-            <LiveComplianceViewer
-              compliantData={viewData.compliantData}
-              nonCompliantData={viewData.nonCompliantData}
-              stats={viewData.stats}
-            />
+            )}
           </Box>
         )}
       </Box>

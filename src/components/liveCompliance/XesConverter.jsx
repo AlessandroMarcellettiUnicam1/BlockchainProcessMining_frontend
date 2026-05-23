@@ -37,7 +37,7 @@ const jsonKeys = [
   "storageState",
   "internalTxs",
   "events",
-  "status"
+  "status",
 ];
 
 export default function XesConverter({
@@ -51,6 +51,7 @@ export default function XesConverter({
   const [query, setQuery] = useState({});
   const [transactionsJson, setTransactionsJson] = useState(null);
   const [isConverting, setIsConverting] = useState(false);
+  const [isConversionDone, setIsConversionDone] = useState(false); 
 
   const { data: collections } = useQuery({
     queryKey: ["collections"],
@@ -80,7 +81,7 @@ export default function XesConverter({
         setTransactionsJson(parsed);
       } catch (err) {
         console.error("Invalid JSON file");
-        alert("Il file non è un JSON valido");
+        alert("Invalid JSON file");
       }
     };
     if (e.target.files[0]) {
@@ -95,6 +96,7 @@ export default function XesConverter({
 
   const handleConfirmAndConvert = async () => {
     setIsConverting(true);
+    setIsConversionDone(false);
     try {
       let cleanData = [];
 
@@ -116,17 +118,20 @@ export default function XesConverter({
       const response = await _convertLogsToXes(payload);
 
       let columnsToPass = response.columns;
-      
-      if (dataSource === "empty" || !columnsToPass || columnsToPass.length === 0) {
+
+      if (
+        dataSource === "empty" ||
+        !columnsToPass ||
+        columnsToPass.length === 0
+      ) {
         columnsToPass = [...jsonKeys];
       }
 
       onConversionSuccess(response.sessionId, columnsToPass);
-
-      alert("Conversione XES completata. Session ID: " + response.sessionId);
+      setIsConversionDone(true);
     } catch (error) {
       console.error("Errore durante la conversione", error);
-      alert("Errore durante la conversione");
+      alert("Conversion error");
     } finally {
       setIsConverting(false);
     }
@@ -260,6 +265,12 @@ export default function XesConverter({
           {isConverting ? "Converting..." : "Generate base XES"}
         </Button>
       </Box>
+
+      {isConversionDone && (
+        <Typography variant="body2" color="success.main" mt={4}>
+          ✓ Base XES log created.
+        </Typography>
+      )}
     </Box>
   );
 }
