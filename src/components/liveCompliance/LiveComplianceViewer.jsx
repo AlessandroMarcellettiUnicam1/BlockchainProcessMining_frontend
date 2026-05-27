@@ -86,7 +86,7 @@ export default function LiveComplianceViewer({
       <div className="row p-4">
         <div className="col-4">
           <div className="text-center p-3 border rounded">
-            <div className="text-muted mb-1" style={{ color: "darkgreen" }}>
+            <div className={`mb-1 ${isDarkMode ? 'text-light' : 'text-muted'}`}>
               Compliant Traces
             </div>
             <div className="fs-4 fw-bold text-success">

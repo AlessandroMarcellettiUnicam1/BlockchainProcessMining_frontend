@@ -144,10 +144,11 @@ export default function RealTimeCompliancePage() {
           // Estrazione sicura dei dati
           const c = incomingData.complianceResult.compliant || [];
           const nc = incomingData.complianceResult.noncompliant || [];
+          const ign = incomingData.complianceResult.ignored || [];
           const currentStats = {
             compliant: c.length,
             nonCompliant: nc.length,
-            ignored: 0,
+            ignored: ign.length,
           };
 
           // Creazione del pacchetto da salvare
@@ -157,6 +158,7 @@ export default function RealTimeCompliancePage() {
             step: currentStep,
             compliantData: c,
             nonCompliantData: nc,
+            ignored: ign,
             stats: currentStats,
           };
 
@@ -169,6 +171,7 @@ export default function RealTimeCompliancePage() {
             hash: incomingData.hash,
             compliantData: c,
             nonCompliantData: nc,
+            ignored: ign,
             stats: currentStats,
           });
         } else if (incomingData.type === "QUEUE_STATS") {
