@@ -51,7 +51,7 @@ export default function XesConverter({
   const [query, setQuery] = useState({});
   const [transactionsJson, setTransactionsJson] = useState(null);
   const [isConverting, setIsConverting] = useState(false);
-  const [isConversionDone, setIsConversionDone] = useState(false); 
+  const [isConversionDone, setIsConversionDone] = useState(false);
 
   const { data: collections } = useQuery({
     queryKey: ["collections"],
@@ -98,13 +98,10 @@ export default function XesConverter({
     setIsConverting(true);
     setIsConversionDone(false);
     try {
-      let cleanData = [];
-
-      if (dataSource !== "empty") {
-        cleanData = transactionsJson;
-        if (cleanData && cleanData.data) cleanData = cleanData.data;
-        if (!Array.isArray(cleanData)) cleanData = [cleanData];
-      }
+      // if (dataSource !== "empty") {
+      let cleanData = transactionsJson;
+      if (cleanData && cleanData.data) cleanData = cleanData.data;
+      if (!Array.isArray(cleanData)) cleanData = [cleanData];
 
       const payload = {
         data: cleanData,
@@ -119,11 +116,15 @@ export default function XesConverter({
 
       let columnsToPass = response.columns;
 
-      if (
-        dataSource === "empty" ||
-        !columnsToPass ||
-        columnsToPass.length === 0
-      ) {
+      // if (
+      //   dataSource === "empty" ||
+      //   !columnsToPass ||
+      //   columnsToPass.length === 0
+      // ) {
+      //   columnsToPass = [...jsonKeys];
+      // }
+
+      if (!columnsToPass || columnsToPass.length === 0) {
         columnsToPass = [...jsonKeys];
       }
 
@@ -137,9 +138,11 @@ export default function XesConverter({
     }
   };
 
+  // const isDataReady =
+  //   dataSource === "empty" ||
+  //   (transactionsJson && Object.keys(transactionsJson).length > 0);
   const isDataReady =
-    dataSource === "empty" ||
-    (transactionsJson && Object.keys(transactionsJson).length > 0);
+    transactionsJson && Object.keys(transactionsJson).length > 0;
   const isMappingComplete =
     mapping.case_col && mapping.activity_col && mapping.time_col;
 
@@ -161,11 +164,11 @@ export default function XesConverter({
             control={<Radio />}
             label="Database"
           />
-          <FormControlLabel
+          {/* <FormControlLabel
             value="empty"
             control={<Radio />}
             label="No starting log"
-          />
+          /> */}
         </RadioGroup>
       </FormControl>
 
@@ -193,14 +196,14 @@ export default function XesConverter({
             setQueryState={setQuery}
           />
         )}
-        {dataSource === "empty" && (
+        {/* {dataSource === "empty" && (
           <Typography variant="body2" color="textSecondary" sx={{ py: 1 }}>
             Monitoring will start with an empty log
           </Typography>
-        )}
+        )} */}
       </Box>
 
-      {dataSource !== "empty" && transactionsJson && (
+      {transactionsJson && (
         <Typography variant="body2" color="success.main" mb={2}>
           ✓ Transactions loaded
         </Typography>

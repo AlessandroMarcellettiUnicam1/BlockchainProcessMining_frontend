@@ -259,7 +259,7 @@ export default function RealTimeCompliancePage() {
       {/* 2. XES Mapping */}
       <Box mb={4} p={3} border={1} borderRadius={2} borderColor="grey.300">
         <Typography variant="h6" mb={3} fontWeight="bold" color="primary">
-          2. XES mapping
+          2. CoBlock mapping
         </Typography>
 
         {logColumns.length > 0 ? (
