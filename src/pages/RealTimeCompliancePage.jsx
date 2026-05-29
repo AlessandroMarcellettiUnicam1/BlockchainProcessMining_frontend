@@ -14,9 +14,13 @@ import {
   InputLabel,
   Tooltip,
   IconButton,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
 } from "@mui/material";
 import { FileUpload } from "@mui/icons-material";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useQuery } from "react-query";
 import RuleParser from "./CoBlockly/coblockComponents/RuleParser.tsx";
 import CoBlocklyEditor from "./CoBlockly/coblockComponents/CoBlocklyEditor.tsx";
@@ -59,14 +63,8 @@ export default function RealTimeCompliancePage() {
     time_col: "",
   });
 
-  // stati per visualizzatore live
-  const [latestLiveData, setLatestLiveData] = useState(null); // Dati per la visualizzazione Live
-  const [playbackMode, setPlaybackMode] = useState(false); // Flag Modalità Navigazione
-  const [currentIndex, setCurrentIndex] = useState(0); // Cursore temporale
-  const [maxIndex, setMaxIndex] = useState(0); // Max step raggiunti
-  const [viewData, setViewData] = useState(null); // Dati caricati da IndexedDB per il Playback
+  const [simulations, setSimulations] = useState([]);
   const processedHashesRef = useRef(new Set());
-  const stepCounterRef = useRef(0);
 
   // stato per le transazioni in coda
   const [queueWaiting, setQueueWaiting] = useState(0);
@@ -79,18 +77,6 @@ export default function RealTimeCompliancePage() {
     };
   }, [eventSource]);
 
-  useEffect(() => {
-    if (playbackMode && currentIndex > 0) {
-      dexieDB.history
-        .where("step")
-        .equals(currentIndex)
-        .first()
-        .then((snapshot) => {
-          if (snapshot) setViewData(snapshot);
-        });
-    }
-  }, [currentIndex, playbackMode]);
-
   const startMonitor = async () => {
     if (!sessionId) return alert("Genera prima il base XES!");
 
@@ -101,13 +87,8 @@ export default function RealTimeCompliancePage() {
       }
       // reset completo del database e degli stati per la nuova sessione
       await dexieDB.history.clear();
-      setPlaybackMode(false);
-      setCurrentIndex(0);
-      setMaxIndex(0);
-      setLatestLiveData(null);
-      setViewData(null);
+      setSimulations([]);
       processedHashesRef.current.clear();
-      stepCounterRef.current = 0;
       setQueueWaiting(0);
 
       await _startComplianceMonitoring({
@@ -138,8 +119,6 @@ export default function RealTimeCompliancePage() {
           incomingData.complianceResult
         ) {
           processedHashesRef.current.add(txHash);
-          stepCounterRef.current += 1;
-          const currentStep = stepCounterRef.current;
 
           // Estrazione sicura dei dati
           const c = incomingData.complianceResult.compliant || [];
@@ -155,25 +134,20 @@ export default function RealTimeCompliancePage() {
           const snapshot = {
             sessionId: incomingData.sessionId,
             hash: incomingData.hash,
-            step: currentStep,
             compliantData: c,
             nonCompliantData: nc,
             ignored: ign,
             stats: currentStats,
           };
 
-          // Salvataggio asincrono su disco (IndexedDB)
           await dexieDB.history.add(snapshot);
-
-          // Aggiornamento della UI Live (Tailing dell'ultimo evento)
-          setMaxIndex(currentStep);
-          setLatestLiveData({
-            hash: incomingData.hash,
-            compliantData: c,
-            nonCompliantData: nc,
-            ignored: ign,
-            stats: currentStats,
-          });
+          setSimulations((prev) => [
+            {
+              hash: incomingData.hash,
+              stats: currentStats,
+            },
+            ...prev,
+          ]); // aggiungo la nuova simulazione in cima alla lista
         } else if (incomingData.type === "QUEUE_STATS") {
           setQueueWaiting(incomingData.waiting);
           return;
@@ -193,10 +167,6 @@ export default function RealTimeCompliancePage() {
     }
 
     setIsListening(false);
-
-    // Attivazione automatica del Playback all'ultimo frame disponibile
-    setPlaybackMode(true);
-    setCurrentIndex(maxIndex);
 
     try {
       await _stopComplianceMonitoring({ sessionId });
@@ -307,7 +277,14 @@ export default function RealTimeCompliancePage() {
       </Box>
 
       {/* 5. LIVE COMPLIANCE AREA */}
-      <Box mb={4} p={3} border={1} borderRadius={2} borderColor="divider" bgcolor="background.paper">
+      <Box
+        mb={4}
+        p={3}
+        border={1}
+        borderRadius={2}
+        borderColor="divider"
+        bgcolor="background.paper"
+      >
         <Box display="flex" alignItems="center" gap={2} mb={3}>
           <Button
             variant="contained"
@@ -333,162 +310,127 @@ export default function RealTimeCompliancePage() {
           )}
         </Box>
 
-        {/* --- MODALITÀ LIVE --- */}
-        {isListening && (
-          <Box
-            mt={3}
-            p={2}
-            bgcolor="action.hover" 
-            borderRadius={2}
-            border={1}
-            borderColor="success.light"
-          >
-            <Typography
-              variant="subtitle1"
-              color="success.main"
-              fontWeight="bold"
-              mb={1}
-            >
-              LIVE MONITORING
-            </Typography>
+        {/* --- STORICO COMPLIANCE --- */}
+        <Box mt={4}>
+          <Typography variant="h6" mb={2} fontWeight="bold" color="primary">
+            Compliance Results
+          </Typography>
 
-            {/* Il box della coda è SEMPRE visibile durante il monitoring */}
+          {simulations.length === 0 ? (
             <Box
-              display="flex"
-              gap={3}
-              mb={3}
-              p={1.5}
+              textAlign="center"
+              p={4}
               bgcolor="background.paper"
               borderRadius={1}
               border={1}
               borderColor="divider"
+              borderStyle="dashed"
             >
-              <Typography
-                variant="body2"
-                color="warning.main"
-                fontWeight="bold"
-              >
-                Queued transactions: {queueWaiting}
+              <Typography variant="body2" color="text.secondary">
+                {isListening
+                  ? "Waiting for the first transaction..."
+                  : "No transactions checked yet."}
               </Typography>
             </Box>
-
-            {/* Render condizionale interno per i risultati */}
-            {latestLiveData ? (
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary" mb={1}>
-                  Last Analyzed Transaction
-                </Typography>
-                <Typography variant="caption" display="block" mb={2}>
-                  Hash: {latestLiveData.hash}
-                </Typography>
-                <LiveComplianceViewer
-                  compliantData={latestLiveData.compliantData}
-                  nonCompliantData={latestLiveData.nonCompliantData}
-                  stats={latestLiveData.stats}
-                />
-              </Box>
-            ) : (
-              // Mostrato finché non arriva la prima transazione
-              <Box
-                textAlign="center" 
-                p={4} 
-                bgcolor="background.paper" 
-                borderRadius={1} 
-                border={1} 
-                borderColor="divider" 
-                borderStyle="dashed"
+          ) : (
+            simulations.map((sim) => (
+              <Accordion
+                key={sim.hash}
+                sx={{
+                  mb: 1,
+                  border: 1,
+                  borderColor: "divider",
+                  borderRadius: 1,
+                }}
+                TransitionProps={{ unmountOnExit: true }}
               >
-                <Typography variant="body2" color="text.secondary">
-                  Waiting for the first transaction...
-                </Typography>
-              </Box>
-            )}
-          </Box>
-        )}
-
-        {/* --- MODALITÀ PLAYBACK --- */}
-        {playbackMode && (
-          <Box
-            mt={3}
-            p={2}
-            bgcolor="action.hover"
-            borderRadius={2}
-            border={1}
-            borderColor="info.light"
-          >
-            <Typography
-              variant="subtitle1"
-              color="primary.main"
-              fontWeight="bold"
-              mb={2}
-            >
-              Compliance History
-            </Typography>
-
-            {/* Controllo se ci sono effettivamente dati storici salvati */}
-            {maxIndex > 0 && viewData ? (
-              <Box>
-                <Box
-                  display="flex"
-                  justifyContent="space-between"
-                  alignItems="center"
-                  mb={3}
-                  p={2}
-                  bgcolor="background.paper"
-                  borderRadius={1}
-                >
-                  <Button
-                    variant="contained"
-                    onClick={() =>
-                      setCurrentIndex((prev) => Math.max(1, prev - 1))
-                    }
-                    disabled={currentIndex <= 1}
+                {/* Banner della transazione */}
+                <AccordionSummary expandMoreIcon={<ExpandMoreIcon />}>
+                  <Box
+                    display="flex"
+                    justifyContent="space-between"
+                    alignItems="center"
+                    width="100%"
+                    pr={2}
                   >
-                    Previous
-                  </Button>
-                  <Box textAlign="center">
-                    <Typography variant="body1" fontWeight="bold">
-                      Step {currentIndex} of {maxIndex}
+                    <Typography
+                      variant="body2"
+                      fontFamily="monospace"
+                      fontWeight="bold"
+                    >
+                      Tx: {sim.hash}
                     </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Hash: {viewData.hash}
-                    </Typography>
+
+                    <Box display="flex" gap={2}>
+                      <Typography
+                        variant="caption"
+                        color="success.main"
+                        fontWeight="bold"
+                      >
+                        Compliant: {sim.stats.compliant}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        color="error.main"
+                        fontWeight="bold"
+                      >
+                        Non-Compliant: {sim.stats.nonCompliant}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Ignored: {sim.stats.ignored}
+                      </Typography>
+                    </Box>
                   </Box>
-                  <Button
-                    variant="contained"
-                    onClick={() =>
-                      setCurrentIndex((prev) => Math.min(maxIndex, prev + 1))
-                    }
-                    disabled={currentIndex >= maxIndex}
-                  >
-                    Next
-                  </Button>
-                </Box>
-                <LiveComplianceViewer
-                  compliantData={viewData.compliantData}
-                  nonCompliantData={viewData.nonCompliantData}
-                  stats={viewData.stats}
-                />
-              </Box>
-            ) : (
-              // Mostrato se si preme STOP prima che sia arrivata alcuna transazione
-              <Box 
-                textAlign="center" 
-                p={4} 
-                bgcolor="background.paper" 
-                borderRadius={1} 
-                border={1} 
-                borderColor="divider" 
-                borderStyle="dashed"
-              >
-                <Typography variant="body2" color="textSecondary">
-                  No transactions recorded in this session.
-                </Typography>
-              </Box>
-            )}
-          </Box>
-        )}
+                </AccordionSummary>
+
+                {/* Contenuto espanso */}
+                <AccordionDetails
+                  sx={{
+                    bgcolor: "background.paper",
+                    borderTop: 1,
+                    borderColor: "divider",
+                  }}
+                >
+                  <LazyComplianceViewer hash={sim.hash} />
+                </AccordionDetails>
+              </Accordion>
+            ))
+          )}
+        </Box>
       </Box>
     </Box>
+  );
+}
+
+// componente Wrapper per lazy loading dall'indexedDB
+function LazyComplianceViewer({ hash }) {
+  const [heavyData, setHeavyData] = useState(null);
+
+  useEffect(() => {
+    // pessca il json quando apro la tendina
+    dexieDB.history
+      .where("hash")
+      .equals(hash)
+      .first()
+      .then((snapshot) => {
+        if (snapshot) setHeavyData(snapshot);
+      });
+  }, [hash]);
+
+  // caricamento prima di mostrare il json
+  if (!heavyData) {
+    return (
+      <Box textAlign="center" p={3}>
+        <CircularProgress size={24} />
+      </Box>
+    );
+  }
+
+  return (
+    <LiveComplianceViewer
+      compliantData={heavyData.compliantData}
+      nonCompliantData={heavyData.nonCompliantData}
+      stats={heavyData.stats}
+    />
   );
 }

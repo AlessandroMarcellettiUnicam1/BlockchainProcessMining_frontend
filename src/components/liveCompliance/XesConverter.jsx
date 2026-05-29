@@ -141,8 +141,9 @@ export default function XesConverter({
   // const isDataReady =
   //   dataSource === "empty" ||
   //   (transactionsJson && Object.keys(transactionsJson).length > 0);
-  const isDataReady =
-    transactionsJson && Object.keys(transactionsJson).length > 0;
+  const isDataReady = transactionsJson
+    ? Object.keys(transactionsJson).length > 0
+    : false;
   const isMappingComplete =
     mapping.case_col && mapping.activity_col && mapping.time_col;
 
@@ -164,11 +165,6 @@ export default function XesConverter({
             control={<Radio />}
             label="Database"
           />
-          {/* <FormControlLabel
-            value="empty"
-            control={<Radio />}
-            label="No starting log"
-          /> */}
         </RadioGroup>
       </FormControl>
 
@@ -196,15 +192,10 @@ export default function XesConverter({
             setQueryState={setQuery}
           />
         )}
-        {/* {dataSource === "empty" && (
-          <Typography variant="body2" color="textSecondary" sx={{ py: 1 }}>
-            Monitoring will start with an empty log
-          </Typography>
-        )} */}
       </Box>
 
       {transactionsJson && (
-        <Typography variant="body2" color="success.main" mb={2}>
+        <Typography variant="body2" color="success.main" mb={3}>
           ✓ Transactions loaded
         </Typography>
       )}
