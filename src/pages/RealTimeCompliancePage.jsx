@@ -18,7 +18,7 @@ import {
   AccordionSummary,
   AccordionDetails,
   Snackbar,
-  Alert
+  Alert,
 } from "@mui/material";
 import { FileUpload } from "@mui/icons-material";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
@@ -41,6 +41,7 @@ import {
 } from "../api/services.js";
 import { CircularProgress } from "@mui/material";
 import { dexieDB } from "../dexie.js";
+import { SnackbarProvider, enqueueSnackbar } from "notistack";
 
 export default function RealTimeCompliancePage() {
   const [isListening, setIsListening] = useState(false);
@@ -66,11 +67,7 @@ export default function RealTimeCompliancePage() {
   });
 
   // stato per il popup di informazion dell'aggiornamento dello xesbase
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: "",
-    severity: "info", // può essere: 'success', 'error', 'warning', 'info'
-  });
+  
 
   const [simulations, setSimulations] = useState([]);
   const processedHashesRef = useRef(new Set());
@@ -85,11 +82,6 @@ export default function RealTimeCompliancePage() {
       }
     };
   }, [eventSource]);
-
-  const handleCloseSnackbar = (event, reason) => {
-    if (reason === 'clickaway') return;
-    setSnackbar((prev) => ({ ...prev, open: false }));
-  };
 
   const startMonitor = async () => {
     if (!sessionId) return alert("Genera prima il base XES!");
@@ -124,22 +116,19 @@ export default function RealTimeCompliancePage() {
         const incomingData = JSON.parse(event.data);
         const txHash = incomingData.hash;
 
-        if (incomingData.type === 'BASELINE_UPDATE') {
+        if (incomingData.type === "BASELINE_UPDATE") {
           if (incomingData.success) {
-            setSnackbar({
-              open: true,
-              message: `✅ Log Base aggiornato con la tx ${txHash.substring(0,6)}...`,
-              severity: "success"
+            enqueueSnackbar(`✅ Log Base aggiornato con la tx ${txHash.substring(0, 6)}...`, {
+              variant: "success",
             });
           } else {
-            const errorMsg = incomingData.reason === "EMPTY_EXTRACTION" 
-              ? "Nessun dato estratto" 
-              : "Transazione non trovata";
-              
-            setSnackbar({
-              open: true,
-              message: `⚠️ Log Base NON aggiornato (${errorMsg}): ${txHash.substring(0,6)}...`,
-              severity: "warning"
+            const errorMsg =
+              incomingData.reason === "EMPTY_EXTRACTION"
+                ? "Nessun dato estratto"
+                : "Transazione non trovata";
+
+            enqueueSnackbar(`⚠️ Log Base NON aggiornato (${errorMsg}): ${txHash.substring(0, 6)}...`, {
+              variant: "warning",
             });
           }
           return;
@@ -212,18 +201,24 @@ export default function RealTimeCompliancePage() {
   };
 
   return (
-    <Box p={4}>
-      {/* 1. XES Converter */}
-      <Box mb={4} p={3} border={1} borderRadius={2} borderColor="grey.300">
-        <Box display="flex" alignItems="center" gap={1} mb={3}>
-          <Typography variant="h6" fontWeight="bold" color="primary">
-            1. Upload logs or choose from DB
-          </Typography>
+    <SnackbarProvider
+      maxSnack={5}
+      anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+    >
+      <Box p={4}>
+        {/* 1. XES Converter */}
+        <Box mb={4} p={3} border={1} borderRadius={2} borderColor="grey.300">
+          <Box display="flex" alignItems="center" gap={1} mb={3}>
+            <Typography variant="h6" fontWeight="bold" color="primary">
+              1. Upload logs or choose from DB
+            </Typography>
 
-          <Tooltip
-            title={
-              <Box sx={{ whiteSpace: "pre-wrap", fontSize: "0.85rem", p: 0.5 }}>
-                {`The uploaded log must contain these keys:
+            <Tooltip
+              title={
+                <Box
+                  sx={{ whiteSpace: "pre-wrap", fontSize: "0.85rem", p: 0.5 }}
+                >
+                  {`The uploaded log must contain these keys:
 
 {
     "functionName",
@@ -239,220 +234,209 @@ export default function RealTimeCompliancePage() {
     "internalTxs",
     "events"
 }`}
-              </Box>
-            }
-            placement="left"
-            arrow
-          >
-            <IconButton size="small" sx={{ color: "text.secondary" }}>
-              <InfoOutlinedIcon />
-            </IconButton>
-          </Tooltip>
-        </Box>
-
-        <XesConverter
-          mapping={mapping}
-          setMapping={setMapping}
-          previousSessionId={sessionId}
-          onConversionSuccess={(newSessionId, columns) => {
-            setSessionId(newSessionId);
-            setLogColumns(columns);
-          }}
-        />
-      </Box>
-
-      {/* 2. XES Mapping */}
-      <Box mb={4} p={3} border={1} borderRadius={2} borderColor="grey.300">
-        <Typography variant="h6" mb={3} fontWeight="bold" color="primary">
-          2. CoBlock mapping
-        </Typography>
-
-        {logColumns.length > 0 ? (
-          <LogMapper columns={logColumns} onMappingChange={setLogMapping} />
-        ) : (
-          <Typography variant="body2" color="textSecondary">
-            Upload log first
-          </Typography>
-        )}
-      </Box>
-
-      {/* 3. CoBlock Rule */}
-      <Box mb={4} p={3} border={1} borderRadius={2} borderColor="grey.300">
-        <Typography variant="h6" mb={3} fontWeight="bold" color="primary">
-          3. Define a CoBlock rule
-        </Typography>
-
-        <CoBlocklyEditor onRuleTranslated={setRuleText} />
-
-        <RuleParser
-          ruleText={ruleText}
-          setRuleText={setRuleText}
-          onRuleParsed={setParsedRule}
-        />
-
-        {parsedRule && (
-          <Typography variant="body2" color="success.main" mt={1}>
-            ✓ Rule parsed and saved in page memory.
-          </Typography>
-        )}
-      </Box>
-
-      {/* 4. Mempool Filter */}
-      <Box mb={4} p={3} border={1} borderRadius={2} borderColor="grey.300">
-        <Typography variant="h6" mb={3} fontWeight="bold" color="primary">
-          4. Insert an address to filter the mempool
-        </Typography>
-
-        <MempoolFilter
-          validAddress={validAddress}
-          setValidAddress={setValidAddress}
-          addressFilters={addressFilters}
-          setAddressFilters={setAddressFilters}
-        />
-      </Box>
-
-      {/* 5. LIVE COMPLIANCE AREA */}
-      <Box
-        mb={4}
-        p={3}
-        border={1}
-        borderRadius={2}
-        borderColor="divider"
-        bgcolor="background.paper"
-      >
-        <Box display="flex" alignItems="center" gap={2} mb={3}>
-          <Button
-            variant="contained"
-            color="success"
-            onClick={startMonitor}
-            disabled={isListening || !validAddress || !sessionId}
-          >
-            START LIVE MONITOR
-          </Button>
-          <Button
-            variant="outlined"
-            color="error"
-            onClick={stopMonitor}
-            disabled={!isListening}
-          >
-            STOP MONITOR
-          </Button>
-
-          {isListening && (
-            <Box display="flex" alignItems="center" gap={1.5} ml={2}>
-              <CircularProgress size={20} color="primary" />
-              <Typography variant="body2" color="text.secondary" fontWeight="bold">
-                Queued Transactions: {queueWaiting}
-              </Typography>
-            </Box>
-          )}
-        </Box>
-
-        {/* --- STORICO COMPLIANCE --- */}
-        <Box mt={4}>
-          <Typography variant="h6" mb={2} fontWeight="bold" color="primary">
-            Compliance Results
-          </Typography>
-
-          {simulations.length === 0 ? (
-            <Box
-              textAlign="center"
-              p={4}
-              bgcolor="background.paper"
-              borderRadius={1}
-              border={1}
-              borderColor="divider"
-              borderStyle="dashed"
+                </Box>
+              }
+              placement="left"
+              arrow
             >
-              <Typography variant="body2" color="text.secondary">
-                {isListening
-                  ? "Waiting for the first transaction..."
-                  : "No transactions checked yet."}
-              </Typography>
-            </Box>
+              <IconButton size="small" sx={{ color: "text.secondary" }}>
+                <InfoOutlinedIcon />
+              </IconButton>
+            </Tooltip>
+          </Box>
+
+          <XesConverter
+            mapping={mapping}
+            setMapping={setMapping}
+            previousSessionId={sessionId}
+            onConversionSuccess={(newSessionId, columns) => {
+              setSessionId(newSessionId);
+              setLogColumns(columns);
+            }}
+          />
+        </Box>
+
+        {/* 2. XES Mapping */}
+        <Box mb={4} p={3} border={1} borderRadius={2} borderColor="grey.300">
+          <Typography variant="h6" mb={3} fontWeight="bold" color="primary">
+            2. CoBlock mapping
+          </Typography>
+
+          {logColumns.length > 0 ? (
+            <LogMapper columns={logColumns} onMappingChange={setLogMapping} />
           ) : (
-            simulations.map((sim) => (
-              <Accordion
-                key={sim.hash}
-                sx={{
-                  mb: 1,
-                  border: 1,
-                  borderColor: "divider",
-                  borderRadius: 1,
-                }}
-                TransitionProps={{ unmountOnExit: true }}
-              >
-                {/* Banner della transazione */}
-                <AccordionSummary expandMoreIcon={<ExpandMoreIcon />}>
-                  <Box
-                    display="flex"
-                    justifyContent="space-between"
-                    alignItems="center"
-                    width="100%"
-                    pr={2}
-                  >
-                    <Typography
-                      variant="body2"
-                      fontFamily="monospace"
-                      fontWeight="bold"
-                    >
-                      Tx: {sim.hash}
-                    </Typography>
-
-                    <Box display="flex" gap={2}>
-                      <Typography
-                        variant="caption"
-                        color="success.main"
-                        fontWeight="bold"
-                      >
-                        Compliant: {sim.stats.compliant}
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        color="error.main"
-                        fontWeight="bold"
-                      >
-                        Non-Compliant: {sim.stats.nonCompliant}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        Ignored: {sim.stats.ignored}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </AccordionSummary>
-
-                {/* Contenuto espanso */}
-                <AccordionDetails
-                  sx={{
-                    bgcolor: "background.paper",
-                    borderTop: 1,
-                    borderColor: "divider",
-                  }}
-                >
-                  <LazyComplianceViewer hash={sim.hash} />
-                </AccordionDetails>
-              </Accordion>
-            ))
+            <Typography variant="body2" color="textSecondary">
+              Upload log first
+            </Typography>
           )}
         </Box>
-      </Box>
 
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6700} // Scompare dopo 5 secondi
-        onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }} 
-      >
-        <Alert 
-          onClose={handleCloseSnackbar} 
-          severity={snackbar.severity} 
-          sx={{ width: '100%', boxShadow: 3 }}
-          variant="filled"
+        {/* 3. CoBlock Rule */}
+        <Box mb={4} p={3} border={1} borderRadius={2} borderColor="grey.300">
+          <Typography variant="h6" mb={3} fontWeight="bold" color="primary">
+            3. Define a CoBlock rule
+          </Typography>
+
+          <CoBlocklyEditor onRuleTranslated={setRuleText} />
+
+          <RuleParser
+            ruleText={ruleText}
+            setRuleText={setRuleText}
+            onRuleParsed={setParsedRule}
+          />
+
+          {parsedRule && (
+            <Typography variant="body2" color="success.main" mt={1}>
+              ✓ Rule parsed and saved in page memory.
+            </Typography>
+          )}
+        </Box>
+
+        {/* 4. Mempool Filter */}
+        <Box mb={4} p={3} border={1} borderRadius={2} borderColor="grey.300">
+          <Typography variant="h6" mb={3} fontWeight="bold" color="primary">
+            4. Insert an address to filter the mempool
+          </Typography>
+
+          <MempoolFilter
+            validAddress={validAddress}
+            setValidAddress={setValidAddress}
+            addressFilters={addressFilters}
+            setAddressFilters={setAddressFilters}
+          />
+        </Box>
+
+        {/* 5. LIVE COMPLIANCE AREA */}
+        <Box
+          mb={4}
+          p={3}
+          border={1}
+          borderRadius={2}
+          borderColor="divider"
+          bgcolor="background.paper"
         >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-    </Box>
+          <Box display="flex" alignItems="center" gap={2} mb={3}>
+            <Button
+              variant="contained"
+              color="success"
+              onClick={startMonitor}
+              disabled={isListening || !validAddress || !sessionId}
+            >
+              START LIVE MONITOR
+            </Button>
+            <Button
+              variant="outlined"
+              color="error"
+              onClick={stopMonitor}
+              disabled={!isListening}
+            >
+              STOP MONITOR
+            </Button>
+
+            {isListening && (
+              <Box display="flex" alignItems="center" gap={1.5} ml={2}>
+                <CircularProgress size={20} color="primary" />
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  fontWeight="bold"
+                >
+                  Queued Transactions: {queueWaiting}
+                </Typography>
+              </Box>
+            )}
+          </Box>
+
+          {/* --- STORICO COMPLIANCE --- */}
+          <Box mt={4}>
+            <Typography variant="h6" mb={2} fontWeight="bold" color="primary">
+              Compliance Results
+            </Typography>
+
+            {simulations.length === 0 ? (
+              <Box
+                textAlign="center"
+                p={4}
+                bgcolor="background.paper"
+                borderRadius={1}
+                border={1}
+                borderColor="divider"
+                borderStyle="dashed"
+              >
+                <Typography variant="body2" color="text.secondary">
+                  {isListening
+                    ? "Waiting for the first transaction..."
+                    : "No transactions checked yet."}
+                </Typography>
+              </Box>
+            ) : (
+              simulations.map((sim) => (
+                <Accordion
+                  key={sim.hash}
+                  sx={{
+                    mb: 1,
+                    border: 1,
+                    borderColor: "divider",
+                    borderRadius: 1,
+                  }}
+                  TransitionProps={{ unmountOnExit: true }}
+                >
+                  {/* Banner della transazione */}
+                  <AccordionSummary expandMoreIcon={<ExpandMoreIcon />}>
+                    <Box
+                      display="flex"
+                      justifyContent="space-between"
+                      alignItems="center"
+                      width="100%"
+                      pr={2}
+                    >
+                      <Typography
+                        variant="body2"
+                        fontFamily="monospace"
+                        fontWeight="bold"
+                      >
+                        Tx: {sim.hash}
+                      </Typography>
+
+                      <Box display="flex" gap={2}>
+                        <Typography
+                          variant="caption"
+                          color="success.main"
+                          fontWeight="bold"
+                        >
+                          Compliant: {sim.stats.compliant}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          color="error.main"
+                          fontWeight="bold"
+                        >
+                          Non-Compliant: {sim.stats.nonCompliant}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Ignored: {sim.stats.ignored}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </AccordionSummary>
+
+                  {/* Contenuto espanso */}
+                  <AccordionDetails
+                    sx={{
+                      bgcolor: "background.paper",
+                      borderTop: 1,
+                      borderColor: "divider",
+                    }}
+                  >
+                    <LazyComplianceViewer hash={sim.hash} />
+                  </AccordionDetails>
+                </Accordion>
+              ))
+            )}
+          </Box>
+        </Box>
+      </Box>
+    </SnackbarProvider>
   );
 }
 
