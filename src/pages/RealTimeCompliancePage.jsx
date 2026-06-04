@@ -17,6 +17,8 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  Snackbar,
+  Alert
 } from "@mui/material";
 import { FileUpload } from "@mui/icons-material";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
@@ -63,6 +65,13 @@ export default function RealTimeCompliancePage() {
     time_col: "",
   });
 
+  // stato per il popup di informazion dell'aggiornamento dello xesbase
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "info", // può essere: 'success', 'error', 'warning', 'info'
+  });
+
   const [simulations, setSimulations] = useState([]);
   const processedHashesRef = useRef(new Set());
 
@@ -76,6 +85,11 @@ export default function RealTimeCompliancePage() {
       }
     };
   }, [eventSource]);
+
+  const handleCloseSnackbar = (event, reason) => {
+    if (reason === 'clickaway') return;
+    setSnackbar((prev) => ({ ...prev, open: false }));
+  };
 
   const startMonitor = async () => {
     if (!sessionId) return alert("Genera prima il base XES!");
@@ -109,6 +123,27 @@ export default function RealTimeCompliancePage() {
       source.onmessage = async (event) => {
         const incomingData = JSON.parse(event.data);
         const txHash = incomingData.hash;
+
+        if (incomingData.type === 'BASELINE_UPDATE') {
+          if (incomingData.success) {
+            setSnackbar({
+              open: true,
+              message: `✅ Log Base aggiornato con la tx ${txHash.substring(0,6)}...`,
+              severity: "success"
+            });
+          } else {
+            const errorMsg = incomingData.reason === "EMPTY_EXTRACTION" 
+              ? "Nessun dato estratto" 
+              : "Transazione non trovata";
+              
+            setSnackbar({
+              open: true,
+              message: `⚠️ Log Base NON aggiornato (${errorMsg}): ${txHash.substring(0,6)}...`,
+              severity: "warning"
+            });
+          }
+          return;
+        }
 
         if (processedHashesRef.current.has(txHash)) {
           return;
@@ -304,8 +339,11 @@ export default function RealTimeCompliancePage() {
           </Button>
 
           {isListening && (
-            <Box display="flex" alignItems="center" gap={1} ml={2}>
-              <CircularProgress size={24} color="primary" />
+            <Box display="flex" alignItems="center" gap={1.5} ml={2}>
+              <CircularProgress size={20} color="primary" />
+              <Typography variant="body2" color="text.secondary" fontWeight="bold">
+                Queued Transactions: {queueWaiting}
+              </Typography>
             </Box>
           )}
         </Box>
@@ -398,6 +436,22 @@ export default function RealTimeCompliancePage() {
           )}
         </Box>
       </Box>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6700} // Scompare dopo 5 secondi
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }} 
+      >
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbar.severity} 
+          sx={{ width: '100%', boxShadow: 3 }}
+          variant="filled"
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }
