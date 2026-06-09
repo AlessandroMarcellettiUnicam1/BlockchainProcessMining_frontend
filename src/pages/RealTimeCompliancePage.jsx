@@ -117,17 +117,14 @@ export default function RealTimeCompliancePage() {
         const txHash = incomingData.hash;
 
         if (incomingData.type === "BASELINE_UPDATE") {
+          const blockNum = incomingData.blockNumber;
+
           if (incomingData.success) {
-            enqueueSnackbar(`✅ Log Base aggiornato con la tx ${txHash.substring(0, 6)}...`, {
+            enqueueSnackbar(`Log Base aggiornato con le tx del blocco ${blockNum}`, {
               variant: "success",
             });
           } else {
-            const errorMsg =
-              incomingData.reason === "EMPTY_EXTRACTION"
-                ? "Nessun dato estratto"
-                : "Transazione non trovata";
-
-            enqueueSnackbar(`⚠️ Log Base NON aggiornato (${errorMsg}): ${txHash.substring(0, 6)}...`, {
+            enqueueSnackbar(`Log Base NON aggiornato per il blocco ${blockNum}: nessun dato utile estratto`, {
               variant: "warning",
             });
           }
