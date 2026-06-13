@@ -21,6 +21,7 @@ import {
   Alert,
 } from "@mui/material";
 import { FileUpload } from "@mui/icons-material";
+import { Switch } from "@mui/material";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useQuery } from "react-query";
@@ -66,14 +67,11 @@ export default function RealTimeCompliancePage() {
     time_col: "",
   });
 
-  // stato per il popup di informazion dell'aggiornamento dello xesbase
-  
-
   const [simulations, setSimulations] = useState([]);
   const processedHashesRef = useRef(new Set());
 
-  // stato per le transazioni in coda
   const [queueWaiting, setQueueWaiting] = useState(0);
+  const [enableMempool, setEnableMempool] = useState(true);
 
   useEffect(() => {
     return () => {
@@ -104,6 +102,7 @@ export default function RealTimeCompliancePage() {
         mapping,
         parsedRule,
         logMapping,
+        enableMempool
       });
 
       setIsListening(true);
@@ -123,6 +122,32 @@ export default function RealTimeCompliancePage() {
             enqueueSnackbar(`Log Base aggiornato con le tx del blocco ${blockNum}`, {
               variant: "success",
             });
+
+            if (incomingData.complianceResult) {
+              const c = incomingData.complianceResult.compliant || [];
+              const nc = incomingData.complianceResult.noncompliant || [];
+              const ign = incomingData.complianceResult.ignored || [];
+              const currentStats = {
+                compliant: c.length,
+                nonCompliant: nc.length,
+                ignored: ign.length,
+              };
+
+              const snapshot = {
+                sessionId: incomingData.sessionId,
+                hash: `Block ${blockNum}`, 
+                compliantData: c,
+                nonCompliantData: nc,
+                ignored: ign,
+                stats: currentStats,
+              };
+
+              await dexieDB.history.add(snapshot);
+              setSimulations((prev) => [
+                { hash: `Blocco ${blockNum}`, stats: currentStats },
+                ...prev,
+              ]);
+            }
           } else {
             enqueueSnackbar(`Log Base NON aggiornato per il blocco ${blockNum}: nessun dato utile estratto`, {
               variant: "warning",
@@ -312,6 +337,20 @@ export default function RealTimeCompliancePage() {
           borderColor="divider"
           bgcolor="background.paper"
         >
+          <Box display="flex" alignItems="center" mb={2}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={enableMempool}
+                  onChange={(e) => setEnableMempool(e.target.checked)}
+                  disabled={isListening}
+                  color="primary"
+                />
+              }
+              label="Enable mempool simulation"
+            />
+          </Box>
+
           <Box display="flex" alignItems="center" gap={2} mb={3}>
             <Button
               variant="contained"
