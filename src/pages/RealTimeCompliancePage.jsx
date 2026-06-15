@@ -144,7 +144,7 @@ export default function RealTimeCompliancePage() {
 
               await dexieDB.history.add(snapshot);
               setSimulations((prev) => [
-                { hash: `Blocco ${blockNum}`, stats: currentStats },
+                { hash: `Block ${blockNum}`, stats: currentStats },
                 ...prev,
               ]);
             }
