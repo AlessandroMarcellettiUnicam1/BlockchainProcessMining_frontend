@@ -99,9 +99,14 @@ export default function XesConverter({
     setIsConversionDone(false);
     try {
       // if (dataSource !== "empty") {
-      let cleanData = transactionsJson;
-      if (cleanData && cleanData.data) cleanData = cleanData.data;
-      if (!Array.isArray(cleanData)) cleanData = [cleanData];
+      let cleanData = [];
+      
+      // Estrapoliamo i dati solo se non siamo in modalità "no_log"
+      if (dataSource !== "no_log" && transactionsJson) {
+        cleanData = transactionsJson;
+        if (cleanData && cleanData.data) cleanData = cleanData.data;
+        if (!Array.isArray(cleanData)) cleanData = [cleanData];
+      }
 
       const payload = {
         data: cleanData,
@@ -141,9 +146,10 @@ export default function XesConverter({
   // const isDataReady =
   //   dataSource === "empty" ||
   //   (transactionsJson && Object.keys(transactionsJson).length > 0);
-  const isDataReady = transactionsJson
-    ? Object.keys(transactionsJson).length > 0
-    : false;
+  const isDataReady = 
+    dataSource === "no_log" || 
+    (transactionsJson && Object.keys(transactionsJson).length > 0);
+
   const isMappingComplete =
     mapping.case_col && mapping.activity_col && mapping.time_col;
 
@@ -164,6 +170,11 @@ export default function XesConverter({
             value="database"
             control={<Radio />}
             label="Database"
+          />
+          <FormControlLabel
+            value="no_log"
+            control={<Radio />}
+            label="No starting log"
           />
         </RadioGroup>
       </FormControl>
@@ -194,7 +205,7 @@ export default function XesConverter({
         )}
       </Box>
 
-      {transactionsJson && (
+      {dataSource !== "no_log" && transactionsJson && (
         <Typography variant="body2" color="success.main" mb={3}>
           ✓ Transactions loaded
         </Typography>
