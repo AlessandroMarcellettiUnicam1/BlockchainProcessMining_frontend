@@ -225,34 +225,50 @@ function XesPage() {
     };
   }, [dataSource, selectedCollections]);
 
-  const sendObjectForXes = () => {
-    if (!sourceFile) {
-      setSourceError(
-        dataSource === 'file'
-          ? 'Please upload a JSON file first.'
-          : 'Please select at least one collection from the database.'
-      );
-      return;
-    }
+  const sendObjectForXes = async () => {
+  if (!sourceFile) {
+    setSourceError(
+      dataSource === 'file' ? 'Please upload a JSON file first.' : 'Please select at least one collection from the database.'
+    );
+    return;
+  }
 
-    setLoading(true);
-    setSourceError('');
+  setLoading(true);
+  setSourceError('');
 
-    _ocelXes({ caseId, activityKey, timestamp }, sourceFile)
-      .then((response) => {
-        setXes(response.data);
-      })
-      .catch((error) => {
-        setSourceError(
-          error?.response?.data?.message ||
-            error?.message ||
-            'Error while creating the XES file.'
-        );
-      })
-      .finally(() => {
-        setLoading(false);
+  try {
+    const response = await _ocelXes({ caseId, activityKey, timestamp }, sourceFile);
+
+    if (response.status >= 200 && response.status < 300) {
+      const fileBlob = response.data; // Blob binario da 1GB protetto
+
+      // 1. Estrae un blocco di testo iniziale sufficientemente grande (es. 200KB)
+      const initialChunk = await fileBlob.slice(0, 200000).text();
+      
+      // 2. Lo divide in righe e prende le prime 100 righe
+      const lines = initialChunk.split('\n');
+      const exact100Lines = lines.slice(0, 100).join('\n');
+
+      // 3. Salva nel Context l'oggetto strutturato
+      setXes({
+        xesBlob: fileBlob, 
+        xesPreviewText: exact100Lines,
+        // Mantiene xesString valorizzato se altri componenti fanno controlli legacy su di esso
+        xesString: exact100Lines, 
+        hasData: true 
       });
-  };
+    } else {
+      setSourceError('Failed to generate XES file.');
+    }
+  } catch (error) {
+    console.error(error);
+    setSourceError(
+      error?.response?.data?.message || error?.message || 'Error while creating the XES file.'
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <PageLayout loading={loading || collectionsLoading || databaseLoading}>

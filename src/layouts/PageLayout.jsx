@@ -89,8 +89,9 @@ function PageLayout({ children, loading, setLoading }) {
 
   const isXesPage = path.toLowerCase().includes('xes');
   const isOcelPage = path.toLowerCase().includes('ocel');
-  const hasXes = Boolean(xes?.xesString);
-
+  //const hasXes = Boolean(xes?.xesString);
+  const hasXes = Boolean(xes?.hasData);
+  
   const [showOcel, setShowOcel] = useState(false);
   const [showXes, setShowXes] = useState(false);
 
@@ -100,9 +101,12 @@ function PageLayout({ children, loading, setLoading }) {
     }
   }, [isXesPage, hasXes]);
 
+  /* const xesPreview = useMemo(() => {
+    const xesString = xes?.xesPreviewText || '<empty></empty>';
+    //return xesString;
+  }, [xes]); */
   const xesPreview = useMemo(() => {
-    const xesString = xes?.xesString || '<empty></empty>';
-    return xesString.split('\n').slice(0, 100).join('\n');
+    return xes?.xesPreviewText || '<empty></empty>';
   }, [xes]);
 
   const handleShowXes = () => {
@@ -111,7 +115,7 @@ function PageLayout({ children, loading, setLoading }) {
 
   const handleDeleteXes = () => {
     setResults(null);
-    setXes({ xesString: null });
+    setXes({ xesBlob: null, xesPreviewText: null, hasData: false });
     setShowXes(false);
     window.history.replaceState({}, '', path);
   };
@@ -131,13 +135,37 @@ function PageLayout({ children, loading, setLoading }) {
     window.history.replaceState({}, '', path);
   };
 
-  const handleFileChange = (e) => {
+  /* const handleFileChange = (e) => {
     const fileReader = new FileReader();
     fileReader.onload = (ev) => {
       const content = ev.target.result;
       setResults(JSON.parse(content));
     };
     fileReader.readAsText(e.target.files[0]);
+    e.target.value = null;
+  }; */
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const fileReader = new FileReader();
+    fileReader.onload = (ev) => {
+      try {
+        let content = ev.target.result;
+        if (file.size > 20 * 1024 * 1024) { 
+          content = content.trim();
+          if (!content.endsWith(']')) content += '\n]';
+        }
+        setResults(JSON.parse(content));
+      } catch (err) {
+        setResults({ message: "Preview loaded. File too large to parse fully." });
+      }
+    };
+    // Slicing del file per evitare il crash del browser
+    if (file.size > 20 * 1024 * 1024) {
+      fileReader.readAsText(file.slice(0, 100000));
+    } else {
+      fileReader.readAsText(file);
+    }
     e.target.value = null;
   };
 
@@ -165,7 +193,7 @@ function PageLayout({ children, loading, setLoading }) {
     setLoading && setLoading(false);
   };
 
-  const downloadXES = async () => {
+  /* const downloadXES = async () => {
     setLoading && setLoading(true);
     try {
       const xesString = xes?.xesString || '';
@@ -181,6 +209,15 @@ function PageLayout({ children, loading, setLoading }) {
     } finally {
       setLoading && setLoading(false);
     }
+  }; */
+  const downloadXES = async () => {
+    if (!xes?.xesBlob) return;
+    const href = window.URL.createObjectURL(xes.xesBlob);
+    const anchor = document.createElement('a');
+    anchor.href = href;
+    anchor.download = 'log.xes';
+    anchor.click();
+    window.URL.revokeObjectURL(href);
   };
 
   const downloadOcel = async () => {

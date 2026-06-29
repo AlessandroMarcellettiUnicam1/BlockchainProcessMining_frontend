@@ -179,6 +179,7 @@ export const _ocelXes = async (objectsToXes, jsonFile) => {
       headers: {
         "Content-Type": "multipart/form-data",
       },
+      responseType: 'blob',
     });
 
     return { status: response.status, data: response.data };
