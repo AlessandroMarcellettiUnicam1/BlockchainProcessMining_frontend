@@ -3,5 +3,5 @@ import Dexie from 'dexie';
 export const dexieDB = new Dexie('LiveComplianceDB');
 
 dexieDB.version(1).stores({
-    history: '++id, hash, sessionId'
+    history: '++id, hash, sessionId, step'
 });
