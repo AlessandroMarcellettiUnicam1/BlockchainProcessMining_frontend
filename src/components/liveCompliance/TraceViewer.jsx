@@ -60,10 +60,8 @@ export default function TraceViewer({
 
   // Determiniamo dinamicamente titoli e colori in base alla sorgente (Mempool vs Blocco)
   const isSimulation = sourceType === "SIMULATION_RESULT";
-  const sourceLabel = isSimulation
-    ? "⚡ Transazione Mempool"
-    : "✅ Blocco Confermato";
-  const sourceColor = isSimulation ? "warning.main" : "primary.main";
+  const sourceLabel = isSimulation ? "Mempool Transaction" : "Confirmed Block";
+  const sourceColor = isSimulation ? "text.secondary" : "primary.main";
 
   return (
     <Box sx={{ width: "100%" }}>
@@ -75,7 +73,7 @@ export default function TraceViewer({
           mb: 2,
           border: 1,
           borderColor: "divider",
-          bgcolor: "grey.50",
+          bgcolor: "background.paper",
         }}
       >
         <Box
@@ -85,14 +83,14 @@ export default function TraceViewer({
           mb={2}
         >
           <Typography variant="subtitle2" color="text.secondary">
-            STEP {step} • Esito dell'analisi
+            STEP {step} - Compliance Result
           </Typography>
           <Typography
             variant="caption"
             fontWeight="bold"
             color={sourceColor}
             sx={{
-              bgcolor: isSimulation ? "warning.50" : "primary.50",
+              bgcolor:"transparent",
               px: 1,
               py: 0.5,
               borderRadius: 1,
@@ -110,7 +108,7 @@ export default function TraceViewer({
             border={1}
             borderColor="success.light"
             borderRadius={1}
-            bgcolor="success.50"
+            bgcolor="background.default"
           >
             <Typography
               variant="caption"
@@ -130,7 +128,7 @@ export default function TraceViewer({
             border={1}
             borderColor="error.light"
             borderRadius={1}
-            bgcolor="error.50"
+            bgcolor="background.default"
           >
             <Typography variant="caption" color="error.main" fontWeight="bold">
               NON-COMPLIANT
@@ -144,9 +142,9 @@ export default function TraceViewer({
             textAlign="center"
             p={1}
             border={1}
-            borderColor="grey.300"
+            borderColor="divider"
             borderRadius={1}
-            bgcolor="grey.100"
+            bgcolor="background.default"
           >
             <Typography
               variant="caption"
@@ -166,12 +164,12 @@ export default function TraceViewer({
 
       {/* SEZIONE 2: Lista delle Tracce modificate */}
       <Typography variant="subtitle2" fontWeight="bold" mb={1}>
-        Tracce processate ({visualList.length})
+        Processed Traces ({visualList.length})
       </Typography>
 
       {visualList.length === 0 ? (
         <Typography variant="body2" color="text.secondary" fontStyle="italic">
-          Nessuna traccia restituita dal controllo.
+          No Trace Returned
         </Typography>
       ) : (
         visualList.map((item, index) => {
@@ -184,13 +182,13 @@ export default function TraceViewer({
               sx={{
                 mb: 1,
                 border: 1,
-                borderColor: `${item.color}.light`,
+                borderColor: `${item.color}.main`,
                 "&:before": { display: "none" },
               }}
             >
               <AccordionSummary
                 expandMoreIcon={<ExpandMoreIcon />}
-                sx={{ bgcolor: `${item.color}.50` }}
+                sx={{ bgcolor: "background.default" }}
               >
                 <Box
                   display="flex"
@@ -210,18 +208,17 @@ export default function TraceViewer({
                     label={item.label}
                     color={item.color}
                     size="small"
-                    variant="filled"
+                    variant="outlined"
                     sx={{ fontWeight: "bold" }}
                   />
                 </Box>
               </AccordionSummary>
               <AccordionDetails
                 sx={{
-                  bgcolor:
-                    theme.palette.mode === "dark"
-                      ? "grey.900"
-                      : "background.paper",
+                  bgcolor: "background.paper", 
                   p: 0,
+                  borderTop: 1,
+                  borderColor: "divider",
                 }}
               >
                 <Box

@@ -31,6 +31,7 @@ import LogMapper from "./CoBlockly/coblockComponents/LogMapper.tsx";
 import MempoolFilter from "../components/liveCompliance/MempoolFilter.jsx";
 import XesConverter from "../components/liveCompliance/XesConverter.jsx";
 import LiveComplianceViewer from "../components/liveCompliance/LiveComplianceViewer.jsx";
+import TraceViewer from "../components/liveCompliance/TraceViewer.jsx";
 import { HiddenInput } from "../components/HiddenInput";
 import { CollectionDropdown } from "../components/dataVisualization/CollectionDropdown";
 import {
@@ -48,38 +49,55 @@ export default function RealTimeCompliancePage() {
   const [isListening, setIsListening] = useState(false);
   const [eventSource, setEventSource] = useState(null);
 
-  // stati per coblockly e coblock parser
+  // setup stati
   const [ruleText, setRuleText] = useState("");
   const [parsedRule, setParsedRule] = useState(null);
-  const [sessionId, setSessionId] = useState(null); // stato per il sessionId di Redis
-
-  // stati per il contratto per filtrare la mempool
+  const [sessionId, setSessionId] = useState(null);
   const [validAddress, setValidAddress] = useState("");
   const [addressFilters, setAddressFilters] = useState("from"); // from, to o both
-
-  // stati per il mapping per la verifica della regola
   const [logColumns, setLogColumns] = useState([]);
   const [logMapping, setLogMapping] = useState({});
-
+  const [queueWaiting, setQueueWaiting] = useState(0);
+  const [enableMempool, setEnableMempool] = useState(true);
   const [mapping, setMapping] = useState({
     case_col: "",
     activity_col: "",
     time_col: "",
   });
 
-  const [simulations, setSimulations] = useState([]);
+  const stepCounterRef = useRef(0);
   const processedHashesRef = useRef(new Set());
 
-  const [queueWaiting, setQueueWaiting] = useState(0);
-  const [enableMempool, setEnableMempool] = useState(true);
+  const [latestLiveData, setLatestLiveData] = useState(null);
+  const [playbackMode, setPlaybackMode] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [maxIndex, setMaxIndex] = useState(0);
+  const [viewData, setViewData] = useState(null);
 
   useEffect(() => {
     return () => {
-      if (eventSource) {
-        eventSource.close();
-      }
+      if (eventSource) eventSource.close();
     };
   }, [eventSource]);
+
+  useEffect(() => {
+    if (playbackMode && currentIndex > 0) {
+      dexieDB.history
+        .where("step")
+        .equals(currentIndex)
+        .first()
+        .then((snapshot) => {
+          if (snapshot) setViewData(snapshot);
+        });
+    }
+  }, [currentIndex, playbackMode]);
+
+  useEffect(() => {
+    if (playbackMode && latestLiveData && currentIndex === 0) {
+      setCurrentIndex(maxIndex);
+      setViewData(latestLiveData);
+    }
+  }, [playbackMode, latestLiveData, maxIndex, currentIndex]);
 
   const startMonitor = async () => {
     if (!sessionId) return alert("Genera prima il base XES!");
@@ -89,10 +107,16 @@ export default function RealTimeCompliancePage() {
         eventSource.close();
         setEventSource(null);
       }
-      // reset completo del database e degli stati per la nuova sessione
+
+      // reset
       await dexieDB.history.clear();
-      setSimulations([]);
+      setPlaybackMode(false);
+      setCurrentIndex(0);
+      setMaxIndex(0);
+      setLatestLiveData(null);
+      setViewData(null);
       processedHashesRef.current.clear();
+      stepCounterRef.current = 0;
       setQueueWaiting(0);
 
       await _startComplianceMonitoring({
@@ -102,7 +126,7 @@ export default function RealTimeCompliancePage() {
         mapping,
         parsedRule,
         logMapping,
-        enableMempool
+        enableMempool,
       });
 
       setIsListening(true);
@@ -113,90 +137,61 @@ export default function RealTimeCompliancePage() {
 
       source.onmessage = async (event) => {
         const incomingData = JSON.parse(event.data);
-        const txHash = incomingData.hash;
 
-        if (incomingData.type === "BASELINE_UPDATE") {
-          const blockNum = incomingData.blockNumber;
-
-          if (incomingData.success) {
-            enqueueSnackbar(`Log Base aggiornato con le tx del blocco ${blockNum}`, {
-              variant: "success",
-            });
-
-            if (incomingData.complianceResult) {
-              const c = incomingData.complianceResult.compliant || [];
-              const nc = incomingData.complianceResult.noncompliant || [];
-              const ign = incomingData.complianceResult.ignored || [];
-              const currentStats = {
-                compliant: c.length,
-                nonCompliant: nc.length,
-                ignored: ign.length,
-              };
-
-              const snapshot = {
-                sessionId: incomingData.sessionId,
-                hash: `Block ${blockNum}`, 
-                compliantData: c,
-                nonCompliantData: nc,
-                ignored: ign,
-                stats: currentStats,
-              };
-
-              await dexieDB.history.add(snapshot);
-              setSimulations((prev) => [
-                { hash: `Block ${blockNum}`, stats: currentStats },
-                ...prev,
-              ]);
-            }
-          } else {
-            enqueueSnackbar(`Log Base NON aggiornato per il blocco ${blockNum}: nessun dato utile estratto`, {
-              variant: "warning",
-            });
-          }
+        if (incomingData.type === "QUEUE_STATS") {
+          setQueueWaiting(incomingData.waiting);
           return;
         }
 
-        if (processedHashesRef.current.has(txHash)) {
-          return;
-        }
+        const txHash = incomingData.hash || `Block_${incomingData.blockNumber}`;
+        if (processedHashesRef.current.has(txHash)) return;
+        processedHashesRef.current.add(txHash);
 
         if (
-          incomingData.type === "SIMULATION_RESULT" &&
-          incomingData.complianceResult
+          incomingData.type === "BASELINE_UPDATE" &&
+          incomingData.success === false
         ) {
-          processedHashesRef.current.add(txHash);
+          enqueueSnackbar(
+            `Blocco ${incomingData.blockNumber} vuoto, ignorato`,
+            { variant: "info" },
+          );
+          return;
+        }
 
-          // Estrazione sicura dei dati
-          const c = incomingData.complianceResult.compliant || [];
-          const nc = incomingData.complianceResult.noncompliant || [];
-          const ign = incomingData.complianceResult.ignored || [];
+        if (incomingData.complianceResult) {
+          stepCounterRef.current += 1;
+          const currentStep = stepCounterRef.current;
+          const delta = incomingData.complianceResult;
+
           const currentStats = {
-            compliant: c.length,
-            nonCompliant: nc.length,
-            ignored: ign.length,
+            compliant: (delta.compliant || []).length,
+            nonCompliant: (delta.noncompliant || []).length,
+            ignored: (delta.ignored || []).length,
           };
 
-          // Creazione del pacchetto da salvare
           const snapshot = {
-            sessionId: incomingData.sessionId,
-            hash: incomingData.hash,
-            compliantData: c,
-            nonCompliantData: nc,
-            ignored: ign,
+            sessionId: sessionId,
+            step: currentStep,
+            sourceType: incomingData.type,
+            sourceId: txHash,
+            compliantData: delta.compliant || [],
+            nonCompliantData: delta.noncompliant || [],
+            ignoredData: delta.ignored || [],
             stats: currentStats,
+            caseColumn: mapping.case_col,
           };
 
           await dexieDB.history.add(snapshot);
-          setSimulations((prev) => [
-            {
-              hash: incomingData.hash,
-              stats: currentStats,
-            },
-            ...prev,
-          ]); // aggiungo la nuova simulazione in cima alla lista
-        } else if (incomingData.type === "QUEUE_STATS") {
-          setQueueWaiting(incomingData.waiting);
-          return;
+
+          setMaxIndex(currentStep);
+          setLatestLiveData(snapshot);
+          setCurrentIndex((prev) => (playbackMode ? prev : currentStep));
+
+          if (incomingData.type === "BASELINE_UPDATE") {
+            enqueueSnackbar(`Blocco ${incomingData.blockNumber} processato`, {
+              variant: "success",
+            });
+          }
         }
       };
 
@@ -211,14 +206,14 @@ export default function RealTimeCompliancePage() {
       eventSource.close();
       setEventSource(null);
     }
-
     setIsListening(false);
+    setPlaybackMode(true);
 
     try {
       await _stopComplianceMonitoring({ sessionId });
-      console.log("Monitoraggio fermato con successo.");
+      console.log("Monitoraggio fermato.");
     } catch (err) {
-      console.error("Errore durante la chiusura del monitoraggio:", err);
+      console.error("Errore stop monitoraggio:", err);
     }
   };
 
@@ -229,7 +224,7 @@ export default function RealTimeCompliancePage() {
     >
       <Box p={4}>
         {/* 1. XES Converter */}
-        <Box mb={4} p={3} border={1} borderRadius={2} borderColor="grey.300">
+        <Box mb={4} p={3} border={1} borderRadius={2} borderColor="divider">
           <Box display="flex" alignItems="center" gap={1} mb={3}>
             <Typography variant="h6" fontWeight="bold" color="primary">
               1. Upload logs or choose from DB
@@ -279,7 +274,7 @@ export default function RealTimeCompliancePage() {
         </Box>
 
         {/* 2. XES Mapping */}
-        <Box mb={4} p={3} border={1} borderRadius={2} borderColor="grey.300">
+        <Box mb={4} p={3} border={1} borderRadius={2} borderColor="divider">
           <Typography variant="h6" mb={3} fontWeight="bold" color="primary">
             2. CoBlock mapping
           </Typography>
@@ -294,7 +289,7 @@ export default function RealTimeCompliancePage() {
         </Box>
 
         {/* 3. CoBlock Rule */}
-        <Box mb={4} p={3} border={1} borderRadius={2} borderColor="grey.300">
+        <Box mb={4} p={3} border={1} borderRadius={2} borderColor="divider">
           <Typography variant="h6" mb={3} fontWeight="bold" color="primary">
             3. Define a CoBlock rule
           </Typography>
@@ -315,7 +310,7 @@ export default function RealTimeCompliancePage() {
         </Box>
 
         {/* 4. Mempool Filter */}
-        <Box mb={4} p={3} border={1} borderRadius={2} borderColor="grey.300">
+        <Box mb={4} p={3} border={1} borderRadius={2} borderColor="divider">
           <Typography variant="h6" mb={3} fontWeight="bold" color="primary">
             4. Insert an address to filter the mempool
           </Typography>
@@ -383,128 +378,104 @@ export default function RealTimeCompliancePage() {
             )}
           </Box>
 
-          {/* --- STORICO COMPLIANCE --- */}
-          <Box mt={4}>
-            <Typography variant="h6" mb={2} fontWeight="bold" color="primary">
-              Compliance Results
-            </Typography>
+          {/* --- MODALITÀ LIVE STREAMING --- */}
+          {!playbackMode && latestLiveData && (
+            <TraceViewer
+              compliantData={latestLiveData.compliantData}
+              nonCompliantData={latestLiveData.nonCompliantData}
+              ignoredData={latestLiveData.ignoredData}
+              stats={latestLiveData.stats}
+              sourceType={latestLiveData.sourceType}
+              sourceId={latestLiveData.sourceId}
+              step={latestLiveData.step}
+              caseColumn={latestLiveData.caseColumn}
+            />
+          )}
 
-            {simulations.length === 0 ? (
+          {/* --- MODALITÀ PLAYBACK (Storico) --- */}
+          {playbackMode && viewData && (
+            <Box
+              mt={3}
+              p={3}
+              bgcolor="background.default"
+              borderRadius={2}
+              border={1}
+              borderColor="divider"
+            >
               <Box
-                textAlign="center"
-                p={4}
+                display="flex"
+                justifyContent="space-between"
+                alignItems="center"
+                mb={3}
+                p={2}
                 bgcolor="background.paper"
                 borderRadius={1}
-                border={1}
-                borderColor="divider"
-                borderStyle="dashed"
               >
-                <Typography variant="body2" color="text.secondary">
-                  {isListening
-                    ? "Waiting for the first transaction..."
-                    : "No transactions checked yet."}
-                </Typography>
-              </Box>
-            ) : (
-              simulations.map((sim) => (
-                <Accordion
-                  key={sim.hash}
-                  sx={{
-                    mb: 1,
-                    border: 1,
-                    borderColor: "divider",
-                    borderRadius: 1,
-                  }}
-                  TransitionProps={{ unmountOnExit: true }}
+                <Button
+                  variant="contained"
+                  onClick={() =>
+                    setCurrentIndex((prev) => Math.max(1, prev - 1))
+                  }
+                  disabled={currentIndex <= 1}
                 >
-                  {/* Banner della transazione */}
-                  <AccordionSummary expandMoreIcon={<ExpandMoreIcon />}>
-                    <Box
-                      display="flex"
-                      justifyContent="space-between"
-                      alignItems="center"
-                      width="100%"
-                      pr={2}
-                    >
-                      <Typography
-                        variant="body2"
-                        fontFamily="monospace"
-                        fontWeight="bold"
-                      >
-                        Tx: {sim.hash}
-                      </Typography>
-
-                      <Box display="flex" gap={2}>
-                        <Typography
-                          variant="caption"
-                          color="success.main"
-                          fontWeight="bold"
-                        >
-                          Compliant: {sim.stats.compliant}
-                        </Typography>
-                        <Typography
-                          variant="caption"
-                          color="error.main"
-                          fontWeight="bold"
-                        >
-                          Non-Compliant: {sim.stats.nonCompliant}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          Ignored: {sim.stats.ignored}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </AccordionSummary>
-
-                  {/* Contenuto espanso */}
-                  <AccordionDetails
-                    sx={{
-                      bgcolor: "background.paper",
-                      borderTop: 1,
-                      borderColor: "divider",
-                    }}
+                  Previous
+                </Button>
+                <Box textAlign="center">
+                  <Typography variant="body1" fontWeight="bold">
+                    Rule Checking History
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    display="block"
                   >
-                    <LazyComplianceViewer hash={sim.hash} />
-                  </AccordionDetails>
-                </Accordion>
-              ))
-            )}
-          </Box>
+                    Check {currentIndex} of {maxIndex}
+                  </Typography>
+                </Box>
+                <Button
+                  variant="contained"
+                  onClick={() =>
+                    setCurrentIndex((prev) => Math.min(maxIndex, prev + 1))
+                  }
+                  disabled={currentIndex >= maxIndex}
+                >
+                  Next
+                </Button>
+              </Box>
+
+              <TraceViewer
+                compliantData={viewData.compliantData}
+                nonCompliantData={viewData.nonCompliantData}
+                ignoredData={viewData.ignoredData}
+                stats={viewData.stats}
+                sourceType={viewData.sourceType}
+                sourceId={viewData.sourceId}
+                step={viewData.step}
+                caseColumn={viewData.caseColumn}
+              />
+            </Box>
+          )}
+
+          {/* Fallback vuoto */}
+          {!latestLiveData && maxIndex === 0 && (
+            <Box
+              textAlign="center"
+              p={4}
+              bgcolor="background.paper"
+              borderRadius={1}
+              border={1}
+              borderColor="divider"
+              borderStyle="dashed"
+            >
+              <Typography variant="body2" color="text.secondary">
+                {isListening
+                  ? "Waiting for mempool transactions or new blocks..."
+                  : "No simulation activated"}
+              </Typography>
+            </Box>
+          )}
         </Box>
       </Box>
     </SnackbarProvider>
-  );
-}
-
-// componente Wrapper per lazy loading dall'indexedDB
-function LazyComplianceViewer({ hash }) {
-  const [heavyData, setHeavyData] = useState(null);
-
-  useEffect(() => {
-    // pessca il json quando apro la tendina
-    dexieDB.history
-      .where("hash")
-      .equals(hash)
-      .first()
-      .then((snapshot) => {
-        if (snapshot) setHeavyData(snapshot);
-      });
-  }, [hash]);
-
-  // caricamento prima di mostrare il json
-  if (!heavyData) {
-    return (
-      <Box textAlign="center" p={3}>
-        <CircularProgress size={24} />
-      </Box>
-    );
-  }
-
-  return (
-    <LiveComplianceViewer
-      compliantData={heavyData.compliantData}
-      nonCompliantData={heavyData.nonCompliantData}
-      stats={heavyData.stats}
-    />
   );
 }
