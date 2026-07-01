@@ -1,4 +1,3 @@
-import { continuousColorLegendClasses } from "@mui/x-charts";
 import axios from "axios";
 const serverUrl = "http://localhost:8000";
 
@@ -222,6 +221,88 @@ function findAllValuesByKey(obj, key) {
 
 }
 
+export const _ocelDetect = async (records) => {
+    try {
+        const response = await axios.post(serverUrl + "/api/ocel/detect", { records });
+        return { status: response.status, data: response.data };
+    } catch (error) {
+        console.error(error);
+        return { status: error?.response?.status, data: error?.response?.data };
+    }
+};
+
+export const _ocelBuild = async (records, nestedColNames, objectTypeCols, activityCol, timestampCol) => {
+    try {
+        const response = await axios.post(serverUrl + "/api/ocel/build", {
+            records, nestedColNames, objectTypeCols, activityCol, timestampCol
+        });
+        return { status: response.status, data: response.data };
+    } catch (error) {
+        console.error(error);
+        return { status: error?.response?.status, data: error?.response?.data };
+    }
+};
+
+export const _ocelE2OCombinations = async (sessionId) => {
+    try {
+        const response = await axios.post(serverUrl + "/api/ocel/e2o-combinations", { sessionId });
+        return { status: response.status, data: response.data };
+    } catch (error) {
+        return { status: error?.response?.status, data: error?.response?.data };
+    }
+};
+
+export const _ocelE2OQualifiers = async (sessionId, qualifierMap) => {
+    try {
+        const response = await axios.post(serverUrl + "/api/ocel/e2o-qualifiers", { sessionId, qualifierMap });
+        return { status: response.status, data: response.data };
+    } catch (error) {
+        return { status: error?.response?.status, data: error?.response?.data };
+    }
+};
+
+export const _ocelO2OEnrich = async (sessionId) => {
+    try {
+        const response = await axios.post(serverUrl + "/api/ocel/o2o-enrich", { sessionId });
+        return { status: response.status, data: response.data };
+    } catch (error) {
+        return { status: error?.response?.status, data: error?.response?.data };
+    }
+};
+
+export const _ocelO2OQualifiers = async (sessionId, qualifierMap) => {
+    try {
+        const response = await axios.post(serverUrl + "/api/ocel/o2o-qualifiers", { sessionId, qualifierMap });
+        return { status: response.status, data: response.data };
+    } catch (error) {
+        return { status: error?.response?.status, data: error?.response?.data };
+    }
+};
+
+export const _ocelGetSession = async (sessionId) => {
+    try {
+        const response = await axios.get(serverUrl + `/api/ocel/session/${sessionId}`);
+        return { status: response.status, data: response.data };
+    } catch (error) {
+        return { status: error?.response?.status, data: error?.response?.data };
+    }
+};
+
+export const _ocelDeleteSession = async (sessionId) => {
+    try {
+        await axios.delete(serverUrl + `/api/ocel/session/${sessionId}`);
+    } catch (_) {}
+};
+
+export const _ocelExport = async (sessionId, format) => {
+    try {
+        const response = await axios.get(serverUrl + `/api/ocel/export/${sessionId}/${format}`, { responseType: 'blob' });
+        return { status: response.status, data: response.data };
+    } catch (error) {
+        return { status: error?.response?.status, data: null };
+    }
+};
+
 export const getData = async ({ type, query}) => {
   try {
     console.log("[Service] Fetching data with type:", type, "and query:", query);
@@ -231,43 +312,6 @@ export const getData = async ({ type, query}) => {
     console.error(error)
     return {status: error.response.status, data: error.response.data}
   }
-}
-
-export const _simulateTransaction = async (payload) => {
-    try {
-        const response = await axios.post(serverUrl + "/api/simulate", payload);
-        return {status: response.status, data: response.data };
-    }
-    catch (error) {
-        console.error("Errore durante la simulazione: ", error);
-        return { status: error?.response?.status, data: error?.response?.data };
-    }
-}
-
-export const _getMempoolTxs = async (limit) => {
-    try {
-        const response = await axios.get(`${serverUrl}/api/get-mempool-txs`, {
-            params: { limit: limit }
-        });
-        return { status: response.status, data: response.data };
-    }
-    catch (err) {
-        console.error("Errore durante il ricevimento delle transazioni dalla mempool: ", err);
-        return { status: err?.response?.status, data: err?.response?.data };
-    }
-}
-
-export const _simulateMempoolTxs = async (payload) => {
-    try {
-        const response = await axios.post(serverUrl + "/api/simulate/mempool-txs", {
-            transactions: payload 
-        });
-        return { status: response.status, data: response.data };
-    }
-    catch (err) {
-        console.error("Errore durante la simulazione della mempool: ", err);
-        return { status: err?.response?.status, data: err?.response?.data };
-    }
 }
 
 
