@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import JSONEditor from 'jsoneditor';
+//@ts-ignore
 import 'jsoneditor/dist/jsoneditor.min.css';
 
 interface RuleApplierProps {
