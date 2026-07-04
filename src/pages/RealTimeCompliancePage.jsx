@@ -57,7 +57,6 @@ export default function RealTimeCompliancePage() {
   const [addressFilters, setAddressFilters] = useState("from"); // from, to o both
   const [logColumns, setLogColumns] = useState([]);
   const [logMapping, setLogMapping] = useState({});
-  const [queueWaiting, setQueueWaiting] = useState(0);
   const [enableMempool, setEnableMempool] = useState(true);
   const [mapping, setMapping] = useState({
     case_col: "",
@@ -117,7 +116,6 @@ export default function RealTimeCompliancePage() {
       setViewData(null);
       processedHashesRef.current.clear();
       stepCounterRef.current = 0;
-      setQueueWaiting(0);
 
       await _startComplianceMonitoring({
         sessionId,
@@ -137,11 +135,6 @@ export default function RealTimeCompliancePage() {
 
       source.onmessage = async (event) => {
         const incomingData = JSON.parse(event.data);
-
-        if (incomingData.type === "QUEUE_STATS") {
-          setQueueWaiting(incomingData.waiting);
-          return;
-        }
 
         const txHash = incomingData.hash || `Block_${incomingData.blockNumber}`;
         if (processedHashesRef.current.has(txHash)) return;
@@ -363,19 +356,6 @@ export default function RealTimeCompliancePage() {
             >
               STOP MONITOR
             </Button>
-
-            {isListening && (
-              <Box display="flex" alignItems="center" gap={1.5} ml={2}>
-                <CircularProgress size={20} color="primary" />
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  fontWeight="bold"
-                >
-                  Queued Transactions: {queueWaiting}
-                </Typography>
-              </Box>
-            )}
           </Box>
 
           {/* --- MODALITÀ LIVE STREAMING --- */}
