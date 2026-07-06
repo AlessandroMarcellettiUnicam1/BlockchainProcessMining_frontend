@@ -17,6 +17,7 @@ import FactCheckIcon from '@mui/icons-material/FactCheck';
 import FileCopyIcon from '@mui/icons-material/FileCopy';
 import WaterIcon from '@mui/icons-material/Water';
 import LibraryAddCheckIcon from '@mui/icons-material/LibraryAddCheck';
+import AccountTreeIcon from '@mui/icons-material/AccountTree';
 
 const NAVIGATION = [
 	{
@@ -78,6 +79,11 @@ const NAVIGATION = [
                 title: "Query",
                 icon: <ContentPasteSearchTwoToneIcon />,
             },
+			{
+				segment: "sankey",
+				title: "Sankey",
+				icon: <AccountTreeIcon />,
+			},
 			{
 				segment: "coblockly",
 				title: "Compliance",

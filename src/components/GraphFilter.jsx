@@ -7,6 +7,8 @@ import {
     FilledInput,
     IconButton,
     InputLabel,
+    MenuItem,
+    Select,
     Typography,
     Slide, Stack
 } from "@mui/material";
@@ -19,8 +21,19 @@ const Transition = React.forwardRef(function Transition(props, ref) {
     return <Slide direction="down" ref={ref} {...props} />;
 });
 
-function GraphFilter({open,onClose,query,setQuery,isLoading,onApply}){
+function GraphFilter({
+    open,
+    onClose,
+    query,
+    setQuery,
+    isLoading,
+    onApply,
+    title = "Graph Filters",
+    dynamicFilterOptions = [],
+}){
     const [addressToAdd, setAddressToAdd] = useState("");
+    const [dynamicPath, setDynamicPath] = useState("");
+    const [dynamicValue, setDynamicValue] = useState("");
     const handleAddAddress = () => {
         if (!addressToAdd) return;
 
@@ -47,6 +60,37 @@ function GraphFilter({open,onClose,query,setQuery,isLoading,onApply}){
             selectedCollection:query.selectedCollection
         });
     }
+    const handleAddDynamicFilter = () => {
+        if (!dynamicPath || !dynamicValue) return;
+
+        setQuery({
+            ...query,
+            dynamicFilters: [
+                ...(query.dynamicFilters || []),
+                { path: dynamicPath, value: dynamicValue },
+            ],
+        });
+
+        setDynamicPath("");
+        setDynamicValue("");
+    };
+    const handleDeleteDynamicFilter = (idx) => {
+        setQuery({
+            ...query,
+            dynamicFilters: (query.dynamicFilters || []).filter((_, i) => i !== idx),
+        });
+    };
+    const buildQueryWithPendingDynamicFilter = () => {
+        if (!dynamicPath || !dynamicValue) return query;
+
+        return {
+            ...query,
+            dynamicFilters: [
+                ...(query.dynamicFilters || []),
+                { path: dynamicPath, value: dynamicValue },
+            ],
+        };
+    };
     return (
         <Dialog
             TransitionComponent={Transition}
@@ -56,10 +100,59 @@ function GraphFilter({open,onClose,query,setQuery,isLoading,onApply}){
             maxWidth="lg"
             onClose={onClose}
         >
-            <DialogTitle>Graph Filters</DialogTitle>
+            <DialogTitle>{title}</DialogTitle>
             <DialogContent dividers>
 
                 <Stack spacing={3} sx={{ p: 3 }}>
+                    {dynamicFilterOptions.length > 0 && (
+                        <Box>
+                            <Typography sx={{ fontWeight: 700, fontSize: "18px", mb: 1 }}>
+                                Field Filters
+                            </Typography>
+                            <Box display="flex" gap={1} alignItems="center">
+                                <FormControl fullWidth variant="filled">
+                                    <InputLabel>Field</InputLabel>
+                                    <Select
+                                        value={dynamicPath}
+                                        label="Field"
+                                        onChange={(e) => setDynamicPath(e.target.value)}
+                                    >
+                                        {dynamicFilterOptions.map((path) => (
+                                            <MenuItem key={path} value={path}>
+                                                {path}
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
+                                <FormControl fullWidth variant="filled">
+                                    <InputLabel>Value</InputLabel>
+                                    <FilledInput
+                                        value={dynamicValue}
+                                        onChange={(e) => setDynamicValue(e.target.value)}
+                                    />
+                                </FormControl>
+                                <IconButton onClick={handleAddDynamicFilter}>
+                                    <AddBoxIcon color="primary" fontSize="large" />
+                                </IconButton>
+                            </Box>
+                            {(query.dynamicFilters || []).map((filter, idx) => (
+                                <Box
+                                    key={`${filter.path}-${filter.value}-${idx}`}
+                                    display="flex"
+                                    justifyContent="space-between"
+                                    alignItems="center"
+                                    py={1}
+                                >
+                                    <Typography>
+                                        {filter.path} = {filter.value}
+                                    </Typography>
+                                    <IconButton onClick={() => handleDeleteDynamicFilter(idx)}>
+                                        <DeleteIcon color="error" />
+                                    </IconButton>
+                                </Box>
+                            ))}
+                        </Box>
+                    )}
                     <FormControl variant="filled">
                         <InputLabel sx={{ fontWeight: 700, fontSize: "18px" }}>
                             Contract Addresses
@@ -200,7 +293,13 @@ function GraphFilter({open,onClose,query,setQuery,isLoading,onApply}){
                     <Box display="flex" gap={2}>
                         <Button
                             variant="contained"
-                            onClick={onApply}
+                            onClick={() => {
+                                const nextQuery = buildQueryWithPendingDynamicFilter();
+                                setQuery(nextQuery);
+                                setDynamicPath("");
+                                setDynamicValue("");
+                                onApply(nextQuery);
+                            }}
                             disabled={isLoading}
                             sx={{
                                 height: "50px",
