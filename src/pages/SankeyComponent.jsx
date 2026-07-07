@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
 	Box,
 	Button,
+	CircularProgress,
 	FormControl,
 	FormControlLabel,
 	IconButton,
@@ -12,6 +13,7 @@ import {
 	RadioGroup,
 	Select,
 	Stack,
+	Switch,
 	TextField,
 	Tooltip as MuiTooltip,
 	Typography,
@@ -46,6 +48,7 @@ import {
 echarts.use([SankeyChart, TooltipComponent, ToolboxComponent, CanvasRenderer]);
 
 const DEFAULT_LAYERS = ["sender", "contractAddress", "functionName"];
+const BATCH_SIZE = 2500;
 const LAYER_COLORS = [
 	"#1565c0",
 	"#00897b",
@@ -57,32 +60,43 @@ const LAYER_COLORS = [
 	"#2e7d32",
 ];
 
-const shortAddress = (value) => {
-	if (!value) return "Unknown";
-	const text = String(value);
-	if (text.length <= 18) return text;
-	return `${text.slice(0, 8)}...${text.slice(-6)}`;
-};
-
-const getNumericWeight = (tx) => {
-	const value = Number(tx.gasUsed ?? tx.value ?? tx.amount);
-	return Number.isFinite(value) && value > 0 ? value : 1;
-};
+const waitForBrowser = () =>
+	new Promise((resolve) => {
+		if ("requestIdleCallback" in window) {
+			window.requestIdleCallback(resolve, { timeout: 50 });
+			return;
+		}
+		setTimeout(resolve, 0);
+	});
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
-const formatValue = (value) => {
+const shortValue = (value) => {
 	if (value === null || value === undefined || value === "") return "Unknown";
 	const text = String(value);
 	if (/^0x[a-fA-F0-9]{40}$/.test(text) || text.length > 28) {
-		return shortAddress(text);
+		return `${text.slice(0, 8)}...${text.slice(-6)}`;
 	}
 	return text;
 };
 
-const labelForLayer = (layer, value) => {
-	if (!value) return "Unknown";
-	return formatValue(value);
+const toPositiveNumber = (value) => {
+	const parsed = Number(value);
+	return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+};
+
+const getWeight = (record, tx, strategy, path) => {
+	if (strategy === "occurrences") return 1;
+	if (!path) return 1;
+
+	const source = path.startsWith("calls.") ? record : tx;
+	const effectivePath = path.startsWith("calls.") ? stripCallsPrefix(path) : path;
+	const total = getValuesByPath(source, effectivePath).reduce(
+		(sum, value) => sum + toPositiveNumber(value),
+		0
+	);
+
+	return total > 0 ? total : 0;
 };
 
 const addNode = (nodes, nodeIndexes, layer, value, layerIndex) => {
@@ -94,98 +108,25 @@ const addNode = (nodes, nodeIndexes, layer, value, layerIndex) => {
 		name: key,
 		layer,
 		rawValue: value || "Unknown",
-		itemStyle: {
-			color: LAYER_COLORS[layerIndex % LAYER_COLORS.length],
-		},
-		label: {
-			formatter: labelForLayer(layer, value),
-		},
+		itemStyle: { color: LAYER_COLORS[layerIndex % LAYER_COLORS.length] },
+		label: { formatter: shortValue(value) },
 	});
 
 	return key;
 };
 
-const addLink = (links, source, target, value) => {
-	if (!source || !target || source === target) return;
+const addLink = (links, source, target, weight) => {
+	if (!source || !target || source === target || weight <= 0) return;
 
 	const key = `${source}->${target}`;
 	const existing = links.get(key);
-
 	if (existing) {
-		existing.value += value;
+		existing.value += weight;
 		existing.occurrences += 1;
 		return;
 	}
 
-	links.set(key, {
-		source,
-		target,
-		value,
-		occurrences: 1,
-	});
-};
-
-const filterCallRecords = (records, dynamicFilters = []) => {
-	const callFilters = dynamicFilters.filter(
-		(filter) => filter.path?.startsWith("calls.") && filter.value
-	);
-
-	if (callFilters.length === 0) return records;
-
-	return records.filter((record) =>
-		callFilters.every((filter) => {
-			const expected = String(filter.value).toLowerCase();
-			return getValuesByPath(record, stripCallsPrefix(filter.path)).some((value) =>
-				String(value).toLowerCase().includes(expected)
-			);
-		})
-	);
-};
-
-const buildCallSankeyData = (transactions, selectedLayers, minOccurrences, dynamicFilters) => {
-	const nodes = [];
-	const nodeIndexes = new Map();
-	const links = new Map();
-
-	transactions.forEach((tx) => {
-		const weight = getNumericWeight(tx);
-		const callRecords = filterCallRecords(getCallRecords(tx), dynamicFilters);
-
-		callRecords.forEach((record) => {
-			for (let index = 0; index < selectedLayers.length - 1; index += 1) {
-				const sourceLayer = selectedLayers[index];
-				const targetLayer = selectedLayers[index + 1];
-				const sourceValues = Array.from(
-					new Set(getValuesByPath(record, stripCallsPrefix(sourceLayer.path)))
-				);
-				const targetValues = Array.from(
-					new Set(getValuesByPath(record, stripCallsPrefix(targetLayer.path)))
-				);
-
-				sourceValues.forEach((sourceValue) => {
-					targetValues.forEach((targetValue) => {
-						const source = addNode(
-							nodes,
-							nodeIndexes,
-							sourceLayer.path,
-							sourceValue,
-							index
-						);
-						const target = addNode(
-							nodes,
-							nodeIndexes,
-							targetLayer.path,
-							targetValue,
-							index + 1
-						);
-						addLink(links, source, target, weight);
-					});
-				});
-			}
-		});
-	});
-
-	return finalizeSankeyData(nodes, links, minOccurrences);
+	links.set(key, { source, target, value: weight, occurrences: 1 });
 };
 
 const finalizeSankeyData = (nodes, links, minOccurrences) => {
@@ -205,7 +146,49 @@ const finalizeSankeyData = (nodes, links, minOccurrences) => {
 	};
 };
 
-const buildSankeyData = (log, layers, minOccurrences, dynamicFilters = []) => {
+const processRecordLayers = (
+	record,
+	tx,
+	selectedLayers,
+	nodes,
+	nodeIndexes,
+	links,
+	weightStrategy,
+	weightPath,
+) => {
+	const allCallLayers = selectedLayers.every((layer) => layer.path.startsWith("calls."));
+	const weight = getWeight(record, tx, weightStrategy, weightPath);
+	if (weight <= 0) return;
+
+	for (let index = 0; index < selectedLayers.length - 1; index += 1) {
+		const sourceLayer = selectedLayers[index];
+		const targetLayer = selectedLayers[index + 1];
+		const sourceRoot = allCallLayers ? record : tx;
+		const targetRoot = allCallLayers ? record : tx;
+		const sourcePath = allCallLayers ? stripCallsPrefix(sourceLayer.path) : sourceLayer.path;
+		const targetPath = allCallLayers ? stripCallsPrefix(targetLayer.path) : targetLayer.path;
+		const sourceValues = Array.from(new Set(getValuesByPath(sourceRoot, sourcePath)));
+		const targetValues = Array.from(new Set(getValuesByPath(targetRoot, targetPath)));
+
+		sourceValues.forEach((sourceValue) => {
+			targetValues.forEach((targetValue) => {
+				const source = addNode(nodes, nodeIndexes, sourceLayer.path, sourceValue, index);
+				const target = addNode(nodes, nodeIndexes, targetLayer.path, targetValue, index + 1);
+				addLink(links, source, target, weight);
+			});
+		});
+	}
+};
+
+const buildSankeyDataAsync = async ({
+	log,
+	layers,
+	minOccurrences,
+	weightStrategy,
+	weightPath,
+	onProgress,
+	tokenRef,
+}) => {
 	const nodes = [];
 	const nodeIndexes = new Map();
 	const links = new Map();
@@ -213,77 +196,57 @@ const buildSankeyData = (log, layers, minOccurrences, dynamicFilters = []) => {
 	const selectedLayers = layers.filter((layer) => layer.path);
 	const allCallLayers = selectedLayers.every((layer) => layer.path.startsWith("calls."));
 
-	if (selectedLayers.length >= 2 && allCallLayers) {
-		return buildCallSankeyData(
-			transactions,
-			selectedLayers,
-			minOccurrences,
-			dynamicFilters
-		);
-	}
+	for (let start = 0; start < transactions.length; start += BATCH_SIZE) {
+		if (tokenRef.cancelled) return null;
 
-	transactions.forEach((tx) => {
-		const weight = getNumericWeight(tx);
-
-		for (let index = 0; index < selectedLayers.length - 1; index += 1) {
-			const sourceLayer = selectedLayers[index];
-			const targetLayer = selectedLayers[index + 1];
-			const sourceValues = Array.from(new Set(getValuesByPath(tx, sourceLayer.path)));
-			const targetValues = Array.from(new Set(getValuesByPath(tx, targetLayer.path)));
-
-			sourceValues.forEach((sourceValue) => {
-				targetValues.forEach((targetValue) => {
-					const source = addNode(
+		const batch = transactions.slice(start, start + BATCH_SIZE);
+		batch.forEach((tx) => {
+			if (allCallLayers) {
+				getCallRecords(tx).forEach((record) => {
+					processRecordLayers(
+						record,
+						tx,
+						selectedLayers,
 						nodes,
 						nodeIndexes,
-						sourceLayer.path,
-						sourceValue,
-						index
+						links,
+						weightStrategy,
+						weightPath,
 					);
-					const target = addNode(
-						nodes,
-						nodeIndexes,
-						targetLayer.path,
-						targetValue,
-						index + 1
-					);
-					addLink(links, source, target, weight);
 				});
-			});
-		}
-	});
+				return;
+			}
+
+			processRecordLayers(
+				tx,
+				tx,
+				selectedLayers,
+				nodes,
+				nodeIndexes,
+				links,
+				weightStrategy,
+				weightPath,
+			);
+		});
+
+		onProgress(Math.min(start + batch.length, transactions.length), transactions.length);
+		await waitForBrowser();
+	}
 
 	return finalizeSankeyData(nodes, links, minOccurrences);
 };
 
-const EmptyState = () => (
-	<Box
-		sx={{
-			alignItems: "center",
-			display: "flex",
-			height: 420,
-			justifyContent: "center",
-			textAlign: "center",
-		}}>
-		<Typography color="text.secondary">
-			Upload a JSON log or select a collection to generate the Sankey diagram.
-		</Typography>
-	</Box>
-);
-
 const parseNodeKey = (nodeKey) => {
-	const [layerIndex, layer, ...valueParts] = String(nodeKey).split(":");
-
-	return {
-		layerIndex,
-		layer,
-		value: valueParts.join(":"),
-	};
+	const [, layer, ...valueParts] = String(nodeKey).split(":");
+	return { layer, value: valueParts.join(":") };
 };
 
-const SankeyChartView = ({ data, height, width }) => {
+const SankeyChartView = ({ data, height, width, zoom, readableLabels }) => {
 	const chartRef = useRef(null);
 	const chartInstanceRef = useRef(null);
+	const labelScale = readableLabels && zoom < 1 ? 1 / zoom : zoom;
+	const labelFontSize = clamp(Math.round(12 * labelScale), 10, 30);
+	const labelWidth = clamp(Math.round(150 * labelScale), 120, 460);
 
 	const option = useMemo(
 		() => ({
@@ -302,18 +265,10 @@ const SankeyChartView = ({ data, height, width }) => {
 							`<strong>Weight</strong>: ${Number(params.data.value || 0).toLocaleString()}`,
 						].join("<br/>");
 					}
-
 					return `<strong>${params.data.layer}</strong>: ${params.data.rawValue}`;
 				},
 			},
-			toolbox: {
-				right: 16,
-				top: 8,
-				feature: {
-					restore: {},
-					saveAsImage: {},
-				},
-			},
+			toolbox: { right: 16, top: 8, feature: { restore: {}, saveAsImage: {} } },
 			series: [
 				{
 					type: "sankey",
@@ -328,29 +283,20 @@ const SankeyChartView = ({ data, height, width }) => {
 					nodeAlign: "justify",
 					layoutIterations: 64,
 					draggable: true,
-					emphasis: {
-						focus: "adjacency",
-					},
+					emphasis: { focus: "adjacency" },
 					label: {
 						show: true,
 						color: "#263238",
-						fontSize: 12,
+						fontSize: labelFontSize,
 						overflow: "truncate",
-						width: 150,
+						width: labelWidth,
 					},
-					lineStyle: {
-						color: "gradient",
-						curveness: 0.48,
-						opacity: 0.35,
-					},
-					itemStyle: {
-						borderColor: "#ffffff",
-						borderWidth: 1,
-					},
+					lineStyle: { color: "gradient", curveness: 0.48, opacity: 0.35 },
+					itemStyle: { borderColor: "#ffffff", borderWidth: 1 },
 				},
 			],
 		}),
-		[data]
+		[data, labelFontSize, labelWidth],
 	);
 
 	useEffect(() => {
@@ -358,7 +304,6 @@ const SankeyChartView = ({ data, height, width }) => {
 
 		const chart = echarts.init(chartRef.current, null, { renderer: "canvas" });
 		chartInstanceRef.current = chart;
-
 		const resizeObserver = new ResizeObserver(() => chart.resize());
 		resizeObserver.observe(chartRef.current);
 
@@ -383,10 +328,16 @@ const SankeyComponent = () => {
 	const [selectedCollections, setSelectedCollections] = useState([]);
 	const [query, setQuery] = useState({});
 	const [appliedQuery, setAppliedQuery] = useState({});
+	const [openFilterDialog, setOpenFilterDialog] = useState(false);
 	const [layers, setLayers] = useState(DEFAULT_LAYERS.map((path) => ({ path })));
 	const [minOccurrences, setMinOccurrences] = useState(1);
+	const [weightStrategy, setWeightStrategy] = useState("occurrences");
+	const [weightPath, setWeightPath] = useState("");
+	const [sankeyData, setSankeyData] = useState({ nodes: [], links: [] });
+	const [progress, setProgress] = useState(null);
 	const [zoom, setZoom] = useState(1);
-	const [openFilterDialog, setOpenFilterDialog] = useState(false);
+	const [readableLabels, setReadableLabels] = useState(false);
+	const buildTokenRef = useRef({ cancelled: false });
 	const viewportRef = useRef(null);
 
 	const { data: collections } = useQuery({
@@ -400,112 +351,104 @@ const SankeyComponent = () => {
 	const { refetch, isLoading } = useQuery({
 		queryKey: ["sankeyData", query],
 		queryFn: () =>
-			axios
-				.post("http://localhost:8000/api/transactions", query)
-				.then((response) => {
-					setRawData(response.data);
-					return response.data;
-				}),
+			axios.post("http://localhost:8000/api/transactions", query).then((response) => {
+				setRawData(response.data);
+				return response.data;
+			}),
 		enabled: false,
 	});
 
-	const layerOptions = useMemo(() => getUniqueKeys(rawData || results), [rawData, results]);
 	const displayedResults = useMemo(
 		() => applyLogFilters(rawData || results || [], appliedQuery),
-		[rawData, results, appliedQuery]
+		[rawData, results, appliedQuery],
 	);
-	const sankeyData = useMemo(
-		() =>
-			buildSankeyData(
-				displayedResults,
-				layers,
-				minOccurrences,
-				appliedQuery.dynamicFilters
-			),
-		[displayedResults, layers, minOccurrences, appliedQuery.dynamicFilters]
-	);
+	const layerOptions = useMemo(() => getUniqueKeys(rawData || results), [rawData, results]);
 	const chartSize = useMemo(
 		() => ({
 			width: clamp(1200 + sankeyData.links.length * 18, 1300, 5200),
 			height: clamp(620 + sankeyData.nodes.length * 18, 700, 5200),
 		}),
-		[sankeyData.links.length, sankeyData.nodes.length]
+		[sankeyData.links.length, sankeyData.nodes.length],
 	);
 
 	useEffect(() => {
 		if (!layerOptions.length) return;
-
 		setLayers((currentLayers) => {
-			const existingValidLayers = currentLayers.filter((layer) =>
-				layerOptions.includes(layer.path)
-			);
-
-			if (existingValidLayers.length >= 2) return currentLayers;
-
-			const defaultLayers = DEFAULT_LAYERS.filter((path) =>
-				layerOptions.includes(path)
-			);
-
-			if (defaultLayers.length >= 2) {
-				return defaultLayers.map((path) => ({ path }));
-			}
-
-			return layerOptions.slice(0, 3).map((path) => ({ path }));
+			const validLayers = currentLayers.filter((layer) => layerOptions.includes(layer.path));
+			if (validLayers.length >= 2) return currentLayers;
+			const defaults = DEFAULT_LAYERS.filter((path) => layerOptions.includes(path));
+			return (defaults.length >= 2 ? defaults : layerOptions.slice(0, 3)).map((path) => ({ path }));
 		});
 	}, [layerOptions]);
 
-	const handleFileChange = (e) => {
-		const file = e.target.files?.[0];
+	useEffect(() => {
+		if (
+			!Array.isArray(displayedResults) ||
+			displayedResults.length === 0 ||
+			layers.filter((l) => l.path).length < 2
+		) {
+			setSankeyData({ nodes: [], links: [] });
+			return undefined;
+		}
+
+		buildTokenRef.current.cancelled = true;
+		const token = { cancelled: false };
+		buildTokenRef.current = token;
+		setProgress({ done: 0, total: displayedResults.length });
+
+		buildSankeyDataAsync({
+			log: displayedResults,
+			layers,
+			minOccurrences,
+			weightStrategy,
+			weightPath,
+			tokenRef: token,
+			onProgress: (done, total) => setProgress({ done, total }),
+		}).then((data) => {
+			if (!token.cancelled && data) {
+				setSankeyData(data);
+				setProgress(null);
+			}
+		});
+
+		return () => {
+			token.cancelled = true;
+		};
+	}, [displayedResults, layers, minOccurrences, weightStrategy, weightPath]);
+
+	const handleFileChange = (event) => {
+		const file = event.target.files?.[0];
 		if (!file) return;
 
-		const fileReader = new FileReader();
-		fileReader.onload = (event) => {
+		const reader = new FileReader();
+		reader.onload = (loadEvent) => {
 			try {
-				const parsed = JSON.parse(event.target.result);
-				setRawData(parsed);
+				const parsed = JSON.parse(loadEvent.target.result);
+				const rows = Array.isArray(parsed) ? parsed : [];
+				setRawData(rows);
 				setAppliedQuery({});
-				setResults(parsed);
+				setResults(rows);
 			} catch (err) {
 				console.error("Invalid JSON file", err);
 			}
 		};
-		fileReader.readAsText(file);
-		e.target.value = null;
-	};
-
-	const updateZoom = (nextZoom) => {
-		setZoom(clamp(nextZoom, 0.35, 2.5));
-	};
-
-	const resetView = () => {
-		setZoom(1);
-		if (viewportRef.current) {
-			viewportRef.current.scrollTo({ left: 0, top: 0, behavior: "smooth" });
-		}
-	};
-
-	const handleWheel = (event) => {
-		if (!event.ctrlKey) return;
-		event.preventDefault();
-		updateZoom(zoom + (event.deltaY > 0 ? -0.1 : 0.1));
+		reader.readAsText(file);
+		event.target.value = null;
 	};
 
 	const updateLayer = (index, path) => {
 		setLayers((currentLayers) =>
-			currentLayers.map((layer, layerIndex) =>
-				layerIndex === index ? { path } : layer
-			)
+			currentLayers.map((layer, layerIndex) => (layerIndex === index ? { path } : layer)),
 		);
 	};
 
-	const addLayer = () => {
-		setLayers((currentLayers) => [...currentLayers, { path: "" }]);
-	};
-
-	const removeLayer = (index) => {
-		setLayers((currentLayers) =>
-			currentLayers.filter((_, layerIndex) => layerIndex !== index)
-		);
+	const addLayer = () => setLayers((currentLayers) => [...currentLayers, { path: "" }]);
+	const removeLayer = (index) =>
+		setLayers((currentLayers) => currentLayers.filter((_, layerIndex) => layerIndex !== index));
+	const updateZoom = (nextZoom) => setZoom(clamp(nextZoom, 0.35, 2.5));
+	const resetView = () => {
+		setZoom(1);
+		viewportRef.current?.scrollTo({ left: 0, top: 0, behavior: "smooth" });
 	};
 
 	const applyFilters = (nextQuery = query) => {
@@ -518,15 +461,13 @@ const SankeyComponent = () => {
 					setResults(applyLogFilters(result.data, nextQuery));
 				}
 			});
-			setOpenFilterDialog(false);
 			return;
 		}
 
 		setResults(applyLogFilters(rawData || results || [], nextQuery));
-		setOpenFilterDialog(false);
 	};
 
-	const resetDisplayedData = () => {
+	const resetFilters = () => {
 		setAppliedQuery({});
 		if (rawData) {
 			setResults(rawData);
@@ -538,128 +479,93 @@ const SankeyComponent = () => {
 		<Box sx={{ width: "100%" }}>
 			<Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" mb={3}>
 				<FormControl>
-					<RadioGroup
-						row
-						value={dataSource}
-						onChange={(e) => setDataSource(e.target.value)}>
+					<RadioGroup row value={dataSource} onChange={(e) => setDataSource(e.target.value)}>
 						<FormControlLabel value="file" control={<Radio />} label="JSON File" />
 						<FormControlLabel value="database" control={<Radio />} label="Database" />
 					</RadioGroup>
 				</FormControl>
-
 				{dataSource === "file" && (
-					<Button
-						component="label"
-						variant="contained"
-						startIcon={<FileUpload />}
-						sx={{ height: 55 }}>
+					<Button component="label" variant="contained" startIcon={<FileUpload />} sx={{ height: 55 }}>
 						Upload File
 						<HiddenInput type="file" onChange={handleFileChange} />
 					</Button>
 				)}
-
 				<IconButton
 					size="large"
 					sx={{ color: "#ffb703" }}
-					onClick={() => setOpenFilterDialog(true)}>
+					onClick={() => setOpenFilterDialog(true)}
+				>
 					<FilterList fontSize="large" />
 				</IconButton>
 				<GraphFilter
 					open={openFilterDialog}
-					onClose={resetDisplayedData}
+					onClose={resetFilters}
 					query={query}
 					setQuery={setQuery}
 					isLoading={isLoading}
-					onApply={applyFilters}
+					onApply={(nextQuery) => {
+						applyFilters(nextQuery);
+						setOpenFilterDialog(false);
+					}}
 					title="Sankey Filters"
 					dynamicFilterOptions={layerOptions}
 				/>
-
 				<TextField
 					label="Min occurrences"
 					size="small"
 					type="number"
 					value={minOccurrences}
-					onChange={(e) =>
-						setMinOccurrences(Math.max(1, Number(e.target.value) || 1))
-					}
+					onChange={(e) => setMinOccurrences(Math.max(1, Number(e.target.value) || 1))}
 					inputProps={{ min: 1 }}
 					sx={{ width: 170 }}
 				/>
-
+				<FormControl size="small" sx={{ minWidth: 190 }}>
+					<InputLabel>Weight strategy</InputLabel>
+					<Select
+						label="Weight strategy"
+						value={weightStrategy}
+						onChange={(event) => setWeightStrategy(event.target.value)}
+					>
+						<MenuItem value="occurrences">Occurrences</MenuItem>
+						<MenuItem value="field">Numeric field</MenuItem>
+					</Select>
+				</FormControl>
+				{weightStrategy === "field" && (
+					<FormControl size="small" sx={{ minWidth: 260 }}>
+						<InputLabel>Weight field</InputLabel>
+						<Select label="Weight field" value={weightPath} onChange={(e) => setWeightPath(e.target.value)}>
+							{layerOptions.map((path) => (
+								<MenuItem key={path} value={path}>{path}</MenuItem>
+							))}
+						</Select>
+					</FormControl>
+				)}
 				<Stack direction="row" spacing={1} alignItems="center">
 					<MuiTooltip title="Zoom out">
-						<IconButton size="small" onClick={() => updateZoom(zoom - 0.15)}>
-							<ZoomOut fontSize="small" />
-						</IconButton>
+						<IconButton size="small" onClick={() => updateZoom(zoom - 0.15)}><ZoomOut fontSize="small" /></IconButton>
 					</MuiTooltip>
-					<Typography variant="body2" sx={{ minWidth: 44, textAlign: "center" }}>
-						{Math.round(zoom * 100)}%
-					</Typography>
+					<Typography variant="body2" sx={{ minWidth: 44, textAlign: "center" }}>{Math.round(zoom * 100)}%</Typography>
 					<MuiTooltip title="Zoom in">
-						<IconButton size="small" onClick={() => updateZoom(zoom + 0.15)}>
-							<ZoomIn fontSize="small" />
-						</IconButton>
+						<IconButton size="small" onClick={() => updateZoom(zoom + 0.15)}><ZoomIn fontSize="small" /></IconButton>
 					</MuiTooltip>
 					<MuiTooltip title="Reset view">
-						<IconButton size="small" onClick={resetView}>
-							<RestartAlt fontSize="small" />
-						</IconButton>
+						<IconButton size="small" onClick={resetView}><RestartAlt fontSize="small" /></IconButton>
 					</MuiTooltip>
 				</Stack>
-
+				<FormControlLabel
+					control={
+						<Switch
+							checked={readableLabels}
+							onChange={(event) => setReadableLabels(event.target.checked)}
+							size="small"
+						/>
+					}
+					label="Readable labels"
+				/>
 				<Typography variant="body2" color="text.secondary">
-					{Array.isArray(results)
-						? `${results.length} log entries, ${sankeyData.links.length} links`
-						: "No log loaded"}
+					{Array.isArray(displayedResults) ? `${displayedResults.length} log entries, ${sankeyData.links.length} links` : "No log loaded"}
 				</Typography>
 			</Stack>
-
-			<Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" mb={3}>
-				{layers.map((layer, index) => (
-					<Stack
-						key={`sankey-layer-${index}`}
-						direction="row"
-						spacing={0.5}
-						alignItems="center">
-						<FormControl size="small" sx={{ minWidth: 230 }}>
-							<InputLabel>{`Layer ${index + 1}`}</InputLabel>
-							<Select
-								label={`Layer ${index + 1}`}
-								value={layer.path}
-								onChange={(event) => updateLayer(index, event.target.value)}>
-								{layerOptions.length > 0 ? (
-									layerOptions.map((path) => (
-										<MenuItem key={path} value={path}>
-											{path}
-										</MenuItem>
-									))
-								) : (
-									<MenuItem disabled>No keys found</MenuItem>
-								)}
-							</Select>
-						</FormControl>
-						<MuiTooltip title="Remove layer">
-							<span>
-								<IconButton
-									size="small"
-									onClick={() => removeLayer(index)}
-									disabled={layers.length <= 2}>
-									<Delete fontSize="small" />
-								</IconButton>
-							</span>
-						</MuiTooltip>
-					</Stack>
-				))}
-				<Button
-					variant="outlined"
-					startIcon={<Add />}
-					onClick={addLayer}
-					disabled={!layerOptions.length}>
-					Add Layer
-				</Button>
-			</Stack>
-
 			{dataSource === "database" && (
 				<Stack spacing={2} mb={3}>
 					<CollectionDropdown
@@ -680,47 +586,56 @@ const SankeyComponent = () => {
 							})
 						}
 						disabled={isLoading || !query.selectedCollection?.length}
-						sx={{ width: 180 }}>
+						sx={{ width: 180 }}
+					>
 						Generate Sankey
 					</Button>
 				</Stack>
 			)}
-
-			<Paper
-				ref={viewportRef}
-				onWheel={handleWheel}
-				sx={{
-					height: "calc(100vh - 220px)",
-					minHeight: 560,
-					overflow: "auto",
-					p: 2,
-				}}>
-				{sankeyData.nodes.length > 0 && sankeyData.links.length > 0 ? (
-					<Box
-						sx={{
-							height: chartSize.height * zoom,
-							position: "relative",
-							width: chartSize.width * zoom,
-						}}>
-						<Box
-							sx={{
-								height: chartSize.height,
-								left: 0,
-								position: "absolute",
-								top: 0,
-								transform: `scale(${zoom})`,
-								transformOrigin: "0 0",
-								width: chartSize.width,
-							}}>
+			<Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" mb={3}>
+				{layers.map((layer, index) => (
+					<Stack key={`sankey-layer-${index}`} direction="row" spacing={0.5} alignItems="center">
+						<FormControl size="small" sx={{ minWidth: 230 }}>
+							<InputLabel>{`Layer ${index + 1}`}</InputLabel>
+							<Select label={`Layer ${index + 1}`} value={layer.path} onChange={(event) => updateLayer(index, event.target.value)}>
+								{layerOptions.length > 0 ? layerOptions.map((path) => (
+									<MenuItem key={path} value={path}>{path}</MenuItem>
+								)) : <MenuItem disabled>No keys found</MenuItem>}
+							</Select>
+						</FormControl>
+						<MuiTooltip title="Remove layer">
+							<span>
+								<IconButton size="small" onClick={() => removeLayer(index)} disabled={layers.length <= 2}>
+									<Delete fontSize="small" />
+								</IconButton>
+							</span>
+						</MuiTooltip>
+					</Stack>
+				))}
+				<Button variant="outlined" startIcon={<Add />} onClick={addLayer} disabled={!layerOptions.length}>Add Layer</Button>
+			</Stack>
+			<Paper ref={viewportRef} sx={{ height: "calc(100vh - 220px)", minHeight: 560, overflow: "auto", p: 2 }}>
+				{progress ? (
+					<Stack alignItems="center" justifyContent="center" sx={{ height: "100%" }} spacing={2}>
+						<CircularProgress />
+						<Typography>{`Processing ${progress.done.toLocaleString()} / ${progress.total.toLocaleString()} transactions`}</Typography>
+					</Stack>
+				) : sankeyData.nodes.length > 0 && sankeyData.links.length > 0 ? (
+					<Box sx={{ height: chartSize.height * zoom, position: "relative", width: chartSize.width * zoom }}>
+						<Box sx={{ height: chartSize.height, left: 0, position: "absolute", top: 0, transform: `scale(${zoom})`, transformOrigin: "0 0", width: chartSize.width }}>
 							<SankeyChartView
 								data={sankeyData}
 								height={chartSize.height}
 								width={chartSize.width}
+								zoom={zoom}
+								readableLabels={readableLabels}
 							/>
 						</Box>
 					</Box>
 				) : (
-					<EmptyState />
+					<Stack alignItems="center" justifyContent="center" sx={{ height: "100%" }}>
+						<Typography color="text.secondary">Upload a JSON log and select at least two layers.</Typography>
+					</Stack>
 				)}
 			</Paper>
 		</Box>

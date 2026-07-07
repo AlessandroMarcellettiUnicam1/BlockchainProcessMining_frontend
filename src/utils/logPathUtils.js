@@ -6,7 +6,6 @@ export const normalizeCallsPath = (path) => {
 
 	path.forEach((pathPart) => {
 		const key = normalizeCallKey(pathPart);
-
 		if (key === "calls") {
 			if (!seenCalls) {
 				result.push(key);
@@ -14,7 +13,6 @@ export const normalizeCallsPath = (path) => {
 			}
 			return;
 		}
-
 		result.push(key);
 	});
 
@@ -77,20 +75,17 @@ export const getValuesByPath = (source, path) => {
 		if (!value || typeof value !== "object") return [];
 
 		const key = parts[index];
-
 		if (key === "calls") {
 			return getCalls(value).flatMap((call) => collect(call, index + 1, true));
 		}
 
 		const directValues = collect(value[key], index + 1, insideCalls);
-
 		if (!insideCalls) return directValues;
 
-		const nestedCallValues = getCalls(value).flatMap((call) =>
-			collect(call, index, true)
-		);
-
-		return [...directValues, ...nestedCallValues];
+		return [
+			...directValues,
+			...getCalls(value).flatMap((call) => collect(call, index, true)),
+		];
 	};
 
 	return collect(source, 0)
