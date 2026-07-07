@@ -17,6 +17,7 @@ import CoBlocklyPage from './pages/CoBlockly/CoBlocklyPage';
 import SimulationPage from './pages/SimulationPage';
 import MempoolSimulationPage from './pages/MempoolSimulationPage';
 import RealTimeCompliancePage from './pages/RealTimeCompliancePage';
+import SankeyComponent from './pages/SankeyComponent';
 
 const router = createBrowserRouter([
     {
@@ -68,6 +69,10 @@ const router = createBrowserRouter([
                 {
                   path: "data-analysis/visual",
                   Component: NetworkGraph
+                },
+                {
+                  path: "data-analysis/sankey",
+                  Component: SankeyComponent
                 },
                 {
                   path: "data-analysis/coblockly",

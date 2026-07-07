@@ -32,6 +32,7 @@ import {GraphFilter} from "../components/GraphFilter";
 import {useQuery} from "react-query";
 import axios from "axios";
 import {CollectionDropdown} from "../components/dataVisualization/CollectionDropdown";
+import { applyLogFilters } from "../utils/logPathUtils";
 
 
 
@@ -128,30 +129,7 @@ const NetworkGraph = () => {
         setLayoutType("forceatlas2");
         setStartLayout(false);
     };
-    const applyFilter = (json)=>{
-        const {contractAddress,dateFrom,dateTo,fromBlock,toBlock,funName,sender,txHash,minGasUsed,maxGasUsed} = query;
-        if(contractAddress && Array.isArray(contractAddress) && contractAddress.length > 0)
-            json = json.filter((tx)=>contractAddress.includes(tx.contractAddress))
-        if(funName)
-            json = json.filter((tx)=>tx.functionName===funName)
-        if(txHash)
-            json = json.filter((tx)=>tx.transactionHash===txHash);
-        if(sender)
-            json = json.filter((tx)=>tx.sender===sender);
-        if(dateFrom)
-            json = json.filter((tx)=>new Date(tx.timestamp?.$date)>=new Date(dateFrom));
-        if(dateTo)
-            json = json.filter((tx)=>new Date(tx.timestamp?.$date)<=new Date(dateTo));
-        if(fromBlock)
-            json = json.filter((tx)=>tx.blockNumber>=fromBlock);
-        if(toBlock)
-            json = json.filter((tx)=>tx.blockNumber<=toBlock);
-        if(minGasUsed)
-            json = json.filter((tx)=>tx.gasUsed>=minGasUsed);
-        if(maxGasUsed)
-            json = json.filter((tx)=>tx.gasUsed<=maxGasUsed);
-        return json
-    }
+    const applyFilter = (json)=> applyLogFilters(json, query);
     const handleFileChange = (e) => {
         const fileReader = new FileReader();
         fileReader.onload = (event) => {
