@@ -57,7 +57,6 @@ export default function RealTimeCompliancePage() {
   const [addressFilters, setAddressFilters] = useState("from"); // from, to o both
   const [logColumns, setLogColumns] = useState([]);
   const [logMapping, setLogMapping] = useState({});
-  const [enableMempool, setEnableMempool] = useState(true);
   const [mapping, setMapping] = useState({
     case_col: "",
     activity_col: "",
@@ -124,7 +123,6 @@ export default function RealTimeCompliancePage() {
         mapping,
         parsedRule,
         logMapping,
-        enableMempool,
       });
 
       setIsListening(true);
@@ -325,19 +323,6 @@ export default function RealTimeCompliancePage() {
           borderColor="divider"
           bgcolor="background.paper"
         >
-          <Box display="flex" alignItems="center" mb={2}>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={enableMempool}
-                  onChange={(e) => setEnableMempool(e.target.checked)}
-                  disabled={isListening}
-                  color="primary"
-                />
-              }
-              label="Enable mempool simulation"
-            />
-          </Box>
 
           <Box display="flex" alignItems="center" gap={2} mb={3}>
             <Button
