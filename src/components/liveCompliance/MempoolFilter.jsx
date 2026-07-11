@@ -13,9 +13,9 @@ import {
 
 export default function MempoolFilter({ 
     validAddress, 
-    setValidAddress, 
-    addressFilters, 
-    setAddressFilters 
+    setValidAddress
+    // addressFilters, 
+    // setAddressFilters 
 }) {
     const [inputAddress, setInputAddress] = useState("");
     const [addressError, setAddressError] = useState(false);
@@ -55,18 +55,18 @@ export default function MempoolFilter({
                 </Button>
             </Box>
 
-            <FormControl>
+            {/* <FormControl>
                 <Typography variant="body2" color="textSecondary" mb={1}>Filter Direction:</Typography>
                     <RadioGroup row value={addressFilters} onChange={(e) => setAddressFilters(e.target.value)}>
                         <FormControlLabel value="from" control={<Radio />} label="From" />
                         <FormControlLabel value="to" control={<Radio />} label="To" />
                         <FormControlLabel value="both" control={<Radio />} label="Both" />
                     </RadioGroup>
-            </FormControl>
+            </FormControl> */}
 
             {validAddress && (
                 <Typography variant="body2" color="success.main" mt={2}>
-                    ✓ Filter locked: Listening for transactions {addressFilters === 'both' ? 'to/from' : addressFilters} {validAddress.substring(0,6)}...{validAddress.substring(38)}
+                    ✓ Filter locked: Listening for transactions with {validAddress.substring(0,6)}...{validAddress.substring(38)}
                 </Typography>
             )}
         </Box> 

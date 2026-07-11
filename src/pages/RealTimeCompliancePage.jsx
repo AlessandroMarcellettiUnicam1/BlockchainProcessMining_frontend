@@ -57,7 +57,7 @@ export default function RealTimeCompliancePage() {
   const [rulesList, setRulesList] = useState([]);
   const [sessionId, setSessionId] = useState(null);
   const [validAddress, setValidAddress] = useState("");
-  const [addressFilters, setAddressFilters] = useState("from"); // from, to o both
+  // const [addressFilters, setAddressFilters] = useState("from"); // from, to o both
   const [logColumns, setLogColumns] = useState([]);
   const [logMapping, setLogMapping] = useState({});
   const [mapping, setMapping] = useState({
@@ -121,7 +121,7 @@ export default function RealTimeCompliancePage() {
 
       await _startComplianceMonitoring({
         sessionId,
-        addressFilters,
+        // addressFilters,
         validAddress,
         mapping,
         parsedRules: rulesList,
@@ -333,8 +333,8 @@ export default function RealTimeCompliancePage() {
           <MempoolFilter
             validAddress={validAddress}
             setValidAddress={setValidAddress}
-            addressFilters={addressFilters}
-            setAddressFilters={setAddressFilters}
+            // addressFilters={addressFilters}
+            // setAddressFilters={setAddressFilters}
           />
         </Box>
 
