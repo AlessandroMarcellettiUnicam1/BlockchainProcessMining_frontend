@@ -44,6 +44,8 @@ import {
 import { CircularProgress } from "@mui/material";
 import { dexieDB } from "../dexie.js";
 import { SnackbarProvider, enqueueSnackbar } from "notistack";
+import { List, ListItem, ListItemText, Paper } from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 export default function RealTimeCompliancePage() {
   const [isListening, setIsListening] = useState(false);
@@ -51,7 +53,8 @@ export default function RealTimeCompliancePage() {
 
   // setup stati
   const [ruleText, setRuleText] = useState("");
-  const [parsedRule, setParsedRule] = useState(null);
+  //const [parsedRule, setParsedRule] = useState(null);
+  const [rulesList, setRulesList] = useState([]);
   const [sessionId, setSessionId] = useState(null);
   const [validAddress, setValidAddress] = useState("");
   const [addressFilters, setAddressFilters] = useState("from"); // from, to o both
@@ -121,7 +124,7 @@ export default function RealTimeCompliancePage() {
         addressFilters,
         validAddress,
         mapping,
-        parsedRule,
+        parsedRules: rulesList,
         logMapping,
       });
 
@@ -152,23 +155,14 @@ export default function RealTimeCompliancePage() {
         if (incomingData.complianceResult) {
           stepCounterRef.current += 1;
           const currentStep = stepCounterRef.current;
-          const delta = incomingData.complianceResult;
-
-          const currentStats = {
-            compliant: (delta.compliant || []).length,
-            nonCompliant: (delta.noncompliant || []).length,
-            ignored: (delta.ignored || []).length,
-          };
+          const resultsArray = incomingData.complianceResult;
 
           const snapshot = {
             sessionId: sessionId,
             step: currentStep,
             sourceType: incomingData.type,
             sourceId: txHash,
-            compliantData: delta.compliant || [],
-            nonCompliantData: delta.noncompliant || [],
-            ignoredData: delta.ignored || [],
-            stats: currentStats,
+            ruleResults: resultsArray,
             caseColumn: mapping.case_col,
           };
 
@@ -282,7 +276,7 @@ export default function RealTimeCompliancePage() {
         {/* 3. CoBlock Rule */}
         <Box mb={4} p={3} border={1} borderRadius={2} borderColor="divider">
           <Typography variant="h6" mb={3} fontWeight="bold" color="primary">
-            3. Define a CoBlock rule
+            3. Define CoBlock rules
           </Typography>
 
           <CoBlocklyEditor onRuleTranslated={setRuleText} />
@@ -290,20 +284,50 @@ export default function RealTimeCompliancePage() {
           <RuleParser
             ruleText={ruleText}
             setRuleText={setRuleText}
-            onRuleParsed={setParsedRule}
+            onRuleParsed={(parsedResultString) => {
+              if (parsedResultString) {
+                const newRule = {
+                  id: Date.now().toString(),
+                  text: ruleText,
+                  parsed: JSON.parse(parsedResultString) 
+                };
+                
+                setRulesList(prev => [...prev, newRule]);
+                
+                setRuleText(""); 
+              }
+            }}
           />
 
-          {parsedRule && (
-            <Typography variant="body2" color="success.main" mt={1}>
-              ✓ Rule parsed and saved in page memory.
-            </Typography>
+          {rulesList.length > 0 && (
+            <Box mt={3}>
+              <Typography variant="subtitle2" color="textSecondary" mb={1}>
+                Defined Rules:
+              </Typography>
+              <Paper variant="outlined">
+                <List dense>
+                  {rulesList.map((rule) => (
+                    <ListItem
+                      key={rule.id}
+                      secondaryAction={
+                        <IconButton edge="end" color="error" onClick={() => setRulesList(prev => prev.filter(r => r.id !== rule.id))}>
+                          <DeleteIcon />
+                        </IconButton>
+                      }
+                    >
+                      <ListItemText primary={rule.text} />
+                    </ListItem>
+                  ))}
+                </List>
+              </Paper>
+            </Box>
           )}
         </Box>
 
         {/* 4. Mempool Filter */}
         <Box mb={4} p={3} border={1} borderRadius={2} borderColor="divider">
           <Typography variant="h6" mb={3} fontWeight="bold" color="primary">
-            4. Insert an address to filter the mempool
+            4. Insert a Contract to monitor
           </Typography>
 
           <MempoolFilter
@@ -323,7 +347,6 @@ export default function RealTimeCompliancePage() {
           borderColor="divider"
           bgcolor="background.paper"
         >
-
           <Box display="flex" alignItems="center" gap={2} mb={3}>
             <Button
               variant="contained"
@@ -344,21 +367,34 @@ export default function RealTimeCompliancePage() {
           </Box>
 
           {/* --- MODALITÀ LIVE STREAMING --- */}
-          {!playbackMode && latestLiveData && (
-            <TraceViewer
-              compliantData={latestLiveData.compliantData}
-              nonCompliantData={latestLiveData.nonCompliantData}
-              ignoredData={latestLiveData.ignoredData}
-              stats={latestLiveData.stats}
-              sourceType={latestLiveData.sourceType}
-              sourceId={latestLiveData.sourceId}
-              step={latestLiveData.step}
-              caseColumn={latestLiveData.caseColumn}
-            />
+          {!playbackMode && latestLiveData && latestLiveData.ruleResults && (
+            <Box display="flex" flexDirection="column" gap={4}>
+              {latestLiveData.ruleResults.map((result, index) => (
+                <Box key={index} border={1} borderColor="divider" borderRadius={2} p={2} bgcolor="background.default">
+                  <Typography variant="subtitle1" fontWeight="bold" color="primary" mb={2}>
+                    Regola: {result.ruleText}
+                  </Typography>
+                  <TraceViewer
+                    compliantData={result.compliant}
+                    nonCompliantData={result.noncompliant}
+                    ignoredData={result.ignored}
+                    stats={{
+                      compliant: result.compliant.length,
+                      nonCompliant: result.noncompliant.length,
+                      ignored: result.ignored.length
+                    }}
+                    sourceType={latestLiveData.sourceType}
+                    sourceId={latestLiveData.sourceId}
+                    step={latestLiveData.step}
+                    caseColumn={latestLiveData.caseColumn}
+                  />
+                </Box>
+              ))}
+            </Box>
           )}
 
           {/* --- MODALITÀ PLAYBACK (Storico) --- */}
-          {playbackMode && viewData && (
+          {playbackMode && viewData && viewData.ruleResults && (
             <Box
               mt={3}
               p={3}
@@ -408,16 +444,30 @@ export default function RealTimeCompliancePage() {
                 </Button>
               </Box>
 
-              <TraceViewer
-                compliantData={viewData.compliantData}
-                nonCompliantData={viewData.nonCompliantData}
-                ignoredData={viewData.ignoredData}
-                stats={viewData.stats}
-                sourceType={viewData.sourceType}
-                sourceId={viewData.sourceId}
-                step={viewData.step}
-                caseColumn={viewData.caseColumn}
-              />
+              {/* Mappiamo i TraceViewer del Playback */}
+              <Box display="flex" flexDirection="column" gap={4}>
+                {viewData.ruleResults.map((result, index) => (
+                  <Box key={index} border={1} borderColor="divider" borderRadius={2} p={2} bgcolor="background.default">
+                    <Typography variant="subtitle1" fontWeight="bold" color="primary" mb={2}>
+                      Rule: {result.ruleText}
+                    </Typography>
+                    <TraceViewer
+                      compliantData={result.compliant}
+                      nonCompliantData={result.noncompliant}
+                      ignoredData={result.ignored}
+                      stats={{
+                        compliant: result.compliant.length,
+                        nonCompliant: result.noncompliant.length,
+                        ignored: result.ignored.length
+                      }}
+                      sourceType={viewData.sourceType}
+                      sourceId={viewData.sourceId}
+                      step={viewData.step}
+                      caseColumn={viewData.caseColumn}
+                    />
+                  </Box>
+                ))}
+              </Box>
             </Box>
           )}
 
@@ -434,8 +484,8 @@ export default function RealTimeCompliancePage() {
             >
               <Typography variant="body2" color="text.secondary">
                 {isListening
-                  ? "Waiting for mempool transactions or new blocks..."
-                  : "No simulation activated"}
+                  ? "Waiting for traces..."
+                  : "Monitoring not activatd"}
               </Typography>
             </Box>
           )}
