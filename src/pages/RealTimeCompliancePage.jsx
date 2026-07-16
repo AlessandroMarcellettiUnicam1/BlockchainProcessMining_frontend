@@ -57,6 +57,7 @@ export default function RealTimeCompliancePage() {
   const [rulesList, setRulesList] = useState([]);
   const [sessionId, setSessionId] = useState(null);
   const [validAddress, setValidAddress] = useState("");
+  const [implAddress, setImplAddress] = useState("");
   // const [addressFilters, setAddressFilters] = useState("from"); // from, to o both
   const [logColumns, setLogColumns] = useState([]);
   const [logMapping, setLogMapping] = useState({});
@@ -123,6 +124,7 @@ export default function RealTimeCompliancePage() {
         sessionId,
         // addressFilters,
         validAddress,
+        implAddress,
         mapping,
         parsedRules: rulesList,
         logMapping,
@@ -333,10 +335,11 @@ export default function RealTimeCompliancePage() {
           <MempoolFilter
             validAddress={validAddress}
             setValidAddress={setValidAddress}
-            // addressFilters={addressFilters}
-            // setAddressFilters={setAddressFilters}
+            implAddress={implAddress}       
+            setImplAddress={setImplAddress}
           />
         </Box>
+
 
         {/* 5. LIVE COMPLIANCE AREA */}
         <Box
