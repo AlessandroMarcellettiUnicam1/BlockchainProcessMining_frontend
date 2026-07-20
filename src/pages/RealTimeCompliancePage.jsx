@@ -379,12 +379,16 @@ export default function RealTimeCompliancePage() {
                   </Typography>
                   <TraceViewer
                     compliantData={result.compliant}
-                    nonCompliantData={result.noncompliant}
+                    noncompliantData={result.noncompliant}
+                    tempCompliantData={result.tempCompliant}
+                    tempNonCompliantData={result.tempNonCompliant}
                     ignoredData={result.ignored}
                     stats={{
-                      compliant: result.compliant.length,
-                      nonCompliant: result.noncompliant.length,
-                      ignored: result.ignored.length
+                      compliant: result.compliant?.length || 0,
+                      noncompliant: result.noncompliant?.length || 0,
+                      tempCompliant: result.tempCompliant?.length || 0,
+                      tempNonCompliant: result.tempNonCompliant?.length || 0,
+                      ignored: result.ignored?.length || 0
                     }}
                     sourceType={latestLiveData.sourceType}
                     sourceId={latestLiveData.sourceId}
@@ -456,12 +460,16 @@ export default function RealTimeCompliancePage() {
                     </Typography>
                     <TraceViewer
                       compliantData={result.compliant}
-                      nonCompliantData={result.noncompliant}
+                      noncompliantData={result.noncompliant}
+                      tempCompliantData={result.tempCompliant}
+                      tempNonCompliantData={result.tempNonCompliant}
                       ignoredData={result.ignored}
                       stats={{
-                        compliant: result.compliant.length,
-                        nonCompliant: result.noncompliant.length,
-                        ignored: result.ignored.length
+                        compliant: result.compliant?.length || 0,
+                        noncompliant: result.noncompliant?.length || 0,
+                        tempCompliant: result.tempCompliant?.length || 0,
+                        tempNonCompliant: result.tempNonCompliant?.length || 0,
+                        ignored: result.ignored?.length || 0
                       }}
                       sourceType={viewData.sourceType}
                       sourceId={viewData.sourceId}

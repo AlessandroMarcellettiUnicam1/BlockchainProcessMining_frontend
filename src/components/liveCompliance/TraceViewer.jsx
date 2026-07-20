@@ -26,7 +26,9 @@ const getTraceId = (traceArray, caseColumn) => {
 
 export default function TraceViewer({
   compliantData = [],
-  nonCompliantData = [],
+  noncompliantData = [],
+  tempCompliantData = [],
+  tempNonCompliantData = [],
   ignoredData = [],
   stats,
   sourceType,
@@ -44,7 +46,19 @@ export default function TraceViewer({
       label: "Compliant",
       color: "success",
     })),
-    ...nonCompliantData.map((trace) => ({
+    ...tempCompliantData.map((trace) => ({
+      data: trace,
+      status: "tempCompliant",
+      label: "Temporarily Compliant",
+      color: "info", // Blu per indicare uno stato provvisorio positivo
+    })),
+    ...tempNonCompliantData.map((trace) => ({
+      data: trace,
+      status: "tempNonCompliant",
+      label: "Temporarily Non-Compliant",
+      color: "warning", // Arancione per indicare un'attesa/rischio
+    })),
+    ...noncompliantData.map((trace) => ({
       data: trace,
       status: "noncompliant",
       label: "Non-Compliant",
@@ -100,7 +114,7 @@ export default function TraceViewer({
           </Typography>
         </Box>
 
-        <Box display="flex" gap={2}>
+        <Box display="flex" gap={1}>
           <Box
             flex={1}
             textAlign="center"
@@ -110,15 +124,43 @@ export default function TraceViewer({
             borderRadius={1}
             bgcolor="background.default"
           >
-            <Typography
-              variant="caption"
-              color="success.main"
-              fontWeight="bold"
-            >
+            <Typography variant="caption" color="success.main" fontWeight="bold">
               COMPLIANT
             </Typography>
             <Typography variant="h5" color="success.main" fontWeight="bold">
               {stats?.compliant || 0}
+            </Typography>
+          </Box>
+          <Box
+            flex={1}
+            textAlign="center"
+            p={1}
+            border={1}
+            borderColor="info.light"
+            borderRadius={1}
+            bgcolor="background.default"
+          >
+            <Typography variant="caption" color="info.main" fontWeight="bold">
+              TEMP COMPLIANT
+            </Typography>
+            <Typography variant="h5" color="info.main" fontWeight="bold">
+              {stats?.tempCompliant || 0}
+            </Typography>
+          </Box>
+          <Box
+            flex={1}
+            textAlign="center"
+            p={1}
+            border={1}
+            borderColor="warning.light"
+            borderRadius={1}
+            bgcolor="background.default"
+          >
+            <Typography variant="caption" color="warning.main" fontWeight="bold">
+              TEMP NON-COMPL
+            </Typography>
+            <Typography variant="h5" color="warning.main" fontWeight="bold">
+              {stats?.tempNonCompliant || 0}
             </Typography>
           </Box>
           <Box
@@ -134,7 +176,7 @@ export default function TraceViewer({
               NON-COMPLIANT
             </Typography>
             <Typography variant="h5" color="error.main" fontWeight="bold">
-              {stats?.nonCompliant || 0}
+              {stats?.noncompliant || 0}
             </Typography>
           </Box>
           <Box
@@ -146,11 +188,7 @@ export default function TraceViewer({
             borderRadius={1}
             bgcolor="background.default"
           >
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              fontWeight="bold"
-            >
+            <Typography variant="caption" color="text.secondary" fontWeight="bold">
               IGNORED
             </Typography>
             <Typography variant="h5" color="text.primary" fontWeight="bold">
