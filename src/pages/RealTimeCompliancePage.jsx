@@ -27,7 +27,6 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useQuery } from "react-query";
 import RuleParser from "./CoBlockly/coblockComponents/RuleParser.tsx";
 import CoBlocklyEditor from "./CoBlockly/coblockComponents/CoBlocklyEditor.tsx";
-import LogMapper from "./CoBlockly/coblockComponents/LogMapper.tsx";
 import MempoolFilter from "../components/liveCompliance/MempoolFilter.jsx";
 import XesConverter from "../components/liveCompliance/XesConverter.jsx";
 import LiveComplianceViewer from "../components/liveCompliance/LiveComplianceViewer.jsx";
@@ -59,8 +58,20 @@ export default function RealTimeCompliancePage() {
   const [validAddress, setValidAddress] = useState("");
   const [implAddress, setImplAddress] = useState("");
   // const [addressFilters, setAddressFilters] = useState("from"); // from, to o both
-  const [logColumns, setLogColumns] = useState([]);
-  const [logMapping, setLogMapping] = useState({});
+  const [logMapping, setLogMapping] = useState({
+    function: "functionName",
+    contract: "contractAddress",
+    block: "blockNumber",
+    sender: "sender",
+    timestamp: "timestamp",
+    gasUsed: "gasUsed",
+    value: "value",
+    SV: "storageState",
+    CALL: "internalTxs",
+    I: "inputs",
+    E: "events",
+    transactionHash: "transactionHash"
+  });
   const [mapping, setMapping] = useState({
     case_col: "",
     activity_col: "",
@@ -253,32 +264,16 @@ export default function RealTimeCompliancePage() {
             mapping={mapping}
             setMapping={setMapping}
             previousSessionId={sessionId}
-            onConversionSuccess={(newSessionId, columns) => {
+            onConversionSuccess={(newSessionId) => {
               setSessionId(newSessionId);
-              setLogColumns(columns);
             }}
           />
-        </Box>
-
-        {/* 2. XES Mapping */}
-        <Box mb={4} p={3} border={1} borderRadius={2} borderColor="divider">
-          <Typography variant="h6" mb={3} fontWeight="bold" color="primary">
-            2. CoBlock mapping
-          </Typography>
-
-          {logColumns.length > 0 ? (
-            <LogMapper columns={logColumns} onMappingChange={setLogMapping} />
-          ) : (
-            <Typography variant="body2" color="textSecondary">
-              Upload log first
-            </Typography>
-          )}
         </Box>
 
         {/* 3. CoBlock Rule */}
         <Box mb={4} p={3} border={1} borderRadius={2} borderColor="divider">
           <Typography variant="h6" mb={3} fontWeight="bold" color="primary">
-            3. Define CoBlock rules
+            2. Define CoBlock rules
           </Typography>
 
           <CoBlocklyEditor onRuleTranslated={setRuleText} />
@@ -329,7 +324,7 @@ export default function RealTimeCompliancePage() {
         {/* 4. Mempool Filter */}
         <Box mb={4} p={3} border={1} borderRadius={2} borderColor="divider">
           <Typography variant="h6" mb={3} fontWeight="bold" color="primary">
-            4. Insert a Contract to monitor
+            3. Insert a Contract to monitor
           </Typography>
 
           <MempoolFilter
