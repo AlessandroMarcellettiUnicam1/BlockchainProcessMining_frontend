@@ -55,8 +55,9 @@ export default function RealTimeCompliancePage() {
   //const [parsedRule, setParsedRule] = useState(null);
   const [rulesList, setRulesList] = useState([]);
   const [sessionId, setSessionId] = useState(null);
-  const [validAddress, setValidAddress] = useState("");
-  const [implAddress, setImplAddress] = useState("");
+  // const [validAddress, setValidAddress] = useState("");
+  // const [implAddress, setImplAddress] = useState("");
+  const [monitoredContracts, setMonitoredContracts] = useState([]);
   // const [addressFilters, setAddressFilters] = useState("from"); // from, to o both
   const [logMapping, setLogMapping] = useState({
     function: "functionName",
@@ -134,8 +135,9 @@ export default function RealTimeCompliancePage() {
       await _startComplianceMonitoring({
         sessionId,
         // addressFilters,
-        validAddress,
-        implAddress,
+        // validAddress,
+        // implAddress,
+        monitoredContracts,
         mapping,
         parsedRules: rulesList,
         logMapping,
@@ -328,10 +330,8 @@ export default function RealTimeCompliancePage() {
           </Typography>
 
           <MempoolFilter
-            validAddress={validAddress}
-            setValidAddress={setValidAddress}
-            implAddress={implAddress}       
-            setImplAddress={setImplAddress}
+            monitoredContracts={monitoredContracts}
+            setMonitoredContracts={setMonitoredContracts}
           />
         </Box>
 
@@ -350,7 +350,7 @@ export default function RealTimeCompliancePage() {
               variant="contained"
               color="success"
               onClick={startMonitor}
-              disabled={isListening || !validAddress || !sessionId}
+              disabled={isListening || monitoredContracts.length === 0 || !sessionId}
             >
               START LIVE MONITOR
             </Button>
