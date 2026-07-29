@@ -13,14 +13,16 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useTheme } from "@mui/material/styles";
 
 const getTraceId = (traceArray, caseColumn) => {
-  if (!traceArray || traceArray.length === 0) return "Unknown";
-  const firstEvent = traceArray[0];
+  if (!traceArray) return "Unknown";
+  
+  const firstEvent = Array.isArray(traceArray) ? traceArray[0] : traceArray;
+  if (!firstEvent) return "Trace";
 
+  // Utilizza unicamente la colonna di mapping configurata dall'utente
   if (caseColumn && firstEvent[caseColumn]) {
     return firstEvent[caseColumn];
   }
 
-  // fallbak
   return "Trace";
 };
 
@@ -104,7 +106,7 @@ export default function TraceViewer({
             fontWeight="bold"
             color={sourceColor}
             sx={{
-              bgcolor:"transparent",
+              bgcolor: "transparent",
               px: 1,
               py: 0.5,
               borderRadius: 1,
@@ -124,7 +126,11 @@ export default function TraceViewer({
             borderRadius={1}
             bgcolor="background.default"
           >
-            <Typography variant="caption" color="success.main" fontWeight="bold">
+            <Typography
+              variant="caption"
+              color="success.main"
+              fontWeight="bold"
+            >
               COMPLIANT
             </Typography>
             <Typography variant="h5" color="success.main" fontWeight="bold">
@@ -156,7 +162,11 @@ export default function TraceViewer({
             borderRadius={1}
             bgcolor="background.default"
           >
-            <Typography variant="caption" color="warning.main" fontWeight="bold">
+            <Typography
+              variant="caption"
+              color="warning.main"
+              fontWeight="bold"
+            >
               TEMP NON-COMPL
             </Typography>
             <Typography variant="h5" color="warning.main" fontWeight="bold">
@@ -188,7 +198,11 @@ export default function TraceViewer({
             borderRadius={1}
             bgcolor="background.default"
           >
-            <Typography variant="caption" color="text.secondary" fontWeight="bold">
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              fontWeight="bold"
+            >
               IGNORED
             </Typography>
             <Typography variant="h5" color="text.primary" fontWeight="bold">
@@ -211,6 +225,7 @@ export default function TraceViewer({
         </Typography>
       ) : (
         visualList.map((item, index) => {
+          // CALCOLO CORRETTO DELL'ID DELLA TRACCIA
           const caseId = getTraceId(item.data, caseColumn);
 
           return (

@@ -39,6 +39,7 @@ import {
   _convertLogsToXes,
   _startComplianceMonitoring,
   _stopComplianceMonitoring,
+  _getTimelineStep
 } from "../api/services.js";
 import { CircularProgress } from "@mui/material";
 import { dexieDB } from "../dexie.js";
@@ -82,11 +83,10 @@ export default function RealTimeCompliancePage() {
 
   const stepCounterRef = useRef(0);
   const processedHashesRef = useRef(new Set());
-
   const [latestLiveData, setLatestLiveData] = useState(null);
   const [playbackMode, setPlaybackMode] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [maxIndex, setMaxIndex] = useState(0);
+  const [maxIndex, setMaxIndex] = useState(-1); // Parte da -1, il primo step sarà 0
   const [viewData, setViewData] = useState(null);
 
   useEffect(() => {
@@ -96,23 +96,25 @@ export default function RealTimeCompliancePage() {
   }, [eventSource]);
 
   useEffect(() => {
-    if (playbackMode && currentIndex > 0) {
-      dexieDB.history
-        .where("step")
-        .equals(currentIndex)
-        .first()
-        .then((snapshot) => {
-          if (snapshot) setViewData(snapshot);
-        });
+    if (playbackMode && currentIndex >= 0 && currentIndex <= maxIndex) {
+      _getTimelineStep(sessionId, currentIndex)
+        .then((res) => {
+          if (res && res.success) {
+            setViewData(res.data);
+          }
+        })
+        .catch(err => console.error("Errore fetch timeline da Redis:", err));
     }
-  }, [currentIndex, playbackMode]);
+  }, [currentIndex, playbackMode, sessionId, maxIndex]);
 
   useEffect(() => {
-    if (playbackMode && latestLiveData && currentIndex === 0) {
-      setCurrentIndex(maxIndex);
-      setViewData(latestLiveData);
+    if (!playbackMode) {
+      setCurrentIndex(maxIndex); // Tiene l'indice allineato all'ultimo blocco
+      if (latestLiveData) {
+        setViewData(latestLiveData);
+      }
     }
-  }, [playbackMode, latestLiveData, maxIndex, currentIndex]);
+  }, [playbackMode, latestLiveData, maxIndex]);
 
   const startMonitor = async () => {
     if (!sessionId) return alert("Genera prima il base XES!");
@@ -123,11 +125,10 @@ export default function RealTimeCompliancePage() {
         setEventSource(null);
       }
 
-      // reset
-      await dexieDB.history.clear();
+      // RESET CORRETTO DEGLI STATI
       setPlaybackMode(false);
       setCurrentIndex(0);
-      setMaxIndex(0);
+      setMaxIndex(-1);
       setLatestLiveData(null);
       setViewData(null);
       processedHashesRef.current.clear();
@@ -135,9 +136,6 @@ export default function RealTimeCompliancePage() {
 
       await _startComplianceMonitoring({
         sessionId,
-        // addressFilters,
-        // validAddress,
-        // implAddress,
         monitoredContracts,
         mapping,
         parsedRules: rulesList,
@@ -157,45 +155,33 @@ export default function RealTimeCompliancePage() {
         if (processedHashesRef.current.has(txHash)) return;
         processedHashesRef.current.add(txHash);
 
-        if (
-          incomingData.type === "BASELINE_UPDATE" &&
-          incomingData.success === false
-        ) {
-          enqueueSnackbar(
-            `Blocco ${incomingData.blockNumber} vuoto, ignorato`,
-            { variant: "info" },
-          );
+        if (incomingData.type === "BASELINE_UPDATE" && incomingData.success === false) {
+          enqueueSnackbar(`Blocco ${incomingData.blockNumber} vuoto, ignorato`, { variant: "info" });
           return;
         }
 
         if (incomingData.complianceResult) {
           stepCounterRef.current += 1;
           const currentStep = stepCounterRef.current;
-          const resultsArray = incomingData.complianceResult;
-
+          
           const snapshot = {
             sessionId: sessionId,
             step: currentStep,
             sourceType: incomingData.type,
             sourceId: txHash,
-            ruleResults: resultsArray,
+            ruleResults: incomingData.complianceResult, 
             caseColumn: mapping.case_col,
           };
 
-          await dexieDB.history.add(snapshot);
-
-          setMaxIndex(currentStep);
+          // Aggiorna solo gli stati base, l'useEffect farà il resto
+          setMaxIndex(prev => prev + 1);
           setLatestLiveData(snapshot);
-          setCurrentIndex((prev) => (playbackMode ? prev : currentStep));
 
           if (incomingData.type === "BASELINE_UPDATE") {
-            enqueueSnackbar(`Blocco ${incomingData.blockNumber} processato`, {
-              variant: "success",
-            });
+            enqueueSnackbar(`Blocco ${incomingData.blockNumber} processato`, { variant: "success" });
           }
         }
       };
-
       setEventSource(source);
     } catch (err) {
       console.error("Errore avvio monitor:", err);
@@ -208,7 +194,6 @@ export default function RealTimeCompliancePage() {
       setEventSource(null);
     }
     setIsListening(false);
-    setPlaybackMode(true);
 
     try {
       await _stopComplianceMonitoring({ sessionId });
@@ -338,6 +323,7 @@ export default function RealTimeCompliancePage() {
 
 
         {/* 5. LIVE COMPLIANCE AREA */}
+        {/* 5. LIVE COMPLIANCE AREA */}
         <Box
           mb={4}
           p={3}
@@ -346,6 +332,7 @@ export default function RealTimeCompliancePage() {
           borderColor="divider"
           bgcolor="background.paper"
         >
+          {/* Pulsanti Controllo Monitoraggio */}
           <Box display="flex" alignItems="center" gap={2} mb={3}>
             <Button
               variant="contained"
@@ -363,12 +350,42 @@ export default function RealTimeCompliancePage() {
             >
               STOP MONITOR
             </Button>
+            
+            {/* Tasto switch Live/Playback */}
+            {(isListening || maxIndex > -1) && (
+              <Button
+                variant="outlined"
+                color="info"
+                onClick={() => {
+                  setPlaybackMode(!playbackMode);
+                  if (playbackMode) setCurrentIndex(maxIndex); // Se torna al live, salta all'ultimo blocco
+                }}
+              >
+                {playbackMode ? "BACK TO LIVE" : "ENTER PLAYBACK"}
+              </Button>
+            )}
           </Box>
 
-          {/* --- MODALITÀ LIVE STREAMING --- */}
-          {!playbackMode && latestLiveData && latestLiveData.ruleResults && (
+          {/* Barra di Navigazione Playback */}
+          {playbackMode && maxIndex >= 0 && (
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={3} p={2} bgcolor="background.paper" borderRadius={1} border={1} borderColor="divider">
+              <Button variant="contained" onClick={() => setCurrentIndex((prev) => Math.max(0, prev - 1))} disabled={currentIndex <= 0}>
+                Previous Step
+              </Button>
+              <Box textAlign="center">
+                <Typography variant="body1" fontWeight="bold">Rule Checking History</Typography>
+                <Typography variant="caption" color="text.secondary">Step {currentIndex + 1} of {maxIndex + 1}</Typography>
+              </Box>
+              <Button variant="contained" onClick={() => setCurrentIndex((prev) => Math.min(maxIndex, prev + 1))} disabled={currentIndex >= maxIndex}>
+                Next Step
+              </Button>
+            </Box>
+          )}
+
+          {/* Vista unificata TraceViewer (si aggiorna col Live o col Playback) */}
+          {viewData && viewData.ruleResults ? (
             <Box display="flex" flexDirection="column" gap={4}>
-              {latestLiveData.ruleResults.map((result, index) => (
+              {viewData.ruleResults.map((result, index) => (
                 <Box key={index} border={1} borderColor="divider" borderRadius={2} p={2} bgcolor="background.default">
                   <Typography variant="subtitle1" fontWeight="bold" color="primary" mb={2}>
                     Regola: {result.ruleText}
@@ -386,113 +403,18 @@ export default function RealTimeCompliancePage() {
                       tempNonCompliant: result.tempNonCompliant?.length || 0,
                       ignored: result.ignored?.length || 0
                     }}
-                    sourceType={latestLiveData.sourceType}
-                    sourceId={latestLiveData.sourceId}
-                    step={latestLiveData.step}
-                    caseColumn={latestLiveData.caseColumn}
+                    sourceType={viewData.sourceType}
+                    sourceId={viewData.sourceId}
+                    step={viewData.step}
+                    caseColumn={mapping.case_col} 
                   />
                 </Box>
               ))}
             </Box>
-          )}
-
-          {/* --- MODALITÀ PLAYBACK (Storico) --- */}
-          {playbackMode && viewData && viewData.ruleResults && (
-            <Box
-              mt={3}
-              p={3}
-              bgcolor="background.default"
-              borderRadius={2}
-              border={1}
-              borderColor="divider"
-            >
-              <Box
-                display="flex"
-                justifyContent="space-between"
-                alignItems="center"
-                mb={3}
-                p={2}
-                bgcolor="background.paper"
-                borderRadius={1}
-              >
-                <Button
-                  variant="contained"
-                  onClick={() =>
-                    setCurrentIndex((prev) => Math.max(1, prev - 1))
-                  }
-                  disabled={currentIndex <= 1}
-                >
-                  Previous
-                </Button>
-                <Box textAlign="center">
-                  <Typography variant="body1" fontWeight="bold">
-                    Rule Checking History
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    display="block"
-                  >
-                    Check {currentIndex} of {maxIndex}
-                  </Typography>
-                </Box>
-                <Button
-                  variant="contained"
-                  onClick={() =>
-                    setCurrentIndex((prev) => Math.min(maxIndex, prev + 1))
-                  }
-                  disabled={currentIndex >= maxIndex}
-                >
-                  Next
-                </Button>
-              </Box>
-
-              {/* Mappiamo i TraceViewer del Playback */}
-              <Box display="flex" flexDirection="column" gap={4}>
-                {viewData.ruleResults.map((result, index) => (
-                  <Box key={index} border={1} borderColor="divider" borderRadius={2} p={2} bgcolor="background.default">
-                    <Typography variant="subtitle1" fontWeight="bold" color="primary" mb={2}>
-                      Rule: {result.ruleText}
-                    </Typography>
-                    <TraceViewer
-                      compliantData={result.compliant}
-                      noncompliantData={result.noncompliant}
-                      tempCompliantData={result.tempCompliant}
-                      tempNonCompliantData={result.tempNonCompliant}
-                      ignoredData={result.ignored}
-                      stats={{
-                        compliant: result.compliant?.length || 0,
-                        noncompliant: result.noncompliant?.length || 0,
-                        tempCompliant: result.tempCompliant?.length || 0,
-                        tempNonCompliant: result.tempNonCompliant?.length || 0,
-                        ignored: result.ignored?.length || 0
-                      }}
-                      sourceType={viewData.sourceType}
-                      sourceId={viewData.sourceId}
-                      step={viewData.step}
-                      caseColumn={viewData.caseColumn}
-                    />
-                  </Box>
-                ))}
-              </Box>
-            </Box>
-          )}
-
-          {/* Fallback vuoto */}
-          {!latestLiveData && maxIndex === 0 && (
-            <Box
-              textAlign="center"
-              p={4}
-              bgcolor="background.paper"
-              borderRadius={1}
-              border={1}
-              borderColor="divider"
-              borderStyle="dashed"
-            >
+          ) : (
+            <Box textAlign="center" p={4} bgcolor="background.paper" borderRadius={1} border={1} borderColor="divider" borderStyle="dashed">
               <Typography variant="body2" color="text.secondary">
-                {isListening
-                  ? "Waiting for traces..."
-                  : "Monitoring not activatd"}
+                {isListening ? "Waiting for traces..." : "Monitoring not activated"}
               </Typography>
             </Box>
           )}

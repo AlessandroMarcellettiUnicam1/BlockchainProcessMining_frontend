@@ -295,4 +295,18 @@ export const _stopComplianceMonitoring = async (payload) => {
     return response.data;
 };
 
+export const _getRuleTraces = async (sessionId, ruleIndex, status = "") => {
+    // status può essere 'compliant', 'noncompliant', ecc. Se vuoto, prende tutto.
+    const query = status ? `?status=${status}` : "";
+    const response = await axios.get(`${serverUrl}/api/traces/${sessionId}/${ruleIndex}${query}`);
+    return response.data;
+};
+
+export const _getTimelineStep = async (sessionId, stepIndex) => {
+    const response = await axios.get(`${serverUrl}/api/timeline/${sessionId}/${stepIndex}`);
+    return response.data;
+};
+
+
+
 
