@@ -31,6 +31,7 @@ const jsonKeys = [
   "contractAddress",
   "sender",
   "gasUsed",
+  "gasLimit",
   "timestamp",
   "inputs",
   "value",

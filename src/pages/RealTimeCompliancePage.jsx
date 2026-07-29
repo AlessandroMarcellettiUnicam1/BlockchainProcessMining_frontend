@@ -65,6 +65,7 @@ export default function RealTimeCompliancePage() {
     block: "blockNumber",
     sender: "sender",
     timestamp: "timestamp",
+    gasLimit: "gasLimit",
     gasUsed: "gasUsed",
     value: "value",
     SV: "storageState",
