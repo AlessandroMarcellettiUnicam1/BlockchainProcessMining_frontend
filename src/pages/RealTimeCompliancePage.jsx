@@ -88,12 +88,17 @@ export default function RealTimeCompliancePage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [maxIndex, setMaxIndex] = useState(-1); // Parte da -1, il primo step sarà 0
   const [viewData, setViewData] = useState(null);
+  const [stepInput, setStepInput] = useState(1);
 
   useEffect(() => {
     return () => {
       if (eventSource) eventSource.close();
     };
   }, [eventSource]);
+
+  useEffect(() => {
+    setStepInput(currentIndex + 1);
+  }, [currentIndex]);
 
   useEffect(() => {
     if (playbackMode && currentIndex >= 0 && currentIndex <= maxIndex) {
@@ -372,9 +377,38 @@ export default function RealTimeCompliancePage() {
               <Button variant="contained" onClick={() => setCurrentIndex((prev) => Math.max(0, prev - 1))} disabled={currentIndex <= 0}>
                 Previous Step
               </Button>
-              <Box textAlign="center">
+              <Box textAlign="center" display="flex" flexDirection="column" alignItems="center">
                 <Typography variant="body1" fontWeight="bold">Rule Checking History</Typography>
-                <Typography variant="caption" color="text.secondary">Step {currentIndex + 1} of {maxIndex + 1}</Typography>
+                
+                <Box display="flex" alignItems="center" gap={1} mt={0.5}>
+                  <Typography variant="caption" color="text.secondary">Step</Typography>
+                  <TextField
+                    type="number"
+                    size="small"
+                    value={stepInput}
+                    onChange={(e) => {
+                      setStepInput(e.target.value); // Permette all'utente di digitare o svuotare liberamente
+                      
+                      const num = parseInt(e.target.value, 10);
+                      if (!isNaN(num) && num >= 1 && num <= maxIndex + 1) {
+                        setCurrentIndex(num - 1); // Aggiorna la vista reale solo se il numero è nel range valido
+                      }
+                    }}
+                    onBlur={() => {
+                      // Se l'utente clicca fuori lasciando vuoto o con un numero non valido, resetta al blocco corrente
+                      setStepInput(currentIndex + 1);
+                    }}
+                    inputProps={{ 
+                      min: 1, 
+                      max: maxIndex + 1, 
+                      style: { textAlign: 'center', padding: '4px', width: '50px', fontSize: '0.875rem' } 
+                    }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': { borderRadius: 1 }
+                    }}
+                  />
+                  <Typography variant="caption" color="text.secondary">of {maxIndex + 1}</Typography>
+                </Box>
               </Box>
               <Button variant="contained" onClick={() => setCurrentIndex((prev) => Math.min(maxIndex, prev + 1))} disabled={currentIndex >= maxIndex}>
                 Next Step
