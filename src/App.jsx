@@ -57,6 +57,11 @@ const NAVIGATION = [
 				segment: "real-time-compliance",
 				title: "Real Time Compliance",
 				icon : <LibraryAddCheckIcon/>,
+			},
+			{
+				segment: "range-compliance",
+				title: "Block Range Compliance",
+				icon : <AccountTreeIcon/>,
 			}
         ]
     },

@@ -307,6 +307,11 @@ export const _getTimelineStep = async (sessionId, stepIndex) => {
     return response.data;
 };
 
+export const _startHistoricalAnalysis = async (payload) => {
+    const response = await axios.post(`${serverUrl}/api/start-historical-analysis`, payload);
+    return response.data;
+};
+
 
 
 

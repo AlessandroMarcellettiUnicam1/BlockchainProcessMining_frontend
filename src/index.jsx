@@ -18,6 +18,7 @@ import SimulationPage from './pages/SimulationPage';
 import MempoolSimulationPage from './pages/MempoolSimulationPage';
 import RealTimeCompliancePage from './pages/RealTimeCompliancePage';
 import SankeyComponent from './pages/SankeyComponent';
+import RangeCompliance from './pages/RangeCompliance';
 
 const router = createBrowserRouter([
     {
@@ -89,6 +90,10 @@ const router = createBrowserRouter([
                 {
                   path: "data-extraction/real-time-compliance",
                   Component: RealTimeCompliancePage
+                },
+                {
+                  path: "data-extraction/range-compliance",
+                  Component: RangeCompliance
                 }
               ]
             },
