@@ -53,16 +53,6 @@ const NAVIGATION = [
 				title: "Mempool Simulation",
 				icon: <WaterIcon/>,
 			},
-			{
-				segment: "real-time-compliance",
-				title: "Real Time Compliance",
-				icon : <LibraryAddCheckIcon/>,
-			},
-			{
-				segment: "range-compliance",
-				title: "Block Range Compliance",
-				icon : <AccountTreeIcon/>,
-			}
         ]
     },
     {
@@ -93,7 +83,12 @@ const NAVIGATION = [
 				segment: "coblockly",
 				title: "Compliance",
 				icon: <FactCheckIcon />,
-			}
+			},
+			{
+				segment: "real-time-compliance",
+				title: "Real Time Compliance",
+				icon: <LibraryAddCheckIcon />,
+			},
         ]
     },
     {

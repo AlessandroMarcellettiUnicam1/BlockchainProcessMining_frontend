@@ -88,10 +88,11 @@ const router = createBrowserRouter([
                   Component: MempoolSimulationPage
                 },
                 {
-                  path: "data-extraction/real-time-compliance",
+                  path: "data-analysis/real-time-compliance",
                   Component: RealTimeCompliancePage
                 },
                 {
+                  // Kept for direct URL access; hidden from sidebar navigation
                   path: "data-extraction/range-compliance",
                   Component: RangeCompliance
                 }
